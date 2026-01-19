@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Play, Pause, X, Volume2, SkipBack, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
@@ -5,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 
 export function NowPlayingBar() {
   const { currentBeat, isPlaying, progress, duration, toggle, seek, pause, skipForward, skipBackward } = useAudioPlayer();
+  const progressBarRef = useRef<HTMLDivElement>(null);
 
   if (!currentBeat) return null;
 
@@ -16,14 +18,32 @@ export function NowPlayingBar() {
 
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
 
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current || duration === 0) return;
+    
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = clickX / rect.width;
+    const newTime = percentage * duration;
+    
+    seek(Math.max(0, Math.min(newTime, duration)));
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl">
-      {/* Progress Bar */}
-      <div className="h-1 w-full bg-muted">
+      {/* Progress Bar - Clickable */}
+      <div 
+        ref={progressBarRef}
+        className="h-2 w-full bg-muted cursor-pointer group hover:h-3 transition-all"
+        onClick={handleProgressClick}
+      >
         <div
-          className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-100"
+          className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-100 relative"
           style={{ width: `${progressPercent}%` }}
-        />
+        >
+          {/* Seek handle - visible on hover */}
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md" />
+        </div>
       </div>
 
       <div className="container flex h-20 items-center gap-4">

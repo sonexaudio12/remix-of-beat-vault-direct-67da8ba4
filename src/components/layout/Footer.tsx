@@ -1,20 +1,17 @@
-import { Music2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import logo from '@/assets/logo.png';
+
 export function Footer() {
-  return <footer className="border-t border-border/40 bg-card/50">
+  return (
+    <footer className="border-t border-border/40 bg-card/50">
       <div className="container py-12">
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20">
-                <Music2 className="h-5 w-5 text-primary" />
-              </div>
-              <span className="font-display text-xl font-bold tracking-tight">
-                Sonex
-              </span>
+              <img src={logo} alt="Sonex Beats" className="h-9 w-auto" />
             </Link>
-            <div className="flex gap-4 text-sm">
+            <div className="flex gap-4 text-sm mb-4">
               <a href="/terms">Terms</a>
               <a href="/privacy">Privacy</a>
               <a href="/refunds">Refund Policy</a>
@@ -72,8 +69,9 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-border/40 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} SonexLite. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Sonex Beats. All rights reserved.</p>
         </div>
       </div>
-    </footer>;
+    </footer>
+  );
 }

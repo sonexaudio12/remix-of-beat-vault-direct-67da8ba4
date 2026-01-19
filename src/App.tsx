@@ -15,7 +15,6 @@ import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import About from "@/pages/About";
-import { Routes, Route } from "react-router-dom";
 import Terms from "./pages/Terms of service";
 import Privacy from "./pages/Privacy policy";
 import Refund from "./pages/Refund policy";
@@ -39,12 +38,12 @@ const App = () => (
                 <Route path="/licenses" element={<Licenses />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/auth" element={<Auth />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/refunds" element={<Refund />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </AudioPlayerProvider>

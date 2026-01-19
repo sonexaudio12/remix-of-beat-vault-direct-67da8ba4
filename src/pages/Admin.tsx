@@ -10,6 +10,7 @@ import { BeatsManager } from '@/components/admin/BeatsManager';
 import { OrdersManager } from '@/components/admin/OrdersManager';
 import { LicenseTemplatesManager } from '@/components/admin/LicenseTemplatesManager';
 import { supabase } from '@/integrations/supabase/client';
+import logo from '@/assets/logo.png';
 const navItems = [{
   icon: LayoutDashboard,
   label: 'Dashboard',
@@ -66,12 +67,7 @@ const Admin = () => {
       <aside className="w-64 border-r border-border bg-card/50 flex flex-col">
         <div className="p-6 border-b border-border">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20">
-              <Music2 className="h-5 w-5 text-primary" />
-            </div>
-            <span className="font-display text-xl font-bold tracking-tight">
-              Sonex
-            </span>
+            <img src={logo} alt="Sonex Beats" className="h-9 w-auto" />
           </Link>
         </div>
 

@@ -14,16 +14,279 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      beats: {
+        Row: {
+          bpm: number
+          cover_url: string | null
+          created_at: string
+          genre: string
+          id: string
+          is_active: boolean | null
+          is_exclusive_available: boolean | null
+          mood: string
+          mp3_file_path: string | null
+          preview_url: string | null
+          stems_file_path: string | null
+          title: string
+          updated_at: string
+          wav_file_path: string | null
+        }
+        Insert: {
+          bpm?: number
+          cover_url?: string | null
+          created_at?: string
+          genre?: string
+          id?: string
+          is_active?: boolean | null
+          is_exclusive_available?: boolean | null
+          mood?: string
+          mp3_file_path?: string | null
+          preview_url?: string | null
+          stems_file_path?: string | null
+          title: string
+          updated_at?: string
+          wav_file_path?: string | null
+        }
+        Update: {
+          bpm?: number
+          cover_url?: string | null
+          created_at?: string
+          genre?: string
+          id?: string
+          is_active?: boolean | null
+          is_exclusive_available?: boolean | null
+          mood?: string
+          mp3_file_path?: string | null
+          preview_url?: string | null
+          stems_file_path?: string | null
+          title?: string
+          updated_at?: string
+          wav_file_path?: string | null
+        }
+        Relationships: []
+      }
+      license_templates: {
+        Row: {
+          created_at: string
+          file_path: string | null
+          id: string
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          name: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      license_tiers: {
+        Row: {
+          beat_id: string
+          created_at: string
+          id: string
+          includes: string[]
+          is_active: boolean | null
+          license_pdf_path: string | null
+          name: string
+          price: number
+          type: string
+        }
+        Insert: {
+          beat_id: string
+          created_at?: string
+          id?: string
+          includes?: string[]
+          is_active?: boolean | null
+          license_pdf_path?: string | null
+          name: string
+          price: number
+          type: string
+        }
+        Update: {
+          beat_id?: string
+          created_at?: string
+          id?: string
+          includes?: string[]
+          is_active?: boolean | null
+          license_pdf_path?: string | null
+          name?: string
+          price?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_tiers_beat_id_fkey"
+            columns: ["beat_id"]
+            isOneToOne: false
+            referencedRelation: "beats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          beat_id: string | null
+          beat_title: string
+          created_at: string
+          download_count: number | null
+          id: string
+          license_name: string
+          license_tier_id: string | null
+          order_id: string
+          price: number
+        }
+        Insert: {
+          beat_id?: string | null
+          beat_title: string
+          created_at?: string
+          download_count?: number | null
+          id?: string
+          license_name: string
+          license_tier_id?: string | null
+          order_id: string
+          price: number
+        }
+        Update: {
+          beat_id?: string | null
+          beat_title?: string
+          created_at?: string
+          download_count?: number | null
+          id?: string
+          license_name?: string
+          license_tier_id?: string | null
+          order_id?: string
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_beat_id_fkey"
+            columns: ["beat_id"]
+            isOneToOne: false
+            referencedRelation: "beats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_license_tier_id_fkey"
+            columns: ["license_tier_id"]
+            isOneToOne: false
+            referencedRelation: "license_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          customer_email: string
+          customer_name: string | null
+          download_expires_at: string | null
+          id: string
+          paypal_order_id: string | null
+          paypal_transaction_id: string | null
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          customer_name?: string | null
+          download_expires_at?: string | null
+          id?: string
+          paypal_order_id?: string | null
+          paypal_transaction_id?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          customer_name?: string | null
+          download_expires_at?: string | null
+          id?: string
+          paypal_order_id?: string | null
+          paypal_transaction_id?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +413,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "customer"],
+    },
   },
 } as const

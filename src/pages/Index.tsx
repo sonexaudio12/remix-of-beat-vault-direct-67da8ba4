@@ -5,25 +5,32 @@ import { HeroSection } from '@/components/home/HeroSection';
 import { BeatGrid } from '@/components/beats/BeatGrid';
 import { BeatFilters } from '@/components/beats/BeatFilters';
 import { NowPlayingBar } from '@/components/beats/NowPlayingBar';
+import { useBeats } from '@/hooks/useBeats';
 import { mockBeats } from '@/data/mockBeats';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [genreFilter, setGenreFilter] = useState('all');
   const [moodFilter, setMoodFilter] = useState('all');
 
+  const { data: beats, isLoading, error } = useBeats();
+
+  // Use real beats if available, fallback to mock data
+  const displayBeats = beats && beats.length > 0 ? beats : mockBeats;
+
   const genres = useMemo(() => 
-    [...new Set(mockBeats.map((beat) => beat.genre))],
-    []
+    [...new Set(displayBeats.map((beat) => beat.genre))],
+    [displayBeats]
   );
   
   const moods = useMemo(() => 
-    [...new Set(mockBeats.map((beat) => beat.mood))],
-    []
+    [...new Set(displayBeats.map((beat) => beat.mood))],
+    [displayBeats]
   );
 
   const filteredBeats = useMemo(() => {
-    return mockBeats.filter((beat) => {
+    return displayBeats.filter((beat) => {
       const matchesSearch = beat.title
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
@@ -31,7 +38,7 @@ const Index = () => {
       const matchesMood = moodFilter === 'all' || beat.mood === moodFilter;
       return matchesSearch && matchesGenre && matchesMood;
     });
-  }, [searchQuery, genreFilter, moodFilter]);
+  }, [displayBeats, searchQuery, genreFilter, moodFilter]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -49,7 +56,14 @@ const Index = () => {
                   Latest Beats
                 </h2>
                 <p className="text-muted-foreground">
-                  {filteredBeats.length} beat{filteredBeats.length !== 1 ? 's' : ''} available
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading beats...
+                    </span>
+                  ) : (
+                    `${filteredBeats.length} beat${filteredBeats.length !== 1 ? 's' : ''} available`
+                  )}
                 </p>
               </div>
               <BeatFilters
@@ -64,7 +78,18 @@ const Index = () => {
               />
             </div>
 
-            <BeatGrid beats={filteredBeats} />
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : error ? (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground">Error loading beats. Showing sample catalog.</p>
+                <BeatGrid beats={mockBeats} />
+              </div>
+            ) : (
+              <BeatGrid beats={filteredBeats} />
+            )}
           </div>
         </section>
       </main>

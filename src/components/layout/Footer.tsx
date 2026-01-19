@@ -14,6 +14,12 @@ export function Footer() {
                 Sonex
               </span>
             </Link>
+            <div className="flex gap-4 text-sm">
+              <a href="/terms">Terms</a>
+              <a href="/privacy">Privacy</a>
+              <a href="/refunds">Refund Policy</a>
+            </div>
+
             <p className="text-sm text-muted-foreground max-w-md">
               Premium beats crafted with passion. Instant delivery after purchase with professional
               licensing included.

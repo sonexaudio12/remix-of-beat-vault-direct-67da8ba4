@@ -1,1 +1,4 @@
 project_id = "xjlgzxaukgshcytevdin"
+
+[functions.generate-license-pdf]
+verify_jwt = false

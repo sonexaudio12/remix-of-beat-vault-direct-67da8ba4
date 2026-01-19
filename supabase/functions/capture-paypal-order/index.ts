@@ -42,6 +42,78 @@ async function getPayPalAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+interface OrderItem {
+  id: string;
+  beat_id: string | null;
+  sound_kit_id: string | null;
+  beat_title: string;
+  item_title: string | null;
+  item_type: string;
+  license_name: string;
+  license_tier_id: string | null;
+  price: number;
+  license_tiers?: { type: string } | null;
+  beats?: { bpm: number; genre: string } | null;
+}
+
+async function generateLicensePdfs(
+  supabase: any,
+  order: any,
+  orderItems: OrderItem[]
+): Promise<string[]> {
+  const generatedPaths: string[] = [];
+  
+  for (const item of orderItems) {
+    try {
+      const licenseType = item.license_tiers?.type || 'mp3';
+      
+      const requestData = {
+        orderId: order.id,
+        orderItemId: item.id,
+        itemType: item.item_type || 'beat',
+        itemTitle: item.item_title || item.beat_title,
+        licenseName: item.license_name,
+        licenseType: licenseType,
+        customerName: order.customer_name || '',
+        customerEmail: order.customer_email,
+        purchaseDate: order.created_at,
+        price: item.price,
+        bpm: item.beats?.bpm,
+        genre: item.beats?.genre,
+      };
+      
+      console.log(`Generating license PDF for item: ${item.beat_title}`);
+      
+      const response = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-license-pdf`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify(requestData),
+        }
+      );
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.filePath) {
+          generatedPaths.push(result.filePath);
+          console.log(`License PDF generated: ${result.filePath}`);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error(`Failed to generate license PDF for ${item.beat_title}:`, errorText);
+      }
+    } catch (err) {
+      console.error(`Error generating license for ${item.beat_title}:`, err);
+    }
+  }
+  
+  return generatedPaths;
+}
+
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -115,11 +187,15 @@ serve(async (req: Request) => {
         order_items (
           id,
           beat_id,
+          sound_kit_id,
           beat_title,
+          item_title,
+          item_type,
           license_name,
           price,
           license_tier_id,
-          license_tiers:license_tier_id (type)
+          license_tiers:license_tier_id (type),
+          beats:beat_id (bpm, genre)
         )
       `)
       .single();
@@ -134,9 +210,12 @@ serve(async (req: Request) => {
 
     console.log(`Order ${orderId} completed with transaction ${transactionId}`);
 
-    // Send confirmation email
+    // Generate personalized license PDFs for each item
+    const generatedLicensePaths = await generateLicensePdfs(supabase, order, order.order_items);
+    console.log(`Generated ${generatedLicensePaths.length} license PDF(s)`);
+
+    // Send confirmation email with generated licenses
     try {
-      const projectUrl = Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '');
       const siteUrl = Deno.env.get("SITE_URL") || "https://id-preview--430b91ad-0bb9-4350-bdc9-63aa5f481d35.lovable.app";
       const downloadUrl = `${siteUrl}/download?orderId=${orderId}&email=${encodeURIComponent(order.customer_email)}`;
       
@@ -144,8 +223,8 @@ serve(async (req: Request) => {
         customerEmail: order.customer_email,
         customerName: order.customer_name,
         orderId: orderId,
-        orderItems: order.order_items.map((item: any) => ({
-          beat_title: item.beat_title,
+        orderItems: order.order_items.map((item: OrderItem) => ({
+          beat_title: item.item_title || item.beat_title,
           license_name: item.license_name,
           license_type: item.license_tiers?.type || null,
           price: item.price,
@@ -153,6 +232,7 @@ serve(async (req: Request) => {
         total: order.total,
         downloadUrl: downloadUrl,
         expiresAt: order.download_expires_at,
+        generatedLicensePaths: generatedLicensePaths,
       };
 
       const emailResponse = await fetch(
@@ -182,6 +262,7 @@ serve(async (req: Request) => {
         success: true,
         order: order,
         transactionId: transactionId,
+        generatedLicenses: generatedLicensePaths.length,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

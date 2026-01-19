@@ -23,6 +23,7 @@ interface SendOrderEmailRequest {
   total: number;
   downloadUrl: string;
   expiresAt: string;
+  generatedLicensePaths?: string[];
 }
 
 interface Attachment {
@@ -50,7 +51,8 @@ const generateEmailHtml = (data: SendOrderEmailRequest, hasAttachments: boolean)
   const attachmentNote = hasAttachments 
     ? `<div style="background: #e0f2fe; border-radius: 8px; padding: 16px; margin-top: 24px;">
         <p style="margin: 0; color: #0369a1; font-size: 14px;">
-          <strong>📎 License Agreements Attached:</strong> Your license PDF documents are attached to this email. 
+          <strong>📎 Personalized License Agreements Attached:</strong> Your license PDF documents have been 
+          automatically generated with your purchase details and are attached to this email. 
           Please save them for your records.
         </p>
       </div>`
@@ -72,7 +74,7 @@ const generateEmailHtml = (data: SendOrderEmailRequest, hasAttachments: boolean)
         
         <div style="background: #ffffff; padding: 40px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           <p style="color: #333; font-size: 16px; margin-bottom: 24px;">
-            Your order has been processed successfully. Your beats are ready to download!
+            Your order has been processed successfully. Your files are ready to download!
           </p>
           
           <div style="background: #f8f9fa; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
@@ -94,7 +96,7 @@ const generateEmailHtml = (data: SendOrderEmailRequest, hasAttachments: boolean)
           <div style="text-align: center; margin: 32px 0;">
             <a href="${data.downloadUrl}" 
                style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: bold; font-size: 16px;">
-              Download Your Beats
+              Download Your Files
             </a>
           </div>
           
@@ -119,7 +121,7 @@ const generateEmailHtml = (data: SendOrderEmailRequest, hasAttachments: boolean)
         </div>
         
         <p style="color: #999; font-size: 12px; text-align: center; margin-top: 24px;">
-          © ${new Date().getFullYear()} Beat Store. All rights reserved.
+          © ${new Date().getFullYear()} Sonex Beats. All rights reserved.
         </p>
       </div>
     </body>
@@ -127,7 +129,42 @@ const generateEmailHtml = (data: SendOrderEmailRequest, hasAttachments: boolean)
   `;
 };
 
-// Map license names to license template types
+async function fetchGeneratedLicensePdfs(supabase: any, paths: string[]): Promise<Attachment[]> {
+  const attachments: Attachment[] = [];
+  
+  for (const path of paths) {
+    try {
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('licenses')
+        .download(path);
+      
+      if (downloadError) {
+        console.error(`Error downloading generated license ${path}:`, downloadError);
+        continue;
+      }
+      
+      // Convert blob to base64
+      const arrayBuffer = await fileData.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      
+      // Extract filename from path
+      const filename = path.split('/').pop() || 'License.pdf';
+      
+      attachments.push({
+        filename: filename,
+        content: base64,
+      });
+      
+      console.log(`Attached generated license PDF: ${filename}`);
+    } catch (err) {
+      console.error(`Error processing generated license ${path}:`, err);
+    }
+  }
+  
+  return attachments;
+}
+
+// Fallback: Map license names to license template types
 function getLicenseType(licenseName: string): string {
   const name = licenseName.toLowerCase();
   if (name.includes('exclusive')) return 'exclusive';
@@ -136,7 +173,7 @@ function getLicenseType(licenseName: string): string {
   return 'mp3';
 }
 
-async function fetchLicensePdfs(supabase: any, orderItems: OrderItem[]): Promise<Attachment[]> {
+async function fetchTemplateLicensePdfs(supabase: any, orderItems: OrderItem[]): Promise<Attachment[]> {
   const attachments: Attachment[] = [];
   
   // Get unique license types needed
@@ -144,7 +181,7 @@ async function fetchLicensePdfs(supabase: any, orderItems: OrderItem[]): Promise
     item.license_type || getLicenseType(item.license_name)
   ))];
   
-  console.log("Fetching license templates for types:", licenseTypes);
+  console.log("Fetching template license PDFs for types:", licenseTypes);
   
   // Fetch license templates
   const { data: templates, error } = await supabase
@@ -183,7 +220,7 @@ async function fetchLicensePdfs(supabase: any, orderItems: OrderItem[]): Promise
         content: base64,
       });
       
-      console.log(`Attached license PDF: ${template.name}`);
+      console.log(`Attached template license PDF: ${template.name}`);
     } catch (err) {
       console.error(`Error processing ${template.type} license:`, err);
     }
@@ -194,7 +231,7 @@ async function fetchLicensePdfs(supabase: any, orderItems: OrderItem[]): Promise
 
 async function sendEmail(to: string, subject: string, html: string, attachments: Attachment[] = []) {
   const emailPayload: any = {
-    from: "Beat Store <onboarding@resend.dev>",
+    from: "Sonex Beats <onboarding@resend.dev>",
     to: [to],
     subject,
     html,
@@ -242,13 +279,25 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch license PDF attachments
-    const attachments = await fetchLicensePdfs(supabase, data.orderItems);
+    let attachments: Attachment[] = [];
+    
+    // Prefer generated license PDFs if available
+    if (data.generatedLicensePaths && data.generatedLicensePaths.length > 0) {
+      console.log(`Using ${data.generatedLicensePaths.length} generated license PDF(s)`);
+      attachments = await fetchGeneratedLicensePdfs(supabase, data.generatedLicensePaths);
+    }
+    
+    // Fallback to template PDFs if no generated ones available
+    if (attachments.length === 0) {
+      console.log("No generated licenses found, falling back to templates");
+      attachments = await fetchTemplateLicensePdfs(supabase, data.orderItems);
+    }
+    
     console.log(`Attaching ${attachments.length} license PDF(s) to email`);
 
     const emailResponse = await sendEmail(
       data.customerEmail,
-      "🎵 Order Confirmed - Your beats are ready to download!",
+      "🎵 Order Confirmed - Your files are ready to download!",
       generateEmailHtml(data, attachments.length > 0),
       attachments
     );

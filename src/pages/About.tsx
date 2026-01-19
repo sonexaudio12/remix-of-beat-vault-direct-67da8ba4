@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { Music2 } from "lucide-react";
 
 export default function About() {

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/logo real.png';
 
 export function Footer() {
   return (
@@ -9,7 +9,7 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <img src={logo} alt="logo real.png" className="h-9 w-auto" />
+              <img src={logo} alt="Sonex Beats Logo" className="h-9 w-auto" />
             </Link>
             <div className="flex gap-4 text-sm mb-4">
               <a href="/terms">Terms</a>

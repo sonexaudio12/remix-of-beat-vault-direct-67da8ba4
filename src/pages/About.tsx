@@ -1,6 +1,5 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Music2 } from "lucide-react";
 
 export default function About() {
   return (

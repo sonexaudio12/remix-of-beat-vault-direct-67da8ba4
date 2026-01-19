@@ -1,11 +1,12 @@
 import { Trash2, ShoppingBag, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCart } from '@/hooks/useCart';
 
 const Cart = () => {
+  const navigate = useNavigate();
   const { items, removeItem, total } = useCart();
 
   if (items.length === 0) {
@@ -111,8 +112,13 @@ const Cart = () => {
                   </div>
                 </div>
 
-                <Button variant="hero" size="lg" className="w-full">
-                  Checkout with PayPal
+                <Button 
+                  variant="hero" 
+                  size="lg" 
+                  className="w-full"
+                  onClick={() => navigate('/checkout')}
+                >
+                  Proceed to Checkout
                 </Button>
 
                 <p className="text-xs text-muted-foreground text-center mt-4">

@@ -7,6 +7,7 @@ import { CartProvider } from "@/hooks/useCart";
 import { AudioPlayerProvider } from "@/hooks/useAudioPlayer";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
+import Beats from "./pages/Beats";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Download from "./pages/Download";
@@ -34,6 +35,7 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/beats" element={<Beats />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/download" element={<Download />} />

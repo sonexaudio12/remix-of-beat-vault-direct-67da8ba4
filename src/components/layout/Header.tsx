@@ -19,7 +19,7 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/beats" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Beats
           </Link>
           <Link to="/sound-kits" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -68,7 +68,7 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border/40 bg-background">
           <nav className="container py-4 flex flex-col gap-2">
-            <Link to="/" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+            <Link to="/beats" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
               Beats
             </Link>
             <Link to="/sound-kits" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>

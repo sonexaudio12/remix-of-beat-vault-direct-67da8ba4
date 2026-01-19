@@ -172,8 +172,6 @@ const OrderConfirmation = () => {
         return 'Sound Kit';
       case 'license':
         return 'License PDF';
-      case 'license':
-        return 'License PDF';
       default:
         return type.toUpperCase();
     }

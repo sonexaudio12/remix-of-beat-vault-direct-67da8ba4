@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowLeft, CreditCard, Mail, User, Loader2, CheckCircle2, AlertCircle, Music2, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,12 +8,14 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCart } from '@/hooks/useCart';
 import { usePayPal } from '@/hooks/usePayPal';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 
 const Checkout = () => {
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -24,6 +26,13 @@ const Checkout = () => {
   const { createOrder, captureOrder, isLoading, error } = usePayPal();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Pre-fill email for logged-in users
+  useEffect(() => {
+    if (user?.email && !email) {
+      setEmail(user.email);
+    }
+  }, [user]);
 
   // Handle PayPal return
   useEffect(() => {

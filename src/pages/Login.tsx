@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import logo from '@/assets/logo-new.png';
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
-const Auth = () => {
+const Login = () => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +25,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && !isLoading) {
-      navigate('/admin');
+      navigate('/account');
     }
   }, [user, isLoading, navigate]);
 
@@ -64,7 +64,7 @@ const Auth = () => {
           }
         } else {
           toast.success('Welcome back!');
-          navigate('/admin');
+          navigate('/account');
         }
       } else {
         const { error } = await signUp(email, password);
@@ -100,20 +100,20 @@ const Auth = () => {
       
       <div className="relative w-full max-w-md">
         {/* Logo */}
-        <div className="flex justify-center mb-8">
+        <Link to="/" className="flex justify-center mb-8">
           <img src={logo} alt="Sonex Beats" className="h-12 w-auto" />
-        </div>
+        </Link>
 
         {/* Card */}
         <div className="rounded-2xl border border-border bg-card p-8">
           <div className="text-center mb-6">
             <h1 className="font-display text-2xl font-bold mb-2">
-              {mode === 'login' ? 'Admin Login' : 'Create Account'}
+              {mode === 'login' ? 'Welcome Back' : 'Create Account'}
             </h1>
             <p className="text-muted-foreground text-sm">
               {mode === 'login'
-                ? 'Sign in to manage your beats'
-                : 'Create an admin account'}
+                ? 'Sign in to access your purchases'
+                : 'Join to track your orders and downloads'}
             </p>
           </div>
 
@@ -125,7 +125,7 @@ const Auth = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@example.com"
+                  placeholder="your@email.com"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -201,11 +201,11 @@ const Auth = () => {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-4">
-          Admin access only. Contact the producer for permissions.
+          Create an account to track orders and re-download purchases.
         </p>
       </div>
     </div>
   );
 };
 
-export default Auth;
+export default Login;

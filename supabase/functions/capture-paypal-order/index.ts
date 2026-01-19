@@ -132,6 +132,44 @@ serve(async (req: Request) => {
 
     console.log(`Order ${orderId} completed with transaction ${transactionId}`);
 
+    // Send confirmation email
+    try {
+      const projectUrl = Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '');
+      const siteUrl = Deno.env.get("SITE_URL") || "https://id-preview--430b91ad-0bb9-4350-bdc9-63aa5f481d35.lovable.app";
+      const downloadUrl = `${siteUrl}/download?orderId=${orderId}&email=${encodeURIComponent(order.customer_email)}`;
+      
+      const emailPayload = {
+        customerEmail: order.customer_email,
+        customerName: order.customer_name,
+        orderId: orderId,
+        orderItems: order.order_items,
+        total: order.total,
+        downloadUrl: downloadUrl,
+        expiresAt: order.download_expires_at,
+      };
+
+      const emailResponse = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-order-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify(emailPayload),
+        }
+      );
+
+      if (!emailResponse.ok) {
+        console.error("Failed to send confirmation email:", await emailResponse.text());
+      } else {
+        console.log("Confirmation email sent successfully");
+      }
+    } catch (emailError) {
+      console.error("Error sending confirmation email:", emailError);
+      // Don't fail the order if email fails
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

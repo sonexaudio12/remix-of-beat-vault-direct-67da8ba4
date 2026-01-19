@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, AlertCircle, Archive } from 'lucide-react';
+import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, AlertCircle, Archive, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,10 +9,12 @@ import { BeatUploadForm } from '@/components/admin/BeatUploadForm';
 import { BeatsManager } from '@/components/admin/BeatsManager';
 import { OrdersManager } from '@/components/admin/OrdersManager';
 import { LicenseTemplatesManager } from '@/components/admin/LicenseTemplatesManager';
+import { GeneratedLicensesManager } from '@/components/admin/GeneratedLicensesManager';
 import { SoundKitUploadForm } from '@/components/admin/SoundKitUploadForm';
 import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
+
 const navItems = [{
   icon: LayoutDashboard,
   label: 'Dashboard',
@@ -37,6 +39,10 @@ const navItems = [{
   icon: FileText,
   label: 'License Templates',
   id: 'licenses'
+}, {
+  icon: ScrollText,
+  label: 'Generated Licenses',
+  id: 'generated-licenses'
 }, {
   icon: Package,
   label: 'Orders',
@@ -139,6 +145,7 @@ const Admin = () => {
           {activeTab === 'upload-soundkit' && <SoundKitUploadContent isAdmin={isAdmin} onSuccess={() => setActiveTab('soundkits')} />}
           {activeTab === 'soundkits' && <SoundKitsContent isAdmin={isAdmin} />}
           {activeTab === 'licenses' && <LicensesContent isAdmin={isAdmin} />}
+          {activeTab === 'generated-licenses' && <GeneratedLicensesContent isAdmin={isAdmin} />}
           {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>
@@ -340,6 +347,19 @@ function SoundKitsContent({
   }
   return <SoundKitsManager />;
 }
+function GeneratedLicensesContent({
+  isAdmin
+}: {
+  isAdmin: boolean;
+}) {
+  if (!isAdmin) {
+    return <div className="rounded-xl bg-card border border-border p-6">
+        <p className="text-muted-foreground text-sm">Admin access required to view generated licenses.</p>
+      </div>;
+  }
+  return <GeneratedLicensesManager />;
+}
+
 function LicensesContent({
   isAdmin
 }: {

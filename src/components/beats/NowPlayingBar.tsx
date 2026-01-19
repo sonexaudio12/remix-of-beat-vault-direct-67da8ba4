@@ -1,10 +1,10 @@
-import { Play, Pause, X, Volume2 } from 'lucide-react';
+import { Play, Pause, X, Volume2, SkipBack, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { Slider } from '@/components/ui/slider';
 
 export function NowPlayingBar() {
-  const { currentBeat, isPlaying, progress, duration, toggle, seek, pause } = useAudioPlayer();
+  const { currentBeat, isPlaying, progress, duration, toggle, seek, pause, skipForward, skipBackward } = useAudioPlayer();
 
   if (!currentBeat) return null;
 
@@ -43,11 +43,23 @@ export function NowPlayingBar() {
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground hidden sm:block">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <span className="text-sm text-muted-foreground hidden sm:block w-10 text-right">
             {formatTime(progress)}
           </span>
           
+          {/* Rewind Button */}
+          <Button
+            variant="ghost"
+            size="iconSm"
+            onClick={() => skipBackward(10)}
+            className="text-muted-foreground hover:text-foreground"
+            title="Rewind 10 seconds"
+          >
+            <SkipBack className="h-4 w-4" />
+          </Button>
+
+          {/* Play/Pause Button */}
           <Button
             variant="player"
             size="icon"
@@ -60,7 +72,18 @@ export function NowPlayingBar() {
             )}
           </Button>
 
-          <span className="text-sm text-muted-foreground hidden sm:block">
+          {/* Forward Button */}
+          <Button
+            variant="ghost"
+            size="iconSm"
+            onClick={() => skipForward(10)}
+            className="text-muted-foreground hover:text-foreground"
+            title="Forward 10 seconds"
+          >
+            <SkipForward className="h-4 w-4" />
+          </Button>
+
+          <span className="text-sm text-muted-foreground hidden sm:block w-10">
             {formatTime(duration)}
           </span>
         </div>

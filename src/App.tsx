@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Download from "./pages/Download";
+import OrderConfirmation from "./pages/OrderConfirmation";
 import Licenses from "./pages/Licenses";
 import SoundKits from "./pages/SoundKits";
 import Admin from "./pages/Admin";
@@ -36,6 +37,7 @@ const App = () => (
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/download" element={<Download />} />
+                <Route path="/order-confirmation" element={<OrderConfirmation />} />
                 <Route path="/licenses" element={<Licenses />} />
                 <Route path="/sound-kits" element={<SoundKits />} />
                 <Route path="/admin" element={<Admin />} />

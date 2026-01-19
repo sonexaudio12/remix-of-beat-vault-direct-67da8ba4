@@ -122,14 +122,13 @@ const Checkout = () => {
               <p className="text-muted-foreground mb-8">
                 We've sent download links to your email. Links expire in 7 days.
               </p>
-              <div className="flex gap-4 justify-center">
-                <Button variant="outline" onClick={() => navigate('/')}>
-                  Continue Shopping
-                </Button>
-                <Button variant="hero" onClick={() => navigate(`/download?orderId=${orderId}&email=${email}`)}>
-                  Download Now
-                </Button>
-              </div>
+              <Button 
+                variant="hero" 
+                size="lg"
+                onClick={() => navigate(`/order-confirmation?orderId=${orderId}&email=${email}`)}
+              >
+                View Order & Download Files
+              </Button>
             </div>
           )}
 

@@ -1,9 +1,7 @@
 import { Music2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
 export function Footer() {
-  return (
-    <footer className="border-t border-border/40 bg-card/50">
+  return <footer className="border-t border-border/40 bg-card/50">
       <div className="container py-12">
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
@@ -13,7 +11,7 @@ export function Footer() {
                 <Music2 className="h-5 w-5 text-primary" />
               </div>
               <span className="font-display text-xl font-bold tracking-tight">
-                Sonex<span className="text-primary">Lite</span>
+                Sonex
               </span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-md">
@@ -71,6 +69,5 @@ export function Footer() {
           <p>© {new Date().getFullYear()} SonexLite. All rights reserved.</p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 }

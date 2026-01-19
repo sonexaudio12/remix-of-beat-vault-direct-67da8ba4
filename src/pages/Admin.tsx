@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BeatUploadForm } from '@/components/admin/BeatUploadForm';
 import { BeatsManager } from '@/components/admin/BeatsManager';
 import { OrdersManager } from '@/components/admin/OrdersManager';
+import { LicenseTemplatesManager } from '@/components/admin/LicenseTemplatesManager';
 import { supabase } from '@/integrations/supabase/client';
 const navItems = [{
   icon: LayoutDashboard,
@@ -304,22 +305,14 @@ function LicensesContent({
 }: {
   isAdmin: boolean;
 }) {
-  return <div className="rounded-xl bg-card border border-border p-6">
-      <h3 className="font-display font-semibold mb-4">License Templates</h3>
-      <p className="text-muted-foreground text-sm mb-4">
-        {isAdmin ? 'Upload PDF license templates for each tier. These will be automatically included with purchases.' : 'Admin access required to manage license templates.'}
-      </p>
-      {isAdmin && <div className="grid gap-4 md:grid-cols-2">
-          {['MP3 Lease', 'WAV Lease', 'Trackout (Stems)', 'Exclusive'].map(type => <div key={type} className="p-4 rounded-lg bg-secondary/50 border border-border">
-              <p className="font-medium mb-2">{type}</p>
-              <p className="text-xs text-muted-foreground mb-3">No PDF uploaded yet</p>
-              <Button variant="outline" size="sm" disabled>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload PDF
-              </Button>
-            </div>)}
-        </div>}
-    </div>;
+  if (!isAdmin) {
+    return (
+      <div className="rounded-xl bg-card border border-border p-6">
+        <p className="text-muted-foreground text-sm">Admin access required to manage license templates.</p>
+      </div>
+    );
+  }
+  return <LicenseTemplatesManager />;
 }
 function OrdersContent({
   isAdmin

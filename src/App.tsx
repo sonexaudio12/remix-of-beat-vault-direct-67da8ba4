@@ -14,6 +14,7 @@ import Licenses from "./pages/Licenses";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import About from "@/pages/About";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
+                <Route path="/about" element={<About />} />
               </Routes>
             </BrowserRouter>
           </AudioPlayerProvider>

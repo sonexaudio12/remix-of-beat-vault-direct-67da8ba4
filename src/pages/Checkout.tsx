@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Mail, User, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, Mail, User, Loader2, CheckCircle2, AlertCircle, Music2, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,15 +72,7 @@ const Checkout = () => {
     const result = await createOrder(items, email, name || undefined);
 
     if (result?.approvalUrl) {
-      // Store order ID for return
-      const returnUrl = new URL(result.approvalUrl);
-      
-      // Redirect to PayPal with our order ID
-      const currentUrl = new URL(window.location.href);
-      currentUrl.pathname = '/checkout';
-      currentUrl.searchParams.set('orderId', result.orderId);
-      
-      // PayPal will add the token parameter on return
+      // Redirect to PayPal
       window.location.href = result.approvalUrl;
     } else {
       setStep('error');
@@ -96,11 +88,11 @@ const Checkout = () => {
           <div className="max-w-lg mx-auto text-center">
             <h1 className="font-display text-3xl font-bold mb-4">Your cart is empty</h1>
             <p className="text-muted-foreground mb-8">
-              Add some beats to your cart before checkout.
+              Add some beats or sound kits to your cart before checkout.
             </p>
             <Button variant="hero" onClick={() => navigate('/')}>
               <ArrowLeft className="h-4 w-4" />
-              Browse Beats
+              Browse Store
             </Button>
           </div>
         </main>
@@ -261,23 +253,52 @@ const Checkout = () => {
                     <h2 className="font-display text-xl font-semibold mb-4">Order Summary</h2>
 
                     <div className="space-y-4 mb-6">
-                      {items.map((item) => (
-                        <div
-                          key={`${item.beat.id}-${item.license.id}`}
-                          className="flex items-center gap-3"
-                        >
-                          <img
-                            src={item.beat.coverUrl}
-                            alt={item.beat.title}
-                            className="w-12 h-12 rounded-lg object-cover"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate text-sm">{item.beat.title}</p>
-                            <p className="text-xs text-muted-foreground">{item.license.name}</p>
-                          </div>
-                          <p className="font-semibold">${item.license.price.toFixed(2)}</p>
-                        </div>
-                      ))}
+                      {items.map((item) => {
+                        if (item.itemType === 'beat' && item.beat && item.license) {
+                          return (
+                            <div
+                              key={`beat-${item.beat.id}-${item.license.id}`}
+                              className="flex items-center gap-3"
+                            >
+                              <img
+                                src={item.beat.coverUrl}
+                                alt={item.beat.title}
+                                className="w-12 h-12 rounded-lg object-cover"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate text-sm">{item.beat.title}</p>
+                                <p className="text-xs text-muted-foreground">{item.license.name}</p>
+                              </div>
+                              <p className="font-semibold">${item.license.price.toFixed(2)}</p>
+                            </div>
+                          );
+                        } else if (item.itemType === 'sound_kit' && item.soundKit) {
+                          return (
+                            <div
+                              key={`soundkit-${item.soundKit.id}`}
+                              className="flex items-center gap-3"
+                            >
+                              {item.soundKit.coverUrl ? (
+                                <img
+                                  src={item.soundKit.coverUrl}
+                                  alt={item.soundKit.title}
+                                  className="w-12 h-12 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+                                  <Archive className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate text-sm">{item.soundKit.title}</p>
+                                <p className="text-xs text-muted-foreground">{item.soundKit.category}</p>
+                              </div>
+                              <p className="font-semibold">${item.soundKit.price.toFixed(2)}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
                     </div>
 
                     <div className="border-t border-border pt-4 space-y-2">

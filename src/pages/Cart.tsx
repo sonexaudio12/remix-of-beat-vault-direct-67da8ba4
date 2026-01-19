@@ -1,4 +1,4 @@
-import { Trash2, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowLeft, Music2, Archive } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/Header';
@@ -20,12 +20,12 @@ const Cart = () => {
             </div>
             <h1 className="font-display text-3xl font-bold mb-4">Your cart is empty</h1>
             <p className="text-muted-foreground mb-8">
-              Browse our collection of premium beats and find your next hit.
+              Browse our collection of premium beats and sound kits.
             </p>
             <Link to="/">
               <Button variant="hero" size="lg">
                 <ArrowLeft className="h-4 w-4" />
-                Browse Beats
+                Browse Store
               </Button>
             </Link>
           </div>
@@ -45,50 +45,97 @@ const Cart = () => {
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {items.map((item) => (
-                <div
-                  key={`${item.beat.id}-${item.license.id}`}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border"
-                >
-                  <img
-                    src={item.beat.coverUrl}
-                    alt={item.beat.title}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{item.beat.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {item.license.name}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {item.license.includes.slice(0, 2).map((inc, i) => (
-                        <span
-                          key={i}
-                          className="inline-block px-2 py-0.5 text-xs rounded bg-secondary text-secondary-foreground"
-                        >
-                          {inc}
-                        </span>
-                      ))}
-                      {item.license.includes.length > 2 && (
-                        <span className="text-xs text-muted-foreground">
-                          +{item.license.includes.length - 2} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">${item.license.price.toFixed(2)}</p>
-                    <Button
-                      variant="ghost"
-                      size="iconSm"
-                      onClick={() => removeItem(item.beat.id)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-1"
+              {items.map((item) => {
+                if (item.itemType === 'beat' && item.beat && item.license) {
+                  return (
+                    <div
+                      key={`beat-${item.beat.id}-${item.license.id}`}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                      <img
+                        src={item.beat.coverUrl}
+                        alt={item.beat.title}
+                        className="w-16 h-16 rounded-lg object-cover"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Music2 className="h-4 w-4 text-muted-foreground" />
+                          <h3 className="font-semibold truncate">{item.beat.title}</h3>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {item.license.name}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {item.license.includes.slice(0, 2).map((inc, i) => (
+                            <span
+                              key={i}
+                              className="inline-block px-2 py-0.5 text-xs rounded bg-secondary text-secondary-foreground"
+                            >
+                              {inc}
+                            </span>
+                          ))}
+                          {item.license.includes.length > 2 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{item.license.includes.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-lg">${item.license.price.toFixed(2)}</p>
+                        <Button
+                          variant="ghost"
+                          size="iconSm"
+                          onClick={() => removeItem(item.beat!.id, 'beat')}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                } else if (item.itemType === 'sound_kit' && item.soundKit) {
+                  return (
+                    <div
+                      key={`soundkit-${item.soundKit.id}`}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border"
+                    >
+                      {item.soundKit.coverUrl ? (
+                        <img
+                          src={item.soundKit.coverUrl}
+                          alt={item.soundKit.title}
+                          className="w-16 h-16 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center">
+                          <Archive className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Archive className="h-4 w-4 text-muted-foreground" />
+                          <h3 className="font-semibold truncate">{item.soundKit.title}</h3>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {item.soundKit.category}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-lg">${item.soundKit.price.toFixed(2)}</p>
+                        <Button
+                          variant="ghost"
+                          size="iconSm"
+                          onClick={() => removeItem(item.soundKit!.id, 'sound_kit')}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })}
             </div>
 
             {/* Order Summary */}

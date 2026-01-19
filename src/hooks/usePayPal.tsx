@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CartItem } from '@/types/beat';
+import { UnifiedCartItem } from '@/hooks/useCart';
 
 interface PayPalOrderResponse {
   orderId: string;
@@ -14,12 +14,23 @@ interface CaptureResponse {
   transactionId: string;
 }
 
+interface OrderItem {
+  itemType: 'beat' | 'sound_kit';
+  beatId?: string;
+  beatTitle?: string;
+  licenseTierId?: string;
+  licenseName?: string;
+  soundKitId?: string;
+  soundKitTitle?: string;
+  price: number;
+}
+
 export function usePayPal() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const createOrder = async (
-    items: CartItem[],
+    items: UnifiedCartItem[],
     customerEmail: string,
     customerName?: string
   ): Promise<PayPalOrderResponse | null> => {
@@ -27,13 +38,26 @@ export function usePayPal() {
     setError(null);
 
     try {
-      const orderItems = items.map((item) => ({
-        beatId: item.beat.id,
-        beatTitle: item.beat.title,
-        licenseTierId: item.license.id,
-        licenseName: item.license.name,
-        price: item.license.price,
-      }));
+      const orderItems: OrderItem[] = items.map((item) => {
+        if (item.itemType === 'beat' && item.beat && item.license) {
+          return {
+            itemType: 'beat',
+            beatId: item.beat.id,
+            beatTitle: item.beat.title,
+            licenseTierId: item.license.id,
+            licenseName: item.license.name,
+            price: item.license.price,
+          };
+        } else if (item.itemType === 'sound_kit' && item.soundKit) {
+          return {
+            itemType: 'sound_kit',
+            soundKitId: item.soundKit.id,
+            soundKitTitle: item.soundKit.title,
+            price: item.soundKit.price,
+          };
+        }
+        throw new Error('Invalid cart item');
+      });
 
       const { data, error: invokeError } = await supabase.functions.invoke(
         'create-paypal-order',

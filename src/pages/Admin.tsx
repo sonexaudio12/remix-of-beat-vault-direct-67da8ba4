@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, AlertCircle } from 'lucide-react';
+import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, AlertCircle, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,8 @@ import { BeatUploadForm } from '@/components/admin/BeatUploadForm';
 import { BeatsManager } from '@/components/admin/BeatsManager';
 import { OrdersManager } from '@/components/admin/OrdersManager';
 import { LicenseTemplatesManager } from '@/components/admin/LicenseTemplatesManager';
+import { SoundKitUploadForm } from '@/components/admin/SoundKitUploadForm';
+import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 const navItems = [{
@@ -23,6 +25,14 @@ const navItems = [{
   icon: Music2,
   label: 'Manage Beats',
   id: 'beats'
+}, {
+  icon: Archive,
+  label: 'Upload Sound Kit',
+  id: 'upload-soundkit'
+}, {
+  icon: Archive,
+  label: 'Manage Sound Kits',
+  id: 'soundkits'
 }, {
   icon: FileText,
   label: 'License Templates',
@@ -126,6 +136,8 @@ const Admin = () => {
           {activeTab === 'dashboard' && <DashboardContent isAdmin={isAdmin} setActiveTab={setActiveTab} />}
           {activeTab === 'upload' && <UploadContent isAdmin={isAdmin} onSuccess={() => setActiveTab('beats')} />}
           {activeTab === 'beats' && <BeatsContent isAdmin={isAdmin} />}
+          {activeTab === 'upload-soundkit' && <SoundKitUploadContent isAdmin={isAdmin} onSuccess={() => setActiveTab('soundkits')} />}
+          {activeTab === 'soundkits' && <SoundKitsContent isAdmin={isAdmin} />}
           {activeTab === 'licenses' && <LicensesContent isAdmin={isAdmin} />}
           {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
@@ -299,6 +311,34 @@ function BeatsContent({
       </div>;
   }
   return <BeatsManager />;
+}
+function SoundKitUploadContent({
+  isAdmin,
+  onSuccess
+}: {
+  isAdmin: boolean;
+  onSuccess?: () => void;
+}) {
+  if (!isAdmin) {
+    return <div className="rounded-xl bg-card border border-border p-6">
+        <p className="text-muted-foreground text-sm">Admin access required to upload sound kits.</p>
+      </div>;
+  }
+  return <div className="max-w-3xl">
+      <SoundKitUploadForm onSuccess={onSuccess} />
+    </div>;
+}
+function SoundKitsContent({
+  isAdmin
+}: {
+  isAdmin: boolean;
+}) {
+  if (!isAdmin) {
+    return <div className="rounded-xl bg-card border border-border p-6">
+        <p className="text-muted-foreground text-sm">Admin access required to manage sound kits.</p>
+      </div>;
+  }
+  return <SoundKitsManager />;
 }
 function LicensesContent({
   isAdmin

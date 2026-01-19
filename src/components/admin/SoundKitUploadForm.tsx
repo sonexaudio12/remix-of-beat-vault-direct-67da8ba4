@@ -78,8 +78,8 @@ export function SoundKitUploadForm({ onSuccess }: { onSuccess?: () => void }) {
         throw uploadError;
       }
 
-      // Get public URL for public buckets
-      if (bucket === 'covers' || bucket === 'previews') {
+      // Get public URL for covers and previews folders (publicly accessible)
+      if (folder === 'covers' || folder === 'previews') {
         const { data: { publicUrl } } = supabase.storage
           .from(bucket)
           .getPublicUrl(fileName);
@@ -88,7 +88,7 @@ export function SoundKitUploadForm({ onSuccess }: { onSuccess?: () => void }) {
         return publicUrl;
       }
 
-      // For private buckets, store the path
+      // For private files folder, store the path
       setter({ file, uploading: false, uploaded: true, path: fileName, error: null });
       return fileName;
     } catch (error: any) {
@@ -119,10 +119,10 @@ export function SoundKitUploadForm({ onSuccess }: { onSuccess?: () => void }) {
     setIsSubmitting(true);
 
     try {
-      // Upload all files
+      // Upload all files to soundkits bucket with proper folder structure
       const [coverUrl, previewUrl, filePath] = await Promise.all([
-        uploadFile(coverImage.file, 'covers', 'soundkits', setCoverImage),
-        previewAudio.file ? uploadFile(previewAudio.file, 'previews', 'soundkits', setPreviewAudio) : Promise.resolve(null),
+        uploadFile(coverImage.file, 'soundkits', 'covers', setCoverImage),
+        previewAudio.file ? uploadFile(previewAudio.file, 'soundkits', 'previews', setPreviewAudio) : Promise.resolve(null),
         uploadFile(kitFile.file, 'soundkits', 'files', setKitFile),
       ]);
 

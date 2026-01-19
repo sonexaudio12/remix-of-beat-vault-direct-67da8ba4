@@ -10,6 +10,8 @@ interface AudioPlayerContextType {
   pause: () => void;
   toggle: (beat: Beat) => void;
   seek: (time: number) => void;
+  skipForward: (seconds?: number) => void;
+  skipBackward: (seconds?: number) => void;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
@@ -80,9 +82,25 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const skipForward = (seconds: number = 10) => {
+    if (audioRef.current) {
+      const newTime = Math.min(audioRef.current.currentTime + seconds, duration);
+      audioRef.current.currentTime = newTime;
+      setProgress(newTime);
+    }
+  };
+
+  const skipBackward = (seconds: number = 10) => {
+    if (audioRef.current) {
+      const newTime = Math.max(audioRef.current.currentTime - seconds, 0);
+      audioRef.current.currentTime = newTime;
+      setProgress(newTime);
+    }
+  };
+
   return (
     <AudioPlayerContext.Provider
-      value={{ currentBeat, isPlaying, progress, duration, play, pause, toggle, seek }}
+      value={{ currentBeat, isPlaying, progress, duration, play, pause, toggle, seek, skipForward, skipBackward }}
     >
       {children}
     </AudioPlayerContext.Provider>

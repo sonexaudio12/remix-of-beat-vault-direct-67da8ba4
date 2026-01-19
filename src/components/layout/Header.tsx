@@ -22,6 +22,9 @@ export function Header() {
           <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Beats
           </Link>
+          <Link to="/sound-kits" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Sound Kits
+          </Link>
           <Link to="/licenses" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Licensing
           </Link>
@@ -67,6 +70,9 @@ export function Header() {
           <nav className="container py-4 flex flex-col gap-2">
             <Link to="/" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
               Beats
+            </Link>
+            <Link to="/sound-kits" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+              Sound Kits
             </Link>
             <Link to="/licenses" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
               Licensing

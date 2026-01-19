@@ -11,6 +11,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Download from "./pages/Download";
 import Licenses from "./pages/Licenses";
+import SoundKits from "./pages/SoundKits";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -36,6 +37,7 @@ const App = () => (
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/download" element={<Download />} />
                 <Route path="/licenses" element={<Licenses />} />
+                <Route path="/sound-kits" element={<SoundKits />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/about" element={<About />} />

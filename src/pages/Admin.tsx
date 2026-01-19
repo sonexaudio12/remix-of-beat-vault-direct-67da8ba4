@@ -37,8 +37,12 @@ const navItems = [{
 }];
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
- const { user, isLoading, signOut } = useAuth();
-const isAdmin = !!user;
+  const {
+    user,
+    isLoading,
+    signOut
+  } = useAuth();
+  const isAdmin = !!user;
   const navigate = useNavigate();
   useEffect(() => {
     if (!isLoading && !user) {
@@ -66,7 +70,7 @@ const isAdmin = !!user;
               <Music2 className="h-5 w-5 text-primary" />
             </div>
             <span className="font-display text-xl font-bold tracking-tight">
-              Sonex<span className="text-primary">Lite</span>
+              Sonex
             </span>
           </Link>
         </div>
@@ -306,11 +310,9 @@ function LicensesContent({
   isAdmin: boolean;
 }) {
   if (!isAdmin) {
-    return (
-      <div className="rounded-xl bg-card border border-border p-6">
+    return <div className="rounded-xl bg-card border border-border p-6">
         <p className="text-muted-foreground text-sm">Admin access required to manage license templates.</p>
-      </div>
-    );
+      </div>;
   }
   return <LicenseTemplatesManager />;
 }

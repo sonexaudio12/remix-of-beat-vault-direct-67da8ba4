@@ -91,6 +91,42 @@ const OrderConfirmation = () => {
     }
   };
 
+  const downloadAllFiles = async () => {
+    const allFiles = downloads.flatMap(item => item.files);
+    
+    if (allFiles.length === 0) {
+      toast.error('No files to download');
+      return;
+    }
+
+    toast.info(`Starting download of ${allFiles.length} files...`);
+
+    // Download files with a small delay between each to prevent browser blocking
+    for (let i = 0; i < allFiles.length; i++) {
+      const file = allFiles[i];
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = file.url;
+      link.download = file.name;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Small delay between downloads to prevent browser from blocking
+      if (i < allFiles.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    toast.success('All downloads started!');
+  };
+
+  const getTotalFileCount = () => {
+    return downloads.reduce((count, item) => count + item.files.length, 0);
+  };
+
   const getFileIcon = (type: string) => {
     switch (type) {
       case 'mp3':
@@ -134,6 +170,8 @@ const OrderConfirmation = () => {
         return 'Stems Package';
       case 'soundkit':
         return 'Sound Kit';
+      case 'license':
+        return 'License PDF';
       case 'license':
         return 'License PDF';
       default:
@@ -251,10 +289,23 @@ const OrderConfirmation = () => {
 
           {/* Downloads Section */}
           <div className="mb-8">
-            <h2 className="font-display text-xl font-semibold mb-4 flex items-center gap-2">
-              <DownloadIcon className="h-5 w-5 text-primary" />
-              Your Downloads
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                <DownloadIcon className="h-5 w-5 text-primary" />
+                Your Downloads
+              </h2>
+              {downloads.length > 0 && (
+                <Button 
+                  variant="hero" 
+                  size="sm"
+                  onClick={downloadAllFiles}
+                  className="gap-2"
+                >
+                  <DownloadIcon className="h-4 w-4" />
+                  Download All ({getTotalFileCount()} files)
+                </Button>
+              )}
+            </div>
 
             {downloads.length === 0 ? (
               <div className="text-center py-12 rounded-xl bg-card border border-border">

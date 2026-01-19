@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Music2, 
   Upload, 
@@ -7,10 +8,14 @@ import {
   Settings, 
   LayoutDashboard,
   Package,
-  LogOut
+  LogOut,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
@@ -23,6 +28,31 @@ const navItems = [
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { user, isAdmin, isLoading, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, isLoading, navigate]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -63,41 +93,67 @@ const Admin = () => {
           </ul>
         </nav>
 
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t border-border space-y-2">
+          <div className="px-4 py-2 text-sm text-muted-foreground truncate">
+            {user.email}
+          </div>
           <Link to="/">
             <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground">
-              <LogOut className="h-5 w-5" />
-              Back to Store
+              <Music2 className="h-5 w-5" />
+              View Store
             </Button>
           </Link>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start gap-3 text-muted-foreground"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-5 w-5" />
+            Sign Out
+          </Button>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <header className="h-16 border-b border-border bg-card/50 flex items-center px-8">
+        <header className="h-16 border-b border-border bg-card/50 flex items-center justify-between px-8">
           <h1 className="font-display text-xl font-semibold capitalize">{activeTab}</h1>
+          {!isAdmin && (
+            <span className="text-xs text-amber-500 flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" />
+              Limited access
+            </span>
+          )}
         </header>
 
         <div className="p-8">
-          {activeTab === 'dashboard' && <DashboardContent />}
-          {activeTab === 'upload' && <UploadContent />}
-          {activeTab === 'beats' && <BeatsContent />}
-          {activeTab === 'licenses' && <LicensesContent />}
-          {activeTab === 'orders' && <OrdersContent />}
-          {activeTab === 'settings' && <SettingsContent />}
+          {!isAdmin && (
+            <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-amber-200">
+                You don't have admin privileges yet. Contact the site owner to be granted admin access.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {activeTab === 'dashboard' && <DashboardContent isAdmin={isAdmin} />}
+          {activeTab === 'upload' && <UploadContent isAdmin={isAdmin} />}
+          {activeTab === 'beats' && <BeatsContent isAdmin={isAdmin} />}
+          {activeTab === 'licenses' && <LicensesContent isAdmin={isAdmin} />}
+          {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
+          {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>
       </main>
     </div>
   );
 };
 
-function DashboardContent() {
+function DashboardContent({ isAdmin }: { isAdmin: boolean }) {
   const stats = [
-    { label: 'Total Revenue', value: '$2,459.00', icon: DollarSign, change: '+12.5%' },
-    { label: 'Beats Sold', value: '47', icon: Music2, change: '+8.2%' },
-    { label: 'Total Beats', value: '24', icon: Package, change: '+2' },
-    { label: 'Pending Orders', value: '3', icon: FileText, change: '0' },
+    { label: 'Total Revenue', value: '$0.00', icon: DollarSign, change: '-' },
+    { label: 'Beats Sold', value: '0', icon: Music2, change: '-' },
+    { label: 'Total Beats', value: '0', icon: Package, change: '-' },
+    { label: 'Pending Orders', value: '0', icon: FileText, change: '-' },
   ];
 
   return (
@@ -112,7 +168,7 @@ function DashboardContent() {
                 <div className="p-2 rounded-lg bg-primary/10">
                   <Icon className="h-5 w-5 text-primary" />
                 </div>
-                <span className="text-sm text-primary font-medium">{stat.change}</span>
+                <span className="text-sm text-muted-foreground">{stat.change}</span>
               </div>
               <div className="text-2xl font-bold mb-1">{stat.value}</div>
               <div className="text-sm text-muted-foreground">{stat.label}</div>
@@ -126,21 +182,36 @@ function DashboardContent() {
         <div className="p-6 rounded-xl bg-card border border-border">
           <h3 className="font-display font-semibold mb-4">Recent Orders</h3>
           <p className="text-muted-foreground text-sm">
-            Connect to backend to see recent orders
+            {isAdmin ? 'No orders yet. Orders will appear here after customers make purchases.' : 'Admin access required to view orders.'}
           </p>
         </div>
         <div className="p-6 rounded-xl bg-card border border-border">
-          <h3 className="font-display font-semibold mb-4">Top Selling Beats</h3>
-          <p className="text-muted-foreground text-sm">
-            Connect to backend to see analytics
-          </p>
+          <h3 className="font-display font-semibold mb-4">Quick Actions</h3>
+          <div className="space-y-2">
+            <Button variant="outline" className="w-full justify-start" disabled={!isAdmin}>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload New Beat
+            </Button>
+            <Button variant="outline" className="w-full justify-start" disabled={!isAdmin}>
+              <FileText className="h-4 w-4 mr-2" />
+              Manage License Templates
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function UploadContent() {
+function UploadContent({ isAdmin }: { isAdmin: boolean }) {
+  if (!isAdmin) {
+    return (
+      <div className="rounded-xl bg-card border border-border p-6">
+        <p className="text-muted-foreground text-sm">Admin access required to upload beats.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl">
       <div className="p-8 rounded-xl bg-card border border-border border-dashed">
@@ -153,7 +224,7 @@ function UploadContent() {
             Upload MP3, WAV, and STEMS files along with artwork
           </p>
           <p className="text-xs text-muted-foreground">
-            Enable backend to activate file uploads
+            Beat upload form coming soon. Use the database to add beats directly for now.
           </p>
         </div>
       </div>
@@ -161,45 +232,45 @@ function UploadContent() {
   );
 }
 
-function BeatsContent() {
+function BeatsContent({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="rounded-xl bg-card border border-border p-6">
       <h3 className="font-display font-semibold mb-4">Your Beats</h3>
       <p className="text-muted-foreground text-sm">
-        Connect to backend to manage your uploaded beats
+        {isAdmin ? 'No beats uploaded yet. Add your first beat using the upload tab.' : 'Admin access required to manage beats.'}
       </p>
     </div>
   );
 }
 
-function LicensesContent() {
+function LicensesContent({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="rounded-xl bg-card border border-border p-6">
       <h3 className="font-display font-semibold mb-4">License Templates</h3>
       <p className="text-muted-foreground text-sm">
-        Upload and manage PDF license templates for each tier
+        {isAdmin ? 'Upload and manage PDF license templates for each tier (MP3, WAV, Stems, Exclusive).' : 'Admin access required to manage license templates.'}
       </p>
     </div>
   );
 }
 
-function OrdersContent() {
+function OrdersContent({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="rounded-xl bg-card border border-border p-6">
       <h3 className="font-display font-semibold mb-4">Orders</h3>
       <p className="text-muted-foreground text-sm">
-        Connect to backend to view and manage orders
+        {isAdmin ? 'No orders yet. Orders will appear here after customers complete purchases.' : 'Admin access required to view orders.'}
       </p>
     </div>
   );
 }
 
-function SettingsContent() {
+function SettingsContent({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="rounded-xl bg-card border border-border p-6">
       <h3 className="font-display font-semibold mb-4">Settings</h3>
       <p className="text-muted-foreground text-sm">
-        Configure PayPal integration and store settings
+        {isAdmin ? 'Configure PayPal integration and store settings here.' : 'Admin access required to manage settings.'}
       </p>
     </div>
   );

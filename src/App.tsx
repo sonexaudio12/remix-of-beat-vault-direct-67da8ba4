@@ -8,6 +8,8 @@ import { AudioPlayerProvider } from "@/hooks/useAudioPlayer";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Download from "./pages/Download";
 import Licenses from "./pages/Licenses";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
@@ -27,6 +29,8 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/download" element={<Download />} />
                 <Route path="/licenses" element={<Licenses />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/auth" element={<Auth />} />

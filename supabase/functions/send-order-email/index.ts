@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -10,6 +11,7 @@ const corsHeaders = {
 interface OrderItem {
   beat_title: string;
   license_name: string;
+  license_type?: string;
   price: number;
 }
 
@@ -23,7 +25,12 @@ interface SendOrderEmailRequest {
   expiresAt: string;
 }
 
-const generateEmailHtml = (data: SendOrderEmailRequest): string => {
+interface Attachment {
+  filename: string;
+  content: string; // base64 encoded
+}
+
+const generateEmailHtml = (data: SendOrderEmailRequest, hasAttachments: boolean): string => {
   const itemsHtml = data.orderItems
     .map(
       (item) => `
@@ -39,6 +46,15 @@ const generateEmailHtml = (data: SendOrderEmailRequest): string => {
     `
     )
     .join("");
+
+  const attachmentNote = hasAttachments 
+    ? `<div style="background: #e0f2fe; border-radius: 8px; padding: 16px; margin-top: 24px;">
+        <p style="margin: 0; color: #0369a1; font-size: 14px;">
+          <strong>📎 License Agreements Attached:</strong> Your license PDF documents are attached to this email. 
+          Please save them for your records.
+        </p>
+      </div>`
+    : '';
 
   return `
     <!DOCTYPE html>
@@ -93,6 +109,8 @@ const generateEmailHtml = (data: SendOrderEmailRequest): string => {
             </p>
           </div>
           
+          ${attachmentNote}
+          
           <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 32px 0;">
           
           <p style="color: #666; font-size: 14px; text-align: center; margin: 0;">
@@ -109,19 +127,90 @@ const generateEmailHtml = (data: SendOrderEmailRequest): string => {
   `;
 };
 
-async function sendEmail(to: string, subject: string, html: string) {
+// Map license names to license template types
+function getLicenseType(licenseName: string): string {
+  const name = licenseName.toLowerCase();
+  if (name.includes('exclusive')) return 'exclusive';
+  if (name.includes('stem') || name.includes('trackout')) return 'stems';
+  if (name.includes('wav')) return 'wav';
+  return 'mp3';
+}
+
+async function fetchLicensePdfs(supabase: any, orderItems: OrderItem[]): Promise<Attachment[]> {
+  const attachments: Attachment[] = [];
+  
+  // Get unique license types needed
+  const licenseTypes = [...new Set(orderItems.map(item => 
+    item.license_type || getLicenseType(item.license_name)
+  ))];
+  
+  console.log("Fetching license templates for types:", licenseTypes);
+  
+  // Fetch license templates
+  const { data: templates, error } = await supabase
+    .from('license_templates')
+    .select('type, name, file_path')
+    .in('type', licenseTypes)
+    .not('file_path', 'is', null);
+  
+  if (error) {
+    console.error("Error fetching license templates:", error);
+    return attachments;
+  }
+  
+  console.log("Found templates:", templates?.length || 0);
+  
+  // Download each PDF and convert to base64
+  for (const template of templates || []) {
+    if (!template.file_path) continue;
+    
+    try {
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('licenses')
+        .download(template.file_path);
+      
+      if (downloadError) {
+        console.error(`Error downloading ${template.type} license:`, downloadError);
+        continue;
+      }
+      
+      // Convert blob to base64
+      const arrayBuffer = await fileData.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      
+      attachments.push({
+        filename: `${template.name.replace(/\s+/g, '_')}_License.pdf`,
+        content: base64,
+      });
+      
+      console.log(`Attached license PDF: ${template.name}`);
+    } catch (err) {
+      console.error(`Error processing ${template.type} license:`, err);
+    }
+  }
+  
+  return attachments;
+}
+
+async function sendEmail(to: string, subject: string, html: string, attachments: Attachment[] = []) {
+  const emailPayload: any = {
+    from: "Beat Store <onboarding@resend.dev>",
+    to: [to],
+    subject,
+    html,
+  };
+  
+  if (attachments.length > 0) {
+    emailPayload.attachments = attachments;
+  }
+  
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${RESEND_API_KEY}`,
     },
-    body: JSON.stringify({
-      from: "Beat Store <onboarding@resend.dev>",
-      to: [to],
-      subject,
-      html,
-    }),
+    body: JSON.stringify(emailPayload),
   });
 
   if (!response.ok) {
@@ -147,16 +236,27 @@ serve(async (req: Request) => {
     
     console.log("Sending order confirmation email to:", data.customerEmail);
 
+    // Initialize Supabase client to fetch license PDFs
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Fetch license PDF attachments
+    const attachments = await fetchLicensePdfs(supabase, data.orderItems);
+    console.log(`Attaching ${attachments.length} license PDF(s) to email`);
+
     const emailResponse = await sendEmail(
       data.customerEmail,
       "🎵 Order Confirmed - Your beats are ready to download!",
-      generateEmailHtml(data)
+      generateEmailHtml(data, attachments.length > 0),
+      attachments
     );
 
     console.log("Email sent successfully:", emailResponse);
 
     return new Response(
-      JSON.stringify({ success: true, emailId: emailResponse.id }),
+      JSON.stringify({ success: true, emailId: emailResponse.id, attachmentsCount: attachments.length }),
       {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },

@@ -117,7 +117,9 @@ serve(async (req: Request) => {
           beat_id,
           beat_title,
           license_name,
-          price
+          price,
+          license_tier_id,
+          license_tiers:license_tier_id (type)
         )
       `)
       .single();
@@ -142,7 +144,12 @@ serve(async (req: Request) => {
         customerEmail: order.customer_email,
         customerName: order.customer_name,
         orderId: orderId,
-        orderItems: order.order_items,
+        orderItems: order.order_items.map((item: any) => ({
+          beat_title: item.beat_title,
+          license_name: item.license_name,
+          license_type: item.license_tiers?.type || null,
+          price: item.price,
+        })),
         total: order.total,
         downloadUrl: downloadUrl,
         expiresAt: order.download_expires_at,

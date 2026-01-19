@@ -39,10 +39,13 @@ serve(async (req: Request) => {
         *,
         order_items (
           id,
+          item_type,
           beat_id,
           license_tier_id,
           beat_title,
           license_name,
+          sound_kit_id,
+          item_title,
           download_count
         )
       `)
@@ -68,81 +71,146 @@ serve(async (req: Request) => {
     }
 
     // Get beats and license tiers for file paths
-    const beatIds = order.order_items.map((item: any) => item.beat_id).filter(Boolean);
-    const licenseTierIds = order.order_items.map((item: any) => item.license_tier_id).filter(Boolean);
+    const beatIds = order.order_items
+      .filter((item: any) => item.item_type === 'beat')
+      .map((item: any) => item.beat_id)
+      .filter(Boolean);
+    
+    const licenseTierIds = order.order_items
+      .filter((item: any) => item.item_type === 'beat')
+      .map((item: any) => item.license_tier_id)
+      .filter(Boolean);
 
-    const { data: beats } = await supabase
-      .from("beats")
-      .select("id, mp3_file_path, wav_file_path, stems_file_path")
-      .in("id", beatIds);
+    const soundKitIds = order.order_items
+      .filter((item: any) => item.item_type === 'sound_kit')
+      .map((item: any) => item.sound_kit_id)
+      .filter(Boolean);
 
-    const { data: licenseTiers } = await supabase
-      .from("license_tiers")
-      .select("id, type, license_pdf_path")
-      .in("id", licenseTierIds);
+    // Fetch beats if needed
+    let beats: any[] = [];
+    if (beatIds.length > 0) {
+      const { data } = await supabase
+        .from("beats")
+        .select("id, mp3_file_path, wav_file_path, stems_file_path")
+        .in("id", beatIds);
+      beats = data || [];
+    }
+
+    // Fetch license tiers if needed
+    let licenseTiers: any[] = [];
+    if (licenseTierIds.length > 0) {
+      const { data } = await supabase
+        .from("license_tiers")
+        .select("id, type, license_pdf_path")
+        .in("id", licenseTierIds);
+      licenseTiers = data || [];
+    }
+
+    // Fetch sound kits if needed
+    let soundKits: any[] = [];
+    if (soundKitIds.length > 0) {
+      const { data } = await supabase
+        .from("sound_kits")
+        .select("id, title, file_path")
+        .in("id", soundKitIds);
+      soundKits = data || [];
+    }
 
     // Generate signed URLs for each purchased item
     const downloads = [];
 
     for (const item of order.order_items) {
-      const beat = beats?.find((b: any) => b.id === item.beat_id);
-      const licenseTier = licenseTiers?.find((lt: any) => lt.id === item.license_tier_id);
+      // Handle beat items
+      if (item.item_type === 'beat' || (!item.item_type && item.beat_id)) {
+        const beat = beats?.find((b: any) => b.id === item.beat_id);
+        const licenseTier = licenseTiers?.find((lt: any) => lt.id === item.license_tier_id);
 
-      if (!beat || !licenseTier) continue;
+        if (!beat || !licenseTier) continue;
 
-      const itemDownloads: any = {
-        beatTitle: item.beat_title,
-        licenseName: item.license_name,
-        files: [],
-      };
+        const itemDownloads: any = {
+          itemType: 'beat',
+          title: item.beat_title || item.item_title,
+          licenseName: item.license_name,
+          files: [],
+        };
 
-      // Get files based on license type
-      const filesToInclude: string[] = [];
+        // Get files based on license type
+        const filesToInclude: string[] = [];
 
-      switch (licenseTier.type) {
-        case "stems":
-          if (beat.stems_file_path) filesToInclude.push(beat.stems_file_path);
-          // Falls through to include WAV and MP3
-        case "wav":
-          if (beat.wav_file_path) filesToInclude.push(beat.wav_file_path);
-          // Falls through to include MP3
-        case "mp3":
-          if (beat.mp3_file_path) filesToInclude.push(beat.mp3_file_path);
-          break;
+        switch (licenseTier.type) {
+          case "stems":
+            if (beat.stems_file_path) filesToInclude.push(beat.stems_file_path);
+            // Falls through to include WAV and MP3
+          case "wav":
+            if (beat.wav_file_path) filesToInclude.push(beat.wav_file_path);
+            // Falls through to include MP3
+          case "mp3":
+            if (beat.mp3_file_path) filesToInclude.push(beat.mp3_file_path);
+            break;
+        }
+
+        // Generate signed URLs for audio files
+        for (const filePath of filesToInclude) {
+          const { data: signedUrl, error: signError } = await supabase.storage
+            .from("beats")
+            .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+          if (!signError && signedUrl) {
+            const fileName = filePath.split("/").pop() || filePath;
+            itemDownloads.files.push({
+              name: fileName,
+              url: signedUrl.signedUrl,
+              type: fileName.endsWith(".zip") ? "stems" : fileName.endsWith(".wav") ? "wav" : "mp3",
+            });
+          }
+        }
+
+        // Generate signed URL for license PDF
+        if (licenseTier.license_pdf_path) {
+          const { data: pdfUrl, error: pdfError } = await supabase.storage
+            .from("licenses")
+            .createSignedUrl(licenseTier.license_pdf_path, 3600);
+
+          if (!pdfError && pdfUrl) {
+            itemDownloads.files.push({
+              name: `License_${item.beat_title || item.item_title}_${licenseTier.type}.pdf`,
+              url: pdfUrl.signedUrl,
+              type: "license",
+            });
+          }
+        }
+
+        downloads.push(itemDownloads);
       }
+      // Handle sound kit items
+      else if (item.item_type === 'sound_kit') {
+        const soundKit = soundKits?.find((sk: any) => sk.id === item.sound_kit_id);
 
-      // Generate signed URLs for audio files
-      for (const filePath of filesToInclude) {
+        if (!soundKit || !soundKit.file_path) continue;
+
+        const itemDownloads: any = {
+          itemType: 'sound_kit',
+          title: soundKit.title || item.item_title,
+          licenseName: 'Sound Kit',
+          files: [],
+        };
+
+        // Generate signed URL for sound kit file
         const { data: signedUrl, error: signError } = await supabase.storage
-          .from("beats")
-          .createSignedUrl(filePath, 3600); // 1 hour expiry
+          .from("soundkits")
+          .createSignedUrl(soundKit.file_path, 3600); // 1 hour expiry
 
         if (!signError && signedUrl) {
-          const fileName = filePath.split("/").pop() || filePath;
+          const fileName = soundKit.file_path.split("/").pop() || `${soundKit.title}.zip`;
           itemDownloads.files.push({
             name: fileName,
             url: signedUrl.signedUrl,
-            type: fileName.endsWith(".zip") ? "stems" : fileName.endsWith(".wav") ? "wav" : "mp3",
+            type: "soundkit",
           });
         }
+
+        downloads.push(itemDownloads);
       }
-
-      // Generate signed URL for license PDF
-      if (licenseTier.license_pdf_path) {
-        const { data: pdfUrl, error: pdfError } = await supabase.storage
-          .from("licenses")
-          .createSignedUrl(licenseTier.license_pdf_path, 3600);
-
-        if (!pdfError && pdfUrl) {
-          itemDownloads.files.push({
-            name: `License_${item.beat_title}_${licenseTier.type}.pdf`,
-            url: pdfUrl.signedUrl,
-            type: "license",
-          });
-        }
-      }
-
-      downloads.push(itemDownloads);
 
       // Increment download count
       await supabase

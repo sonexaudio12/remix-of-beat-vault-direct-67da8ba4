@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/logo-hd.png';
 
 export function Header() {
   const { itemCount } = useCart();

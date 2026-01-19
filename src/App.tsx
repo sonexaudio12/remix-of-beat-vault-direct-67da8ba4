@@ -16,6 +16,8 @@ import Licenses from "./pages/Licenses";
 import SoundKits from "./pages/SoundKits";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
+import Login from "./pages/Login";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import About from "@/pages/About";
 import Terms from "./pages/Terms of service";
@@ -44,6 +46,8 @@ const App = () => (
                 <Route path="/sound-kits" element={<SoundKits />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/account" element={<Account />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />

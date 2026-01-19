@@ -143,10 +143,13 @@ export type Database = {
           created_at: string
           download_count: number | null
           id: string
+          item_title: string | null
+          item_type: string
           license_name: string
           license_tier_id: string | null
           order_id: string
           price: number
+          sound_kit_id: string | null
         }
         Insert: {
           beat_id?: string | null
@@ -154,10 +157,13 @@ export type Database = {
           created_at?: string
           download_count?: number | null
           id?: string
+          item_title?: string | null
+          item_type?: string
           license_name: string
           license_tier_id?: string | null
           order_id: string
           price: number
+          sound_kit_id?: string | null
         }
         Update: {
           beat_id?: string | null
@@ -165,10 +171,13 @@ export type Database = {
           created_at?: string
           download_count?: number | null
           id?: string
+          item_title?: string | null
+          item_type?: string
           license_name?: string
           license_tier_id?: string | null
           order_id?: string
           price?: number
+          sound_kit_id?: string | null
         }
         Relationships: [
           {
@@ -190,6 +199,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_sound_kit_id_fkey"
+            columns: ["sound_kit_id"]
+            isOneToOne: false
+            referencedRelation: "sound_kits"
             referencedColumns: ["id"]
           },
         ]
@@ -253,6 +269,48 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sound_kits: {
+        Row: {
+          category: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          file_path: string | null
+          id: string
+          is_active: boolean | null
+          preview_url: string | null
+          price: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          is_active?: boolean | null
+          preview_url?: string | null
+          price?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          is_active?: boolean | null
+          preview_url?: string | null
+          price?: number
+          title?: string
           updated_at?: string
         }
         Relationships: []

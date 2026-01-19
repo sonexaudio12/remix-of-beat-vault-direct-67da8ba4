@@ -7,10 +7,13 @@ const corsHeaders = {
 };
 
 interface CartItem {
-  beatId: string;
-  beatTitle: string;
-  licenseTierId: string;
-  licenseName: string;
+  itemType: 'beat' | 'sound_kit';
+  beatId?: string;
+  beatTitle?: string;
+  licenseTierId?: string;
+  licenseName?: string;
+  soundKitId?: string;
+  soundKitTitle?: string;
   price: number;
 }
 
@@ -97,7 +100,9 @@ serve(async (req: Request) => {
           },
         },
         items: items.map((item) => ({
-          name: `${item.beatTitle} - ${item.licenseName}`,
+          name: item.itemType === 'beat' 
+            ? `${item.beatTitle} - ${item.licenseName}` 
+            : item.soundKitTitle || 'Sound Kit',
           unit_amount: {
             currency_code: "USD",
             value: item.price.toFixed(2),
@@ -163,10 +168,13 @@ serve(async (req: Request) => {
     // Create order items
     const orderItems = items.map((item) => ({
       order_id: order.id,
-      beat_id: item.beatId,
-      license_tier_id: item.licenseTierId,
-      beat_title: item.beatTitle,
-      license_name: item.licenseName,
+      item_type: item.itemType,
+      beat_id: item.itemType === 'beat' ? item.beatId : null,
+      license_tier_id: item.itemType === 'beat' ? item.licenseTierId : null,
+      beat_title: item.itemType === 'beat' ? item.beatTitle : '',
+      license_name: item.itemType === 'beat' ? item.licenseName : 'Sound Kit',
+      sound_kit_id: item.itemType === 'sound_kit' ? item.soundKitId : null,
+      item_title: item.itemType === 'beat' ? item.beatTitle : item.soundKitTitle,
       price: item.price,
     }));
 

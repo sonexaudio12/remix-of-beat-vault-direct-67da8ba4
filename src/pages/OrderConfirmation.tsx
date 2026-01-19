@@ -171,9 +171,11 @@ const OrderConfirmation = () => {
       case 'soundkit':
         return 'Sound Kit';
       case 'license':
-        return 'License PDF';
-      default:
-        return type.toUpperCase();
+  return 'License PDF';
+case 'mp3':
+  return 'MP3 File';
+default:
+  return '';
     }
   };
 

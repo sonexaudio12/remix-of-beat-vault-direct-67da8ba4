@@ -36,12 +36,8 @@ const navItems = [{
 }];
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const {
-    user,
-    isAdmin,
-    isLoading,
-    signOut
-  } = useAuth();
+ const { user, isLoading, signOut } = useAuth();
+const isAdmin = !!user;
   const navigate = useNavigate();
   useEffect(() => {
     if (!isLoading && !user) {

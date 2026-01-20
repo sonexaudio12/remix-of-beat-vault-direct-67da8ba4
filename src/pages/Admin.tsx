@@ -14,7 +14,6 @@ import { SoundKitUploadForm } from '@/components/admin/SoundKitUploadForm';
 import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
-
 const navItems = [{
   icon: LayoutDashboard,
   label: 'Dashboard',
@@ -83,7 +82,7 @@ const Admin = () => {
       <aside className="w-64 border-r border-border bg-card/50 flex flex-col">
         <div className="p-6 border-b border-border">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="Sonex Beats" className="h-9 w-auto" />
+            <img alt="Sonex Beats" className="h-9 w-auto" src="/lovable-uploads/56550770-64ff-4708-85bc-e5fac8282323.png" />
           </Link>
         </div>
 
@@ -359,7 +358,6 @@ function GeneratedLicensesContent({
   }
   return <GeneratedLicensesManager />;
 }
-
 function LicensesContent({
   isAdmin
 }: {

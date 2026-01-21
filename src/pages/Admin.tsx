@@ -126,20 +126,9 @@ const Admin = () => {
           <h1 className="font-display text-xl font-semibold capitalize">
             {activeTab === 'upload' ? 'Upload Beat' : activeTab}
           </h1>
-          {!isAdmin && <span className="text-xs flex items-center gap-1 text-sidebar">
-              <AlertCircle className="h-3 w-3" />
-              Limited access
-            </span>}
         </header>
 
         <div className="p-8">
-          {!isAdmin && <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
-              <AlertCircle className="h-4 w-4 text-amber-500" />
-              <AlertDescription className="text-amber-200">
-                You don't have admin privileges yet. Contact the site owner to be granted admin access.
-              </AlertDescription>
-            </Alert>}
-          
           {activeTab === 'dashboard' && <DashboardContent isAdmin={isAdmin} setActiveTab={setActiveTab} />}
           {activeTab === 'upload' && <UploadContent isAdmin={isAdmin} onSuccess={() => setActiveTab('beats')} />}
           {activeTab === 'beats' && <BeatsContent isAdmin={isAdmin} />}

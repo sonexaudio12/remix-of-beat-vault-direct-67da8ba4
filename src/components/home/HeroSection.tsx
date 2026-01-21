@@ -33,14 +33,23 @@ export function HeroSection() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
-            <Button variant="hero" size="xl" className="w-full sm:w-auto">
-              <Play className="h-5 w-5" />
-              Browse Beats
+            <Button
+             variant="hero"
+              size="xl"
+              className="w-full sm:w-auto"
+               onClick={() => navigate("/beats")}
+               >
+                <Play className="h-5 w-5 mr-2" />
+                  Browse Beats
             </Button>
-            <Button variant="outline" size="xl" className="w-full sm:w-auto">
-              View Licensing
-            </Button>
-          </div>
+            <Button
+             variant="outline"
+               size="xl"
+            className="w-full sm:w-auto"
+            onClick={() => navigate("/licenses")}
+          >
+           View Licensing
+           </Button>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 mt-16 pt-8 border-t border-border/50">

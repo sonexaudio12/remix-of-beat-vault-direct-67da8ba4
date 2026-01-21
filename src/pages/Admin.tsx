@@ -54,16 +54,18 @@ const navItems = [{
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const {
-    user,
-    isLoading,
-    signOut
-  } = useAuth();
+  user,
+  isAdmin,
+  isLoading,
+  signOut
+} = useAuth();
   const isAdmin = !!user;
   const navigate = useNavigate();
-  useEffect(() => {
-    if (!isLoading && !user) {
-      navigate('/auth');
-    }
+ useEffect(() => {
+  if (!isLoading && (!user || !isAdmin)) {
+    navigate('/');
+  }
+}, [user, isAdmin, isLoading, navigate]);
   }, [user, isLoading, navigate]);
   const handleSignOut = async () => {
     await signOut();

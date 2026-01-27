@@ -8,7 +8,7 @@ export default function Privacy() {
 
       <main className="max-w-4xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
-        <p className="text-sm text-gray-500 mb-8">Effective Date: [Add date]</p>
+        <p className="text-sm text-gray-500 mb-8">Effective Date: 27/01/2026</p>
 
         <div className="space-y-6 text-gray-700 leading-relaxed">
           <p>
@@ -26,7 +26,7 @@ export default function Privacy() {
           <p>Payments are handled by third-party providers like PayPal.</p>
 
           <h2 className="text-xl font-semibold">Contact</h2>
-          <p>Email: support@sonex.com</p>
+          <p>Email: support@sonex.shop</p>
         </div>
       </main>
 

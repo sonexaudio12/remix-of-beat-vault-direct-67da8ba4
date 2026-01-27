@@ -1,10 +1,23 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, AlertCircle, Archive, ScrollText } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+
+import {
+  Music2,
+  Upload,
+  FileText,
+  DollarSign,
+  Settings,
+  LayoutDashboard,
+  Package,
+  LogOut,
+  Loader2,
+  Archive,
+  ScrollText,
+} from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+
 import { BeatUploadForm } from '@/components/admin/BeatUploadForm';
 import { BeatsManager } from '@/components/admin/BeatsManager';
 import { OrdersManager } from '@/components/admin/OrdersManager';
@@ -12,99 +25,90 @@ import { LicenseTemplatesManager } from '@/components/admin/LicenseTemplatesMana
 import { GeneratedLicensesManager } from '@/components/admin/GeneratedLicensesManager';
 import { SoundKitUploadForm } from '@/components/admin/SoundKitUploadForm';
 import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
+
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
-const navItems = [{
-  icon: LayoutDashboard,
-  label: 'Dashboard',
-  id: 'dashboard'
-}, {
-  icon: Upload,
-  label: 'Upload Beat',
-  id: 'upload'
-}, {
-  icon: Music2,
-  label: 'Manage Beats',
-  id: 'beats'
-}, {
-  icon: Archive,
-  label: 'Upload Sound Kit',
-  id: 'upload-soundkit'
-}, {
-  icon: Archive,
-  label: 'Manage Sound Kits',
-  id: 'soundkits'
-}, {
-  icon: FileText,
-  label: 'License Templates',
-  id: 'licenses'
-}, {
-  icon: ScrollText,
-  label: 'Generated Licenses',
-  id: 'generated-licenses'
-}, {
-  icon: Package,
-  label: 'Orders',
-  id: 'orders'
-}, {
-  icon: Settings,
-  label: 'Settings',
-  id: 'settings'
-}];
-const Admin = () => {
+
+/* -------------------------------------------------------------------------- */
+/*                                   Config                                   */
+/* -------------------------------------------------------------------------- */
+
+const navItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'upload', label: 'Upload Beat', icon: Upload },
+  { id: 'beats', label: 'Manage Beats', icon: Music2 },
+  { id: 'upload-soundkit', label: 'Upload Sound Kit', icon: Archive },
+  { id: 'soundkits', label: 'Manage Sound Kits', icon: Archive },
+  { id: 'licenses', label: 'License Templates', icon: FileText },
+  { id: 'generated-licenses', label: 'Generated Licenses', icon: ScrollText },
+  { id: 'orders', label: 'Orders', icon: Package },
+  { id: 'settings', label: 'Settings', icon: Settings },
+];
+
+/* -------------------------------------------------------------------------- */
+/*                                   Page                                     */
+/* -------------------------------------------------------------------------- */
+
+export default function Admin() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const {
-    user,
-    isAdmin,
-    isLoading,
-    signOut
-  } = useAuth();
+
+  const { user, isAdmin, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
+
   useEffect(() => {
     if (!isLoading && (!user || !isAdmin)) {
       navigate('/');
     }
   }, [user, isAdmin, isLoading, navigate]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
+
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-background">
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>;
+      </div>
+    );
   }
-  if (!user) {
-    return null;
-  }
-  return <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
+
+  if (!user) return null;
+
+  return (
+    <div className="min-h-screen flex bg-background">
+      {/* ------------------------------------------------------------------ */}
+      {/* Sidebar                                                            */}
+      {/* ------------------------------------------------------------------ */}
       <aside className="w-64 border-r border-border bg-card/50 flex flex-col">
         <div className="p-6 border-b border-border">
           <Link to="/" className="flex items-center gap-2">
-            <img alt="Sonex Beats" className="h-9 w-auto" src="/lovable-uploads/56550770-64ff-4708-85bc-e5fac8282323.png" />
+            <img src={logo} alt="Sonex Beats" className="h-9 w-auto" />
           </Link>
         </div>
 
         <nav className="flex-1 p-4">
           <ul className="space-y-1">
-            {navItems.map(item => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return <li key={item.id}>
-                <button
-  onClick={() => setActiveTab(item.id)}
-  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-    isActive
-      ? 'bg-primary/10 text-primary'
-      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-  }`}
->
-  <Icon className="h-5 w-5" />
-  {item.label}
-</button>
-                </li>;
-          })}
+            {navItems.map(({ id, label, icon: Icon }) => {
+              const isActive = activeTab === id;
+
+              return (
+                <li key={id}>
+                  <button
+                    onClick={() => setActiveTab(id)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {label}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
@@ -112,44 +116,72 @@ const Admin = () => {
           <div className="px-4 py-2 text-sm text-muted-foreground truncate">
             {user.email}
           </div>
+
           <Link to="/">
-            <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-muted-foreground"
+            >
               <Music2 className="h-5 w-5" />
               View Store
             </Button>
           </Link>
-          <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground" onClick={handleSignOut}>
+
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 text-muted-foreground"
+            onClick={handleSignOut}
+          >
             <LogOut className="h-5 w-5" />
             Sign Out
           </Button>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* ------------------------------------------------------------------ */}
+      {/* Main                                                               */}
+      {/* ------------------------------------------------------------------ */}
       <main className="flex-1 overflow-auto">
-        <header className="h-16 border-b border-border bg-card/50 flex items-center justify-between px-8">
-          <h1 className="font-display text-xl font-semibold capitalize">
-            {activeTab === 'upload' ? 'Upload Beat' : activeTab}
+        <header className="h-16 border-b border-border bg-card/50 flex items-center px-8">
+          <h1 className="text-xl font-semibold capitalize">
+            {activeTab.replace('-', ' ')}
           </h1>
         </header>
 
         <div className="p-8">
-          {activeTab === 'dashboard' && <DashboardContent isAdmin={isAdmin} setActiveTab={setActiveTab} />}
-          {activeTab === 'upload' && <UploadContent isAdmin={isAdmin} onSuccess={() => setActiveTab('beats')} />}
+          {activeTab === 'dashboard' && (
+            <DashboardContent isAdmin={isAdmin} setActiveTab={setActiveTab} />
+          )}
+          {activeTab === 'upload' && (
+            <UploadContent isAdmin={isAdmin} onSuccess={() => setActiveTab('beats')} />
+          )}
           {activeTab === 'beats' && <BeatsContent isAdmin={isAdmin} />}
-          {activeTab === 'upload-soundkit' && <SoundKitUploadContent isAdmin={isAdmin} onSuccess={() => setActiveTab('soundkits')} />}
+          {activeTab === 'upload-soundkit' && (
+            <SoundKitUploadContent
+              isAdmin={isAdmin}
+              onSuccess={() => setActiveTab('soundkits')}
+            />
+          )}
           {activeTab === 'soundkits' && <SoundKitsContent isAdmin={isAdmin} />}
           {activeTab === 'licenses' && <LicensesContent isAdmin={isAdmin} />}
-          {activeTab === 'generated-licenses' && <GeneratedLicensesContent isAdmin={isAdmin} />}
+          {activeTab === 'generated-licenses' && (
+            <GeneratedLicensesContent isAdmin={isAdmin} />
+          )}
           {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>
       </main>
-    </div>;
-};
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Sub Components                               */
+/* -------------------------------------------------------------------------- */
+
 function DashboardContent({
   isAdmin,
-  setActiveTab
+  setActiveTab,
 }: {
   isAdmin: boolean;
   setActiveTab: (tab: string) => void;
@@ -158,249 +190,120 @@ function DashboardContent({
     revenue: 0,
     beatsSold: 0,
     totalBeats: 0,
-    pendingOrders: 0
+    pendingOrders: 0,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // Fetch completed orders for revenue
-        const {
-          data: orders
-        } = await supabase.from('orders').select('total, status');
-        const completedOrders = orders?.filter(o => o.status === 'completed') || [];
-        const revenue = completedOrders.reduce((sum, o) => sum + Number(o.total), 0);
-        const pending = orders?.filter(o => o.status === 'pending').length || 0;
+    const loadStats = async () => {
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('total,status');
 
-        // Fetch beats count
-        const {
-          count: beatsCount
-        } = await supabase.from('beats').select('id', {
-          count: 'exact',
-          head: true
-        });
+      const completed = orders?.filter(o => o.status === 'completed') ?? [];
+      const pending = orders?.filter(o => o.status === 'pending').length ?? 0;
 
-        // Fetch order items count for beats sold
-        const {
-          count: itemsCount
-        } = await supabase.from('order_items').select('id', {
-          count: 'exact',
-          head: true
-        });
-        setStats({
-          revenue,
-          beatsSold: itemsCount || 0,
-          totalBeats: beatsCount || 0,
-          pendingOrders: pending
-        });
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      const revenue = completed.reduce(
+        (sum, o) => sum + Number(o.total),
+        0
+      );
+
+      const { count: totalBeats } = await supabase
+        .from('beats')
+        .select('id', { count: 'exact', head: true });
+
+      const { count: beatsSold } = await supabase
+        .from('order_items')
+        .select('id', { count: 'exact', head: true });
+
+      setStats({
+        revenue,
+        beatsSold: beatsSold ?? 0,
+        totalBeats: totalBeats ?? 0,
+        pendingOrders: pending,
+      });
+
+      setLoading(false);
     };
-    if (isAdmin) {
-      fetchStats();
-    } else {
-      setIsLoading(false);
-    }
+
+    if (isAdmin) loadStats();
+    else setLoading(false);
   }, [isAdmin]);
-  const statItems = [{
-    label: 'Total Revenue',
-    value: `$${stats.revenue.toFixed(2)}`,
-    icon: DollarSign
-  }, {
-    label: 'Beats Sold',
-    value: stats.beatsSold.toString(),
-    icon: Music2
-  }, {
-    label: 'Total Beats',
-    value: stats.totalBeats.toString(),
-    icon: Package
-  }, {
-    label: 'Pending Orders',
-    value: stats.pendingOrders.toString(),
-    icon: FileText
-  }];
-  return <div className="space-y-8">
-      {/* Stats Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {statItems.map(stat => {
-        const Icon = stat.icon;
-        return <div key={stat.label} className="p-6 rounded-xl bg-card border border-border">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Icon className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mb-1">
-                {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : stat.value}
-              </div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
-            </div>;
-      })}
-      </div>
 
-      {/* Quick Actions */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="p-6 rounded-xl bg-card border border-border">
-          <h3 className="font-display font-semibold mb-4">Quick Actions</h3>
-          <div className="space-y-2">
-            <Button variant="outline" className="w-full justify-start" disabled={!isAdmin} onClick={() => setActiveTab('upload')}>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload New Beat
-            </Button>
-            <Button variant="outline" className="w-full justify-start" disabled={!isAdmin} onClick={() => setActiveTab('orders')}>
-              <Package className="h-4 w-4 mr-2" />
-              View Orders
-            </Button>
-            <Button variant="outline" className="w-full justify-start" disabled={!isAdmin} onClick={() => setActiveTab('beats')}>
-              <Music2 className="h-4 w-4 mr-2" />
-              Manage Beats
-            </Button>
-          </div>
-        </div>
-        <div className="p-6 rounded-xl bg-card border border-border">
-          <h3 className="font-display font-semibold mb-4">Getting Started</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-bold text-primary">1</span>
-              </div>
-              <p className="text-muted-foreground">Upload your beats with cover art and audio files</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-bold text-primary">2</span>
-              </div>
-              <p className="text-muted-foreground">Set license prices for MP3, WAV, and Stems</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-bold text-primary">3</span>
-              </div>
-              <p className="text-muted-foreground">Share your store and start selling!</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>;
-}
-function UploadContent({
-  isAdmin,
-  onSuccess
-}: {
-  isAdmin: boolean;
-  onSuccess?: () => void;
-}) {
-  if (!isAdmin) {
-    return <div className="rounded-xl bg-card border border-border p-6">
-        <p className="text-muted-foreground text-sm">Admin access required to upload beats.</p>
-      </div>;
-  }
-  return <div className="max-w-3xl">
-      <BeatUploadForm onSuccess={onSuccess} />
-    </div>;
-}
-function BeatsContent({
-  isAdmin
-}: {
-  isAdmin: boolean;
-}) {
-  if (!isAdmin) {
-    return <div className="rounded-xl bg-card border border-border p-6">
-        <p className="text-muted-foreground text-sm">Admin access required to manage beats.</p>
-      </div>;
-  }
-  return <BeatsManager />;
-}
-function SoundKitUploadContent({
-  isAdmin,
-  onSuccess
-}: {
-  isAdmin: boolean;
-  onSuccess?: () => void;
-}) {
-  if (!isAdmin) {
-    return <div className="rounded-xl bg-card border border-border p-6">
-        <p className="text-muted-foreground text-sm">Admin access required to upload sound kits.</p>
-      </div>;
-  }
-  return <div className="max-w-3xl">
-      <SoundKitUploadForm onSuccess={onSuccess} />
-    </div>;
-}
-function SoundKitsContent({
-  isAdmin
-}: {
-  isAdmin: boolean;
-}) {
-  if (!isAdmin) {
-    return <div className="rounded-xl bg-card border border-border p-6">
-        <p className="text-muted-foreground text-sm">Admin access required to manage sound kits.</p>
-      </div>;
-  }
-  return <SoundKitsManager />;
-}
-function GeneratedLicensesContent({
-  isAdmin
-}: {
-  isAdmin: boolean;
-}) {
-  if (!isAdmin) {
-    return <div className="rounded-xl bg-card border border-border p-6">
-        <p className="text-muted-foreground text-sm">Admin access required to view generated licenses.</p>
-      </div>;
-  }
-  return <GeneratedLicensesManager />;
-}
-function LicensesContent({
-  isAdmin
-}: {
-  isAdmin: boolean;
-}) {
-  if (!isAdmin) {
-    return <div className="rounded-xl bg-card border border-border p-6">
-        <p className="text-muted-foreground text-sm">Admin access required to manage license templates.</p>
-      </div>;
-  }
-  return <LicenseTemplatesManager />;
-}
-function OrdersContent({
-  isAdmin
-}: {
-  isAdmin: boolean;
-}) {
-  if (!isAdmin) {
-    return <div className="rounded-xl bg-card border border-border p-6">
-        <p className="text-muted-foreground text-sm">Admin access required to view orders.</p>
-      </div>;
-  }
-  return <OrdersManager />;
-}
-function SettingsContent({
-  isAdmin
-}: {
-  isAdmin: boolean;
-}) {
-  return <div className="space-y-6">
-      <div className="rounded-xl bg-card border border-border p-6">
-        <h3 className="font-display font-semibold mb-4">PayPal Integration</h3>
-        <p className="text-muted-foreground text-sm mb-4">
-          {isAdmin ? 'PayPal is configured and ready to accept payments.' : 'Admin access required to manage settings.'}
-        </p>
-        {isAdmin && <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500" />
-            <span className="text-sm text-green-400">Connected</span>
-          </div>}
-      </div>
+  const cards = [
+    { label: 'Revenue', value: `$${stats.revenue.toFixed(2)}`, icon: DollarSign },
+    { label: 'Beats Sold', value: stats.beatsSold, icon: Music2 },
+    { label: 'Total Beats', value: stats.totalBeats, icon: Package },
+    { label: 'Pending Orders', value: stats.pendingOrders, icon: FileText },
+  ];
 
-      <div className="rounded-xl bg-card border border-border p-6">
-        <h3 className="font-display font-semibold mb-4">Store Settings</h3>
-        <p className="text-muted-foreground text-sm">
-          Additional store configuration options coming soon.
-        </p>
-      </div>
-    </div>;
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {cards.map(({ label, value, icon: Icon }) => (
+        <div key={label} className="p-6 rounded-xl bg-card border">
+          <Icon className="h-5 w-5 text-primary mb-3" />
+          <div className="text-2xl font-bold">
+            {loading ? <Loader2 className="animate-spin h-5 w-5" /> : value}
+          </div>
+          <p className="text-sm text-muted-foreground">{label}</p>
+        </div>
+      ))}
+    </div>
+  );
 }
-export default Admin;
+
+/* ---------- Guards ---------- */
+
+function Guard({ isAdmin, message }: { isAdmin: boolean; message: string }) {
+  if (isAdmin) return null;
+  return (
+    <div className="rounded-xl bg-card border p-6 text-sm text-muted-foreground">
+      {message}
+    </div>
+  );
+}
+
+function UploadContent({ isAdmin, onSuccess }: any) {
+  return (
+    <>
+      <Guard isAdmin={isAdmin} message="Admin access required." />
+      {isAdmin && <BeatUploadForm onSuccess={onSuccess} />}
+    </>
+  );
+}
+
+function BeatsContent({ isAdmin }: any) {
+  return isAdmin ? <BeatsManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function SoundKitUploadContent({ isAdmin, onSuccess }: any) {
+  return isAdmin ? <SoundKitUploadForm onSuccess={onSuccess} /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function SoundKitsContent({ isAdmin }: any) {
+  return isAdmin ? <SoundKitsManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function LicensesContent({ isAdmin }: any) {
+  return isAdmin ? <LicenseTemplatesManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function GeneratedLicensesContent({ isAdmin }: any) {
+  return isAdmin ? <GeneratedLicensesManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function OrdersContent({ isAdmin }: any) {
+  return isAdmin ? <OrdersManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function SettingsContent({ isAdmin }: any) {
+  return (
+    <div className="rounded-xl bg-card border p-6">
+      <p className="text-sm text-muted-foreground">
+        {isAdmin
+          ? 'PayPal connected and ready.'
+          : 'Admin access required.'}
+      </p>
+    </div>
+  );
+}

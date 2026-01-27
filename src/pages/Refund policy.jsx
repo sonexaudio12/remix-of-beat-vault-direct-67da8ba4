@@ -8,7 +8,7 @@ export default function Refund() {
 
       <main className="max-w-4xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-bold mb-6">Refund Policy</h1>
-        <p className="text-sm text-gray-500 mb-8">Effective Date: [Add date]</p>
+        <p className="text-sm text-gray-500 mb-8">Effective Date: 17/01/2026</p>
 
         <div className="space-y-6 text-gray-700 leading-relaxed">
           <p>
@@ -27,7 +27,7 @@ export default function Refund() {
           <p>Refunds revoke all associated licenses.</p>
 
           <h2 className="text-xl font-semibold">Contact</h2>
-          <p>Email: support@sonex.com</p>
+          <p>Email: support@sonex.shop</p>
         </div>
       </main>
 

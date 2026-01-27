@@ -54,19 +54,17 @@ const navItems = [{
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const {
-  user,
-  isAdmin,
-  isLoading,
-  signOut
-} = useAuth();
-  const isAdmin = !!user;
+    user,
+    isAdmin,
+    isLoading,
+    signOut
+  } = useAuth();
   const navigate = useNavigate();
- useEffect(() => {
-  if (!isLoading && (!user || !isAdmin)) {
-    navigate('/');
-  }
-}, [user, isAdmin, isLoading, navigate]);
-  }, [user, isLoading, navigate]);
+  useEffect(() => {
+    if (!isLoading && (!user || !isAdmin)) {
+      navigate('/');
+    }
+  }, [user, isAdmin, isLoading, navigate]);
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -94,7 +92,7 @@ const Admin = () => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return <li key={item.id}>
-                  <button onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}>
+                  <button onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-primary/10 [...]
                     <Icon className="h-5 w-5" />
                     {item.label}
                   </button>

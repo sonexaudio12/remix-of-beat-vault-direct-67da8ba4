@@ -92,10 +92,17 @@ const Admin = () => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return <li key={item.id}>
-                  <button onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-primary/10 [...]
-                    <Icon className="h-5 w-5" />
-                    {item.label}
-                  </button>
+                <button
+  onClick={() => setActiveTab(item.id)}
+  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+    isActive
+      ? 'bg-primary/10 text-primary'
+      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+  }`}
+>
+  <Icon className="h-5 w-5" />
+  {item.label}
+</button>
                 </li>;
           })}
           </ul>

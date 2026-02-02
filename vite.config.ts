@@ -18,7 +18,11 @@ export default defineConfig(({ mode }) => ({
     // otherwise "@" will match first and prevent the fallback from resolving.
     alias: [
       {
-        find: "@/integrations/supabase/client",
+        // Match both imports with and without explicit extension.
+        // Some environments/tools emit imports like "@/integrations/supabase/client.ts"
+        // which won't match a plain string alias.
+        // Also match rare absolute-style imports like "src/integrations/supabase/client".
+        find: /^(?:@|src)\/integrations\/supabase\/client(?:\.ts)?$/,
         replacement: path.resolve(__dirname, "./src/integrations/supabase/client-fallback.ts"),
       },
       {

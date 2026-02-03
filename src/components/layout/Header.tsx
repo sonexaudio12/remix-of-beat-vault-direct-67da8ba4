@@ -63,8 +63,8 @@ export function Header() {
             </Button>
           </Link>
 
-          {/* User Menu */}
-          {user ? (
+          {/* User Menu - Admin Only */}
+          {user && isAdmin ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="hidden md:flex">
@@ -73,17 +73,10 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <Link to="/account" className="cursor-pointer">
-                    My Account
+                  <Link to="/admin" className="cursor-pointer">
+                    Admin Dashboard
                   </Link>
                 </DropdownMenuItem>
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin" className="cursor-pointer">
-                      Admin Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                   <LogOut className="h-4 w-4 mr-2" />
@@ -91,13 +84,13 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
+          ) : !user ? (
             <Link to="/login" className="hidden md:block">
               <Button variant="outline" size="sm">
                 Sign In
               </Button>
             </Link>
-          )}
+          ) : null}
 
           {/* Mobile Menu Toggle */}
           <Button
@@ -128,16 +121,11 @@ export function Header() {
               About
             </Link>
             <div className="border-t border-border/40 my-2" />
-            {user ? (
+            {user && isAdmin ? (
               <>
-                <Link to="/account" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
-                  My Account
+                <Link to="/admin" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                  Admin Dashboard
                 </Link>
-                {isAdmin && (
-                  <Link to="/admin" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
-                    Admin Dashboard
-                  </Link>
-                )}
                 <button
                   onClick={() => {
                     handleSignOut();
@@ -148,11 +136,11 @@ export function Header() {
                   Sign Out
                 </button>
               </>
-            ) : (
+            ) : !user ? (
               <Link to="/login" className="py-2 text-sm font-medium text-primary" onClick={() => setMobileMenuOpen(false)}>
-                Sign In / Create Account
+                Admin Login
               </Link>
-            )}
+            ) : null}
           </nav>
         </div>
       )}

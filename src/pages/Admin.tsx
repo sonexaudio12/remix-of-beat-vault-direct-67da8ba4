@@ -13,6 +13,7 @@ import {
   Loader2,
   Archive,
   ScrollText,
+  Users,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import { GeneratedLicensesManager } from '@/components/admin/GeneratedLicensesMa
 import { SoundKitUploadForm } from '@/components/admin/SoundKitUploadForm';
 import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
 import { PaymentSettingsManager } from '@/components/admin/PaymentSettingsManager';
+import { AdminUsersManager } from '@/components/admin/AdminUsersManager';
 
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
@@ -43,6 +45,7 @@ const navItems = [
   { id: 'licenses', label: 'License Templates', icon: FileText },
   { id: 'generated-licenses', label: 'Generated Licenses', icon: ScrollText },
   { id: 'orders', label: 'Orders', icon: Package },
+  { id: 'admins', label: 'Admin Users', icon: Users },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -169,6 +172,7 @@ export default function Admin() {
             <GeneratedLicensesContent isAdmin={isAdmin} />
           )}
           {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
+          {activeTab === 'admins' && <AdminUsersContent isAdmin={isAdmin} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>
       </main>
@@ -295,6 +299,10 @@ function GeneratedLicensesContent({ isAdmin }: any) {
 
 function OrdersContent({ isAdmin }: any) {
   return isAdmin ? <OrdersManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function AdminUsersContent({ isAdmin }: any) {
+  return isAdmin ? <AdminUsersManager /> : <Guard isAdmin={false} message="Admin access required." />;
 }
 
 function SettingsContent({ isAdmin }: any) {

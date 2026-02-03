@@ -11,21 +11,56 @@ interface CaptureRequest {
   orderId: string;
 }
 
-const PAYPAL_BASE_URL = Deno.env.get("PAYPAL_MODE") === "live" 
-  ? "https://api-m.paypal.com" 
-  : "https://api-m.sandbox.paypal.com";
+interface PayPalConfig {
+  clientId: string;
+  clientSecret: string;
+  mode: string;
+  baseUrl: string;
+}
 
-async function getPayPalAccessToken(): Promise<string> {
-  const clientId = Deno.env.get("PAYPAL_CLIENT_ID");
-  const clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET");
+async function getPayPalConfig(): Promise<PayPalConfig> {
+  // Try to get from database first using service role
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
 
-  if (!clientId || !clientSecret) {
+  const { data: settings } = await supabase
+    .from("payment_settings")
+    .select("setting_key, setting_value");
+
+  let clientId = Deno.env.get("PAYPAL_CLIENT_ID") || "";
+  let clientSecret = Deno.env.get("PAYPAL_CLIENT_SECRET") || "";
+  let mode = Deno.env.get("PAYPAL_MODE") || "sandbox";
+
+  // Override with database values if present
+  if (settings && settings.length > 0) {
+    for (const setting of settings) {
+      if (setting.setting_key === "paypal_client_id" && setting.setting_value) {
+        clientId = setting.setting_value;
+      } else if (setting.setting_key === "paypal_client_secret" && setting.setting_value) {
+        clientSecret = setting.setting_value;
+      } else if (setting.setting_key === "paypal_mode" && setting.setting_value) {
+        mode = setting.setting_value;
+      }
+    }
+  }
+
+  const baseUrl = mode === "live" 
+    ? "https://api-m.paypal.com" 
+    : "https://api-m.sandbox.paypal.com";
+
+  return { clientId, clientSecret, mode, baseUrl };
+}
+
+async function getPayPalAccessToken(config: PayPalConfig): Promise<string> {
+  if (!config.clientId || !config.clientSecret) {
     throw new Error("PayPal credentials not configured");
   }
 
-  const auth = btoa(`${clientId}:${clientSecret}`);
+  const auth = btoa(`${config.clientId}:${config.clientSecret}`);
   
-  const response = await fetch(`${PAYPAL_BASE_URL}/v1/oauth2/token`, {
+  const response = await fetch(`${config.baseUrl}/v1/oauth2/token`, {
     method: "POST",
     headers: {
       "Authorization": `Basic ${auth}`,
@@ -131,10 +166,11 @@ serve(async (req: Request) => {
     }
 
     // Capture the PayPal order
-    const accessToken = await getPayPalAccessToken();
+    const paypalConfig = await getPayPalConfig();
+    const accessToken = await getPayPalAccessToken(paypalConfig);
 
     const captureResponse = await fetch(
-      `${PAYPAL_BASE_URL}/v2/checkout/orders/${paypalOrderId}/capture`,
+      `${paypalConfig.baseUrl}/v2/checkout/orders/${paypalOrderId}/capture`,
       {
         method: "POST",
         headers: {

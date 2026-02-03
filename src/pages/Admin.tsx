@@ -25,6 +25,7 @@ import { LicenseTemplatesManager } from '@/components/admin/LicenseTemplatesMana
 import { GeneratedLicensesManager } from '@/components/admin/GeneratedLicensesManager';
 import { SoundKitUploadForm } from '@/components/admin/SoundKitUploadForm';
 import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
+import { PaymentSettingsManager } from '@/components/admin/PaymentSettingsManager';
 
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
@@ -297,13 +298,8 @@ function OrdersContent({ isAdmin }: any) {
 }
 
 function SettingsContent({ isAdmin }: any) {
-  return (
-    <div className="rounded-xl bg-card border p-6">
-      <p className="text-sm text-muted-foreground">
-        {isAdmin
-          ? 'PayPal connected and ready.'
-          : 'Admin access required.'}
-      </p>
-    </div>
-  );
+  if (!isAdmin) {
+    return <Guard isAdmin={false} message="Admin access required." />;
+  }
+  return <PaymentSettingsManager />;
 }

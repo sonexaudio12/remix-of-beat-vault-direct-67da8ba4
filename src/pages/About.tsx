@@ -1,10 +1,8 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Music2 } from 'lucide-react';
-
 export default function About() {
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Header />
       <div className="max-w-4xl mx-auto px-6 py-16">
         <div className="flex items-center gap-3 mb-6">
@@ -51,8 +49,8 @@ export default function About() {
         </div>
 
         <div className="mt-10 rounded-xl border border-border bg-secondary/40 p-6">
-          <h3 className="font-semibold mb-2">Our Vision</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className="font-semibold mb-2 text-primary-foreground">Our Vision</h3>
+          <p className="text-sm text-primary-foreground">
             Sonex Beats aims to become more than a marketplace. Our vision is to
             grow a trusted, community-driven platform where talented producers
             and serious artists can connect, collaborate, and create records
@@ -61,6 +59,5 @@ export default function About() {
         </div>
       </div>
       <Footer />
-    </div>
-  );
+    </div>;
 }

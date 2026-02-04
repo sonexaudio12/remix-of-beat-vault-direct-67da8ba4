@@ -9,16 +9,22 @@ import { Footer } from '@/components/layout/Footer';
 import { useCart } from '@/hooks/useCart';
 import { usePayPal } from '@/hooks/usePayPal';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-const emailSchema = z.string().email('Please enter a valid email address');
+const checkoutSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  name: z.string().min(2, 'Full name is required for the license agreement').max(100, 'Name must be less than 100 characters'),
+});
 
 const Checkout = () => {
   const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'stripe'>('stripe');
   const [step, setStep] = useState<'info' | 'processing' | 'success' | 'error'>('info');
   const [orderId, setOrderId] = useState<string | null>(null);
 
@@ -44,6 +50,60 @@ const Checkout = () => {
     }
   }, [searchParams]);
 
+  // Handle Stripe return
+  useEffect(() => {
+    const stripeSessionId = searchParams.get('stripe_session_id');
+    const savedOrderId = searchParams.get('orderId');
+    
+    if (stripeSessionId && savedOrderId) {
+      handleStripeReturn(stripeSessionId, savedOrderId);
+    }
+  }, [searchParams]);
+
+  const handleStripeReturn = async (sessionId: string, savedOrderId: string) => {
+    setStep('processing');
+    
+    try {
+      // Verify the session and complete the order
+      const { data, error } = await supabase.functions.invoke('verify-stripe-session', {
+        body: { sessionId, orderId: savedOrderId },
+      });
+      
+      if (error || data?.error) {
+        throw new Error(error?.message || data?.error);
+      }
+      
+      if (data?.success) {
+        setOrderId(savedOrderId);
+        setStep('success');
+        clearCart();
+        toast.success('Payment successful! Check your email for download links.');
+      } else {
+        setStep('error');
+        toast.error('Payment verification failed. Please contact support.');
+      }
+    } catch (err: any) {
+      console.error('Stripe verification error:', err);
+      // Even if verification fails, the webhook should have processed the order
+      // Check if order is already completed
+      const { data: order } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('id', savedOrderId)
+        .single();
+      
+      if (order?.status === 'completed') {
+        setOrderId(savedOrderId);
+        setStep('success');
+        clearCart();
+        toast.success('Payment successful! Check your email for download links.');
+      } else {
+        setStep('error');
+        toast.error('Payment verification failed. Please try again or contact support.');
+      }
+    }
+  };
+
   const handlePayPalReturn = async (paypalOrderId: string, savedOrderId: string) => {
     setStep('processing');
     
@@ -63,13 +123,16 @@ const Checkout = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate email
-    const emailResult = emailSchema.safeParse(email);
-    if (!emailResult.success) {
-      setEmailError(emailResult.error.errors[0].message);
+    // Validate form
+    const validation = checkoutSchema.safeParse({ email, name });
+    if (!validation.success) {
+      const errors = validation.error.flatten().fieldErrors;
+      setEmailError(errors.email?.[0] || '');
+      setNameError(errors.name?.[0] || '');
       return;
     }
     setEmailError('');
+    setNameError('');
 
     if (items.length === 0) {
       toast.error('Your cart is empty');
@@ -78,14 +141,54 @@ const Checkout = () => {
 
     setStep('processing');
 
-    const result = await createOrder(items, email, name || undefined);
+    if (paymentMethod === 'stripe') {
+      // Create Stripe checkout session
+      const { data, error: invokeError } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: {
+          items: items.map((item) => {
+            if (item.itemType === 'beat' && item.beat && item.license) {
+              return {
+                itemType: 'beat',
+                beatId: item.beat.id,
+                beatTitle: item.beat.title,
+                licenseTierId: item.license.id,
+                licenseName: item.license.name,
+                price: item.license.price,
+              };
+            } else if (item.itemType === 'sound_kit' && item.soundKit) {
+              return {
+                itemType: 'sound_kit',
+                soundKitId: item.soundKit.id,
+                soundKitTitle: item.soundKit.title,
+                price: item.soundKit.price,
+              };
+            }
+            throw new Error('Invalid cart item');
+          }),
+          customerEmail: email,
+          customerName: name,
+        },
+      });
 
-    if (result?.approvalUrl) {
-      // Redirect to PayPal
-      window.location.href = result.approvalUrl;
+      if (invokeError || data?.error) {
+        setStep('error');
+        toast.error(invokeError?.message || data?.error || 'Failed to create checkout');
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } else {
-      setStep('error');
-      toast.error(error || 'Failed to create order');
+      // PayPal flow
+      const result = await createOrder(items, email, name);
+
+      if (result?.approvalUrl) {
+        window.location.href = result.approvalUrl;
+      } else {
+        setStep('error');
+        toast.error(error || 'Failed to create order');
+      }
     }
   };
 
@@ -217,17 +320,60 @@ const Checkout = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="name">Name (Optional)</Label>
+                        <Label htmlFor="name">Full Name *</Label>
                         <div className="relative">
                           <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             id="name"
                             type="text"
-                            placeholder="Your name"
+                            placeholder="Your full name"
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) => {
+                              setName(e.target.value);
+                              if (nameError) setNameError('');
+                            }}
                             className="pl-10 bg-secondary"
+                            required
                           />
+                        </div>
+                        {nameError && (
+                          <p className="text-sm text-destructive">{nameError}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Used for your license agreement
+                        </p>
+                      </div>
+
+                      {/* Payment Method Selection */}
+                      <div className="space-y-3 pt-2">
+                        <Label>Payment Method</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod('stripe')}
+                            className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                              paymentMethod === 'stripe'
+                                ? 'border-primary bg-primary/10'
+                                : 'border-border hover:border-muted-foreground'
+                            }`}
+                          >
+                            <CreditCard className="h-5 w-5" />
+                            <span className="font-medium">Card</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod('paypal')}
+                            className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                              paymentMethod === 'paypal'
+                                ? 'border-primary bg-primary/10'
+                                : 'border-border hover:border-muted-foreground'
+                            }`}
+                          >
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106z"/>
+                            </svg>
+                            <span className="font-medium">PayPal</span>
+                          </button>
                         </div>
                       </div>
 
@@ -243,14 +389,16 @@ const Checkout = () => {
                         ) : (
                           <>
                             <CreditCard className="h-5 w-5" />
-                            Pay with PayPal - ${total.toFixed(2)}
+                            {paymentMethod === 'stripe' ? 'Pay with Card' : 'Pay with PayPal'} - ${total.toFixed(2)}
                           </>
                         )}
                       </Button>
                     </form>
 
                     <p className="text-xs text-muted-foreground text-center mt-4">
-                      Secure payment powered by PayPal. No account required.
+                      {paymentMethod === 'stripe' 
+                        ? 'Secure payment powered by Stripe.' 
+                        : 'Secure payment powered by PayPal. No account required.'}
                     </p>
                   </div>
                 </div>

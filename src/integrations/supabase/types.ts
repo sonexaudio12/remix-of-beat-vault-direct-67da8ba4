@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      beat_plays: {
+        Row: {
+          beat_id: string
+          id: string
+          ip_hash: string | null
+          played_at: string
+          session_id: string | null
+        }
+        Insert: {
+          beat_id: string
+          id?: string
+          ip_hash?: string | null
+          played_at?: string
+          session_id?: string | null
+        }
+        Update: {
+          beat_id?: string
+          id?: string
+          ip_hash?: string | null
+          played_at?: string
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beat_plays_beat_id_fkey"
+            columns: ["beat_id"]
+            isOneToOne: false
+            referencedRelation: "beats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beats: {
         Row: {
           bpm: number
@@ -23,6 +55,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_exclusive_available: boolean | null
+          is_free: boolean | null
           mood: string
           mp3_file_path: string | null
           preview_url: string | null
@@ -39,6 +72,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_exclusive_available?: boolean | null
+          is_free?: boolean | null
           mood?: string
           mp3_file_path?: string | null
           preview_url?: string | null
@@ -55,6 +89,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_exclusive_available?: boolean | null
+          is_free?: boolean | null
           mood?: string
           mp3_file_path?: string | null
           preview_url?: string | null
@@ -64,6 +99,56 @@ export type Database = {
           wav_file_path?: string | null
         }
         Relationships: []
+      }
+      exclusive_offers: {
+        Row: {
+          admin_response: string | null
+          beat_id: string
+          counter_amount: number | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          id: string
+          message: string | null
+          offer_amount: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          beat_id: string
+          counter_amount?: number | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          id?: string
+          message?: string | null
+          offer_amount: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          beat_id?: string
+          counter_amount?: number | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          id?: string
+          message?: string | null
+          offer_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exclusive_offers_beat_id_fkey"
+            columns: ["beat_id"]
+            isOneToOne: false
+            referencedRelation: "beats"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       license_templates: {
         Row: {
@@ -300,6 +385,33 @@ export type Database = {
           email?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      site_views: {
+        Row: {
+          id: string
+          ip_hash: string | null
+          page_path: string
+          referrer: string | null
+          session_id: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          ip_hash?: string | null
+          page_path: string
+          referrer?: string | null
+          session_id?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          ip_hash?: string | null
+          page_path?: string
+          referrer?: string | null
+          session_id?: string | null
+          viewed_at?: string
         }
         Relationships: []
       }

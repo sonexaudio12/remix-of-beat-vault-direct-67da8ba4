@@ -11,6 +11,7 @@ interface DbBeat {
   cover_url: string | null;
   preview_url: string | null;
   is_exclusive_available: boolean;
+  is_free: boolean | null;
   created_at: string;
   license_tiers: DbLicenseTier[];
 }
@@ -36,7 +37,7 @@ const mapLicenseColor = (type: string): 'basic' | 'premium' | 'exclusive' => {
   }
 };
 
-const transformBeat = (dbBeat: DbBeat): Beat => ({
+const transformBeat = (dbBeat: DbBeat): Beat & { isFree?: boolean } => ({
   id: dbBeat.id,
   title: dbBeat.title,
   bpm: dbBeat.bpm,
@@ -45,6 +46,7 @@ const transformBeat = (dbBeat: DbBeat): Beat => ({
   coverUrl: dbBeat.cover_url || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
   previewUrl: dbBeat.preview_url || '',
   isExclusiveAvailable: dbBeat.is_exclusive_available,
+  isFree: dbBeat.is_free || false,
   createdAt: new Date(dbBeat.created_at),
   licenses: dbBeat.license_tiers.map((tier): License => ({
     id: tier.id,
@@ -71,6 +73,7 @@ export function useBeats() {
           cover_url,
           preview_url,
           is_exclusive_available,
+          is_free,
           created_at,
           license_tiers (
             id,
@@ -108,6 +111,7 @@ export function useBeat(id: string) {
           cover_url,
           preview_url,
           is_exclusive_available,
+          is_free,
           created_at,
           license_tiers (
             id,

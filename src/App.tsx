@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/hooks/useCart";
 import { AudioPlayerProvider } from "@/hooks/useAudioPlayer";
 import { AuthProvider } from "@/hooks/useAuth";
+import { PageTracker } from "@/components/PageTracker";
 import Index from "./pages/Index";
 import Beats from "./pages/Beats";
 import Cart from "./pages/Cart";
@@ -18,7 +19,6 @@ import SoundKits from "./pages/SoundKits";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Login from "./pages/Login";
-import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import About from "@/pages/About";
 import Terms from "./pages/Terms of service";
@@ -36,6 +36,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <PageTracker />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/beats" element={<Beats />} />
@@ -48,7 +49,6 @@ const App = () => (
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/account" element={<Account />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />

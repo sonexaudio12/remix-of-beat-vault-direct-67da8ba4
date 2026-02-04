@@ -14,6 +14,8 @@ import {
   Archive,
   ScrollText,
   Users,
+  BarChart3,
+  MessageSquare,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,8 @@ import { SoundKitUploadForm } from '@/components/admin/SoundKitUploadForm';
 import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
 import { PaymentSettingsManager } from '@/components/admin/PaymentSettingsManager';
 import { AdminUsersManager } from '@/components/admin/AdminUsersManager';
+import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
+import { ExclusiveOffersManager } from '@/components/admin/ExclusiveOffersManager';
 
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
@@ -38,10 +42,12 @@ import logo from '@/assets/logo.png';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'upload', label: 'Upload Beat', icon: Upload },
   { id: 'beats', label: 'Manage Beats', icon: Music2 },
   { id: 'upload-soundkit', label: 'Upload Sound Kit', icon: Archive },
   { id: 'soundkits', label: 'Manage Sound Kits', icon: Archive },
+  { id: 'exclusive-offers', label: 'Exclusive Offers', icon: MessageSquare },
   { id: 'licenses', label: 'License Templates', icon: FileText },
   { id: 'generated-licenses', label: 'Generated Licenses', icon: ScrollText },
   { id: 'orders', label: 'Orders', icon: Package },
@@ -156,6 +162,7 @@ export default function Admin() {
           {activeTab === 'dashboard' && (
             <DashboardContent isAdmin={isAdmin} setActiveTab={setActiveTab} />
           )}
+          {activeTab === 'analytics' && <AnalyticsContent isAdmin={isAdmin} />}
           {activeTab === 'upload' && (
             <UploadContent isAdmin={isAdmin} onSuccess={() => setActiveTab('beats')} />
           )}
@@ -167,6 +174,7 @@ export default function Admin() {
             />
           )}
           {activeTab === 'soundkits' && <SoundKitsContent isAdmin={isAdmin} />}
+          {activeTab === 'exclusive-offers' && <ExclusiveOffersContent isAdmin={isAdmin} />}
           {activeTab === 'licenses' && <LicensesContent isAdmin={isAdmin} />}
           {activeTab === 'generated-licenses' && (
             <GeneratedLicensesContent isAdmin={isAdmin} />
@@ -287,6 +295,14 @@ function SoundKitUploadContent({ isAdmin, onSuccess }: any) {
 
 function SoundKitsContent({ isAdmin }: any) {
   return isAdmin ? <SoundKitsManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function AnalyticsContent({ isAdmin }: any) {
+  return isAdmin ? <AnalyticsDashboard /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function ExclusiveOffersContent({ isAdmin }: any) {
+  return isAdmin ? <ExclusiveOffersManager /> : <Guard isAdmin={false} message="Admin access required." />;
 }
 
 function LicensesContent({ isAdmin }: any) {

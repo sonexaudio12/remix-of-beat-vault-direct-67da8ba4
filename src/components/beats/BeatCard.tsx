@@ -1,20 +1,52 @@
-import { Play, Pause, ShoppingCart } from 'lucide-react';
+import { Play, Pause, ShoppingCart, Download, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Beat } from '@/types/beat';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useState } from 'react';
 import { LicenseModal } from './LicenseModal';
+import { MakeOfferModal } from './MakeOfferModal';
+import { useBeatPlayTracking } from '@/hooks/useAnalyticsTracking';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface BeatCardProps {
-  beat: Beat;
+  beat: Beat & { isFree?: boolean };
 }
 
 export function BeatCard({ beat }: BeatCardProps) {
   const { currentBeat, isPlaying, toggle } = useAudioPlayer();
   const [showLicenseModal, setShowLicenseModal] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const { trackPlay } = useBeatPlayTracking();
 
   const isCurrentlyPlaying = currentBeat?.id === beat.id && isPlaying;
   const lowestPrice = Math.min(...beat.licenses.map((l) => l.price));
+
+  const handlePlay = () => {
+    if (!isCurrentlyPlaying) {
+      trackPlay(beat.id);
+    }
+    toggle(beat);
+  };
+
+  const handleFreeDownload = async () => {
+    try {
+      // Get download URL from edge function
+      const { data, error } = await supabase.functions.invoke('get-download-urls', {
+        body: { beatId: beat.id, licenseType: 'mp3', isFree: true },
+      });
+
+      if (error) throw error;
+
+      if (data?.downloadUrl) {
+        window.open(data.downloadUrl, '_blank');
+        toast.success('Download started!');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to start download');
+    }
+  };
 
   return (
     <>
@@ -32,7 +64,7 @@ export function BeatCard({ beat }: BeatCardProps) {
             <Button
               variant="player"
               size="iconLg"
-              onClick={() => toggle(beat)}
+              onClick={handlePlay}
               className="transform scale-90 group-hover:scale-100 transition-transform"
             >
               {isCurrentlyPlaying ? (
@@ -62,12 +94,19 @@ export function BeatCard({ beat }: BeatCardProps) {
             </div>
           )}
 
-          {/* Exclusive Badge */}
-          {beat.isExclusiveAvailable && (
-            <div className="absolute top-3 right-3 license-badge license-badge-exclusive">
-              Exclusive
-            </div>
-          )}
+          {/* Badges */}
+          <div className="absolute top-3 right-3 flex flex-col gap-2">
+            {beat.isFree && (
+              <div className="license-badge bg-green-500 text-white">
+                Free
+              </div>
+            )}
+            {beat.isExclusiveAvailable && (
+              <div className="license-badge license-badge-exclusive">
+                Exclusive
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Info */}
@@ -84,28 +123,64 @@ export function BeatCard({ beat }: BeatCardProps) {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-lg font-bold text-primary">
-                ${lowestPrice.toFixed(2)}
-              </div>
-              <div className="text-xs text-muted-foreground">starting at</div>
+              {beat.isFree ? (
+                <>
+                  <div className="text-lg font-bold text-green-500">FREE</div>
+                  <div className="text-xs text-muted-foreground">download</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-lg font-bold text-primary">
+                    ${lowestPrice.toFixed(2)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">starting at</div>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Mood Tag */}
-          <div className="flex items-center justify-between">
+          {/* Mood Tag & Actions */}
+          <div className="flex items-center justify-between gap-2">
             <span className="inline-block px-2 py-1 text-xs font-medium rounded-md bg-secondary text-secondary-foreground">
               {beat.mood}
             </span>
             
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setShowLicenseModal(true)}
-              className="gap-1.5"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Buy
-            </Button>
+            <div className="flex gap-2">
+              {beat.isExclusiveAvailable && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowOfferModal(true)}
+                  className="gap-1 text-xs"
+                  title="Make an offer for exclusive rights"
+                >
+                  <DollarSign className="h-3 w-3" />
+                  Offer
+                </Button>
+              )}
+              
+              {beat.isFree ? (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleFreeDownload}
+                  className="gap-1.5 bg-green-500 hover:bg-green-600"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setShowLicenseModal(true)}
+                  className="gap-1.5"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Buy
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -114,6 +189,12 @@ export function BeatCard({ beat }: BeatCardProps) {
         beat={beat}
         open={showLicenseModal}
         onOpenChange={setShowLicenseModal}
+      />
+
+      <MakeOfferModal
+        beat={beat}
+        open={showOfferModal}
+        onOpenChange={setShowOfferModal}
       />
     </>
   );

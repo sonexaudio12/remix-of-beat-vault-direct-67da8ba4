@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Trash2, Eye, EyeOff, Edit2 } from 'lucide-react';
+import { Loader2, Trash2, Eye, EyeOff, Edit2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { BeatEditModal } from './BeatEditModal';
 
 interface Beat {
   id: string;
@@ -24,6 +25,7 @@ interface Beat {
   cover_url: string | null;
   is_active: boolean;
   is_exclusive_available: boolean;
+  is_free?: boolean;
   created_at: string;
   license_tiers: {
     id: string;
@@ -36,6 +38,7 @@ interface Beat {
 export function BeatsManager() {
   const [beats, setBeats] = useState<Beat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingBeat, setEditingBeat] = useState<Beat | null>(null);
 
   const fetchBeats = async () => {
     setIsLoading(true);
@@ -51,6 +54,7 @@ export function BeatsManager() {
           cover_url,
           is_active,
           is_exclusive_available,
+          is_free,
           created_at,
           license_tiers (
             id,
@@ -172,6 +176,11 @@ export function BeatsManager() {
                       Hidden
                     </span>
                   )}
+                  {beat.is_free && (
+                    <span className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400">
+                      Free
+                    </span>
+                  )}
                   {beat.is_exclusive_available && (
                     <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">
                       Exclusive
@@ -195,6 +204,15 @@ export function BeatsManager() {
 
               {/* Actions */}
               <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  onClick={() => setEditingBeat(beat)}
+                  title="Edit beat"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+
                 <Button
                   variant="ghost"
                   size="iconSm"
@@ -242,6 +260,13 @@ export function BeatsManager() {
           </div>
         ))}
       </div>
+
+      <BeatEditModal
+        beat={editingBeat}
+        open={!!editingBeat}
+        onOpenChange={(open) => !open && setEditingBeat(null)}
+        onSuccess={fetchBeats}
+      />
     </div>
   );
 }

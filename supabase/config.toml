@@ -2,3 +2,9 @@ project_id = "xjlgzxaukgshcytevdin"
 
 [functions.generate-license-pdf]
 verify_jwt = false
+
+[functions.send-offer-notification]
+verify_jwt = false
+
+[functions.send-offer-response]
+verify_jwt = false

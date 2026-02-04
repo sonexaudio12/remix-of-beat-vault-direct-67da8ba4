@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { SoundKitEditModal } from './SoundKitEditModal';
 
 interface SoundKit {
   id: string;
@@ -30,6 +31,7 @@ interface SoundKit {
 export function SoundKitsManager() {
   const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingKit, setEditingKit] = useState<SoundKit | null>(null);
 
   const { data: soundKits, isLoading, error } = useQuery({
     queryKey: ['admin-sound-kits'],
@@ -108,89 +110,106 @@ export function SoundKitsManager() {
   }
 
   return (
-    <div className="space-y-4">
-      {soundKits.map((kit) => (
-        <div
-          key={kit.id}
-          className={`flex items-center gap-4 p-4 rounded-xl bg-card border border-border ${
-            !kit.is_active ? 'opacity-60' : ''
-          }`}
-        >
-          {kit.cover_url ? (
-            <img
-              src={kit.cover_url}
-              alt={kit.title}
-              className="w-16 h-16 rounded-lg object-cover"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center">
-              <Archive className="h-6 w-6 text-muted-foreground" />
+    <>
+      <div className="space-y-4">
+        {soundKits.map((kit) => (
+          <div
+            key={kit.id}
+            className={`flex items-center gap-4 p-4 rounded-xl bg-card border border-border ${
+              !kit.is_active ? 'opacity-60' : ''
+            }`}
+          >
+            {kit.cover_url ? (
+              <img
+                src={kit.cover_url}
+                alt={kit.title}
+                className="w-16 h-16 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center">
+                <Archive className="h-6 w-6 text-muted-foreground" />
+              </div>
+            )}
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold truncate">{kit.title}</h3>
+                {!kit.is_active && (
+                  <span className="px-2 py-0.5 text-xs rounded bg-secondary text-muted-foreground">
+                    Hidden
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {kit.category} • ${Number(kit.price).toFixed(2)}
+              </p>
             </div>
-          )}
-          
-          <div className="flex-1 min-w-0">
+
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold truncate">{kit.title}</h3>
-              {!kit.is_active && (
-                <span className="px-2 py-0.5 text-xs rounded bg-secondary text-muted-foreground">
-                  Hidden
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {kit.category} • ${Number(kit.price).toFixed(2)}
-            </p>
-          </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setEditingKit(kit)}
+                title="Edit"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => toggleActive(kit)}
-              title={kit.is_active ? 'Hide' : 'Publish'}
-            >
-              {kit.is_active ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => toggleActive(kit)}
+                title={kit.is_active ? 'Hide' : 'Publish'}
+              >
+                {kit.is_active ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Sound Kit</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete "{kit.title}"? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => handleDelete(kit.id)}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
-                    {deletingId === kit.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'Delete'
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Sound Kit</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{kit.title}"? This will also remove it from any existing orders. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(kit.id)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {deletingId === kit.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Delete'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      <SoundKitEditModal
+        soundKit={editingKit}
+        open={!!editingKit}
+        onClose={() => setEditingKit(null)}
+      />
+    </>
   );
 }

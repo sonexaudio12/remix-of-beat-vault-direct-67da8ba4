@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
-import { Calendar as CalendarIcon, Loader2, Play, ShoppingCart, Eye, TrendingUp } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, Play, ShoppingCart, Eye, TrendingUp, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -17,6 +17,7 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { toast } from 'sonner';
 
 interface DateRange {
   from: Date;
@@ -36,6 +37,125 @@ interface AnalyticsData {
     totalRevenue: number;
   };
 }
+
+// Helper to generate PDF
+const generatePDF = async (data: AnalyticsData, dateRange: DateRange) => {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    toast.error('Please allow popups to download the PDF');
+    return;
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Analytics Report - ${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+        h1 { color: #333; border-bottom: 2px solid #7c3aed; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 30px; }
+        .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 20px 0; }
+        .stat { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #7c3aed; }
+        .stat-label { color: #666; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f5f5f5; font-weight: 600; }
+        .date-range { color: #666; font-size: 14px; margin-top: -10px; }
+        @media print { body { padding: 20px; } }
+      </style>
+    </head>
+    <body>
+      <h1>Analytics Report</h1>
+      <p class="date-range">${format(dateRange.from, 'MMMM d, yyyy')} - ${format(dateRange.to, 'MMMM d, yyyy')}</p>
+      
+      <h2>Summary</h2>
+      <div class="summary">
+        <div class="stat">
+          <div class="stat-value">${data.totals.totalPlays.toLocaleString()}</div>
+          <div class="stat-label">Total Plays</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${data.totals.totalViews.toLocaleString()}</div>
+          <div class="stat-label">Site Views</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${data.totals.totalSales}</div>
+          <div class="stat-label">Total Sales</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">$${data.totals.totalRevenue.toFixed(2)}</div>
+          <div class="stat-label">Total Revenue</div>
+        </div>
+      </div>
+
+      <h2>Top Played Beats</h2>
+      ${data.topBeats.length ? `
+        <table>
+          <thead>
+            <tr><th>#</th><th>Beat Title</th><th>Plays</th></tr>
+          </thead>
+          <tbody>
+            ${data.topBeats.map((beat, i) => `
+              <tr><td>${i + 1}</td><td>${beat.title}</td><td>${beat.plays}</td></tr>
+            `).join('')}
+          </tbody>
+        </table>
+      ` : '<p>No plays recorded in this period.</p>'}
+
+      <h2>Recent Purchases</h2>
+      ${data.recentPurchases.length ? `
+        <table>
+          <thead>
+            <tr><th>Customer</th><th>Email</th><th>Beat</th><th>Price</th><th>Date</th></tr>
+          </thead>
+          <tbody>
+            ${data.recentPurchases.map(p => `
+              <tr>
+                <td>${p.customer_name}</td>
+                <td>${p.customer_email}</td>
+                <td>${p.beat_title}</td>
+                <td>$${p.price.toFixed(2)}</td>
+                <td>${format(new Date(p.created_at), 'MMM d, yyyy')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      ` : '<p>No purchases in this period.</p>'}
+
+      <h2>Daily Breakdown</h2>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Plays</th><th>Views</th><th>Sales</th><th>Revenue</th></tr>
+        </thead>
+        <tbody>
+          ${data.plays.map((p, i) => `
+            <tr>
+              <td>${format(new Date(p.date), 'MMM d')}</td>
+              <td>${p.count}</td>
+              <td>${data.views[i]?.count || 0}</td>
+              <td>${data.sales[i]?.count || 0}</td>
+              <td>$${(data.sales[i]?.revenue || 0).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <p style="margin-top: 40px; color: #999; font-size: 12px; text-align: center;">
+        Generated on ${format(new Date(), 'MMMM d, yyyy \'at\' h:mm a')}
+      </p>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+  
+  setTimeout(() => {
+    printWindow.print();
+  }, 250);
+};
 
 export function AnalyticsDashboard() {
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -179,6 +299,12 @@ export function AnalyticsDashboard() {
     fetchAnalytics();
   }, [dateRange]);
 
+  const handleDownloadPDF = () => {
+    if (data) {
+      generatePDF(data, dateRange);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -189,39 +315,45 @@ export function AnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Date Range Picker */}
-      <div className="flex items-center gap-4">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className={cn('justify-start text-left font-normal')}>
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {format(dateRange.from, 'MMM d, yyyy')} - {format(dateRange.to, 'MMM d, yyyy')}
+      {/* Date Range Picker & Download */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('justify-start text-left font-normal')}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(dateRange.from, 'MMM d, yyyy')} - {format(dateRange.to, 'MMM d, yyyy')}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                selected={{ from: dateRange.from, to: dateRange.to }}
+                onSelect={(range) => {
+                  if (range?.from && range?.to) {
+                    setDateRange({ from: range.from, to: range.to });
+                  }
+                }}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setDateRange({ from: subDays(new Date(), 7), to: new Date() })}>
+              7 days
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="range"
-              selected={{ from: dateRange.from, to: dateRange.to }}
-              onSelect={(range) => {
-                if (range?.from && range?.to) {
-                  setDateRange({ from: range.from, to: range.to });
-                }
-              }}
-              numberOfMonths={2}
-            />
-          </PopoverContent>
-        </Popover>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setDateRange({ from: subDays(new Date(), 7), to: new Date() })}>
-            7 days
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setDateRange({ from: subDays(new Date(), 30), to: new Date() })}>
-            30 days
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setDateRange({ from: subDays(new Date(), 90), to: new Date() })}>
-            90 days
-          </Button>
+            <Button variant="ghost" size="sm" onClick={() => setDateRange({ from: subDays(new Date(), 30), to: new Date() })}>
+              30 days
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setDateRange({ from: subDays(new Date(), 90), to: new Date() })}>
+              90 days
+            </Button>
+          </div>
         </div>
+        <Button onClick={handleDownloadPDF} variant="outline">
+          <Download className="mr-2 h-4 w-4" />
+          Download PDF
+        </Button>
       </div>
 
       {/* Summary Cards */}

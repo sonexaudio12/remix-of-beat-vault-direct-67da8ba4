@@ -1,12 +1,9 @@
 import { Play, Headphones, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-
 export function HeroSection() {
   const navigate = useNavigate();
-
-  return (
-    <section className="relative overflow-hidden py-20 md:py-32">
+  return <section className="relative overflow-hidden py-20 md:py-32">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(187_100%_42%_/_0.1)_0%,transparent_50%)]" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/5 blur-3xl rounded-full" />
 
@@ -18,7 +15,7 @@ export function HeroSection() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </span>
-            <span className="text-sm font-medium">New beats every week</span>
+            <span className="text-sm font-medium text-accent">New beats every week</span>
           </div>
 
           <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
@@ -32,22 +29,12 @@ export function HeroSection() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              variant="hero"
-              size="xl"
-              className="w-full sm:w-auto"
-              onClick={() => navigate('/beats')}
-            >
+            <Button variant="hero" size="xl" className="w-full sm:w-auto" onClick={() => navigate('/beats')}>
               <Play className="h-5 w-5 mr-2" />
               Browse Beats
             </Button>
 
-            <Button
-              variant="outline"
-              size="xl"
-              className="w-full sm:w-auto"
-              onClick={() => navigate('/licenses')}
-            >
+            <Button variant="outline" size="xl" className="w-full sm:w-auto" onClick={() => navigate('/licenses')}>
               View Licensing
             </Button>
           </div>
@@ -74,6 +61,5 @@ export function HeroSection() {
 
         </div>
       </div>
-    </section>
-  );
+    </section>;
 }

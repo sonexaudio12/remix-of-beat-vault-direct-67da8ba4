@@ -29,8 +29,10 @@ import { GeneratedLicensesManager } from '@/components/admin/GeneratedLicensesMa
 import { SoundKitUploadForm } from '@/components/admin/SoundKitUploadForm';
 import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
 import { PaymentSettingsManager } from '@/components/admin/PaymentSettingsManager';
+import { ContactSettingsManager } from '@/components/admin/ContactSettingsManager';
 import { AdminUsersManager } from '@/components/admin/AdminUsersManager';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
+import { DashboardAnalytics } from '@/components/admin/DashboardAnalytics';
 import { ExclusiveOffersManager } from '@/components/admin/ExclusiveOffersManager';
 
 import { supabase } from '@/integrations/supabase/client';
@@ -160,7 +162,7 @@ export default function Admin() {
 
         <div className="p-8">
           {activeTab === 'dashboard' && (
-            <DashboardContent isAdmin={isAdmin} setActiveTab={setActiveTab} />
+            <DashboardWithAnalytics isAdmin={isAdmin} setActiveTab={setActiveTab} />
           )}
           {activeTab === 'analytics' && <AnalyticsContent isAdmin={isAdmin} />}
           {activeTab === 'upload' && (
@@ -325,5 +327,25 @@ function SettingsContent({ isAdmin }: any) {
   if (!isAdmin) {
     return <Guard isAdmin={false} message="Admin access required." />;
   }
-  return <PaymentSettingsManager />;
+  return (
+    <div className="space-y-6">
+      <ContactSettingsManager />
+      <PaymentSettingsManager />
+    </div>
+  );
+}
+
+function DashboardWithAnalytics({
+  isAdmin,
+  setActiveTab,
+}: {
+  isAdmin: boolean;
+  setActiveTab: (tab: string) => void;
+}) {
+  return (
+    <div className="space-y-8">
+      <DashboardContent isAdmin={isAdmin} setActiveTab={setActiveTab} />
+      {isAdmin && <DashboardAnalytics />}
+    </div>
+  );
 }

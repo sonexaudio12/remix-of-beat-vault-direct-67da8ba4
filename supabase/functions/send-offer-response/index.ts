@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -26,7 +27,76 @@ serve(async (req) => {
   }
 
   try {
-    const { customerEmail, customerName, beatTitle, status, adminResponse, counterAmount, originalAmount }: OfferResponseRequest = await req.json();
+     const { offerId, customerEmail, customerName, beatTitle, status, adminResponse, counterAmount, originalAmount }: OfferResponseRequest = await req.json();
+ 
+     // Validate required fields
+     if (!offerId || !customerEmail || !status) {
+       return new Response(
+         JSON.stringify({ error: "Missing required fields" }),
+         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
+ 
+     // Authenticate the request - only admins can send offer responses
+     const authHeader = req.headers.get("Authorization");
+     if (!authHeader?.startsWith("Bearer ")) {
+       return new Response(
+         JSON.stringify({ error: "Unauthorized" }),
+         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
+ 
+     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+ 
+     // Validate user is authenticated and is an admin
+     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+       global: { headers: { Authorization: authHeader } }
+     });
+     
+     const token = authHeader.replace("Bearer ", "");
+     const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+     
+     if (claimsError || !claimsData?.claims?.sub) {
+       return new Response(
+         JSON.stringify({ error: "Invalid authentication token" }),
+         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
+ 
+     const userId = claimsData.claims.sub;
+ 
+     // Check if user is admin
+     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+     const { data: adminRole, error: roleError } = await serviceClient
+       .from("user_roles")
+       .select("role")
+       .eq("user_id", userId)
+       .eq("role", "admin")
+       .single();
+ 
+     if (roleError || !adminRole) {
+       console.warn(`Non-admin user ${userId} attempted to send offer response`);
+       return new Response(
+         JSON.stringify({ error: "Forbidden: Admin access required" }),
+         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
+ 
+     // Verify the offer exists
+     const { data: offer, error: offerError } = await serviceClient
+       .from("exclusive_offers")
+       .select("id, customer_email")
+       .eq("id", offerId)
+       .single();
+ 
+     if (offerError || !offer) {
+       return new Response(
+         JSON.stringify({ error: "Offer not found" }),
+         { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
 
     console.log("Sending offer response to:", customerEmail);
 

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -32,14 +33,25 @@ const corsHeaders = {
    return true;
  }
  
-interface OfferNotificationRequest {
-  beatId: string;
-  beatTitle: string;
-  customerName: string;
-  customerEmail: string;
-  offerAmount: number;
-  message?: string;
-}
+ // Input validation schema
+ const offerNotificationSchema = z.object({
+   beatId: z.string().uuid(),
+   beatTitle: z.string().min(1).max(255),
+   customerName: z.string().min(1).max(255),
+   customerEmail: z.string().email().max(255),
+   offerAmount: z.number().min(1).max(999999),
+   message: z.string().max(5000).optional(),
+ });
+ 
+ // Sanitize text to prevent XSS in emails
+ function sanitizeHtml(text: string): string {
+   return text
+     .replace(/&/g, '&amp;')
+     .replace(/</g, '&lt;')
+     .replace(/>/g, '&gt;')
+     .replace(/"/g, '&quot;')
+     .replace(/'/g, '&#39;');
+ }
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -47,15 +59,25 @@ serve(async (req) => {
   }
 
   try {
-     const { beatId, beatTitle, customerName, customerEmail, offerAmount, message }: OfferNotificationRequest = await req.json();
+      const body = await req.json();
  
-     // Validate required fields
-     if (!beatId || !customerEmail || !offerAmount) {
+      // Validate input with zod
+      const parseResult = offerNotificationSchema.safeParse(body);
+      if (!parseResult.success) {
+        const errorMessage = parseResult.error.issues.map(i => i.message).join(', ');
+        console.warn("Input validation failed:", errorMessage);
        return new Response(
-         JSON.stringify({ error: "Missing required fields" }),
+          JSON.stringify({ error: "Invalid input" }),
          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
        );
      }
+      
+      const { beatId, beatTitle, customerName, customerEmail, offerAmount, message } = parseResult.data;
+ 
+      // Sanitize inputs for email
+      const safeBeatTitle = sanitizeHtml(beatTitle);
+      const safeCustomerName = sanitizeHtml(customerName);
+      const safeMessage = message ? sanitizeHtml(message) : undefined;
  
      // Rate limit by email (prevent spam from same email)
      if (!checkRateLimit(customerEmail.toLowerCase())) {
@@ -107,7 +129,7 @@ serve(async (req) => {
           <h1 style="color: #333;">New Exclusive Rights Offer</h1>
           
           <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="margin: 0 0 10px 0; color: #333;">${beatTitle}</h2>
+             <h2 style="margin: 0 0 10px 0; color: #333;">${safeBeatTitle}</h2>
             <p style="margin: 5px 0; color: #666;">
               <strong>Offer Amount:</strong> 
               <span style="color: #22c55e; font-size: 24px; font-weight: bold;">$${offerAmount.toFixed(2)}</span>
@@ -115,13 +137,13 @@ serve(async (req) => {
           </div>
           
           <h3 style="color: #333;">Customer Details</h3>
-          <p style="margin: 5px 0;"><strong>Name:</strong> ${customerName}</p>
+           <p style="margin: 5px 0;"><strong>Name:</strong> ${safeCustomerName}</p>
           <p style="margin: 5px 0;"><strong>Email:</strong> ${customerEmail}</p>
           
-          ${message ? `
+           ${safeMessage ? `
             <h3 style="color: #333;">Message</h3>
             <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
-              <p style="margin: 0; color: #333;">${message}</p>
+               <p style="margin: 0; color: #333;">${safeMessage}</p>
             </div>
           ` : ''}
           

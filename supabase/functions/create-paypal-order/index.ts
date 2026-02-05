@@ -1,27 +1,31 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface CartItem {
-  itemType: 'beat' | 'sound_kit';
-  beatId?: string;
-  beatTitle?: string;
-  licenseTierId?: string;
-  licenseName?: string;
-  soundKitId?: string;
-  soundKitTitle?: string;
-  price: number;
-}
-
-interface CreateOrderRequest {
-  items: CartItem[];
-  customerEmail: string;
-  customerName?: string;
-}
+ // Input validation schemas
+ const cartItemSchema = z.object({
+   itemType: z.enum(['beat', 'sound_kit']),
+   beatId: z.string().uuid().optional(),
+   beatTitle: z.string().max(255).optional(),
+   licenseTierId: z.string().uuid().optional(),
+   licenseName: z.string().max(100).optional(),
+   soundKitId: z.string().uuid().optional(),
+   soundKitTitle: z.string().max(255).optional(),
+   price: z.number().min(0).max(100000),
+ });
+ 
+ const createOrderSchema = z.object({
+   items: z.array(cartItemSchema).min(1).max(50),
+   customerEmail: z.string().email().max(255),
+   customerName: z.string().max(255).optional(),
+ });
+ 
+ type CartItem = z.infer<typeof cartItemSchema>;
 
 interface PayPalConfig {
   clientId: string;
@@ -98,21 +102,38 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { items, customerEmail, customerName }: CreateOrderRequest = await req.json();
-
-    // Validate input
-    if (!items || items.length === 0) {
+     const body = await req.json();
+ 
+     // Validate input with zod
+     const parseResult = createOrderSchema.safeParse(body);
+     if (!parseResult.success) {
+       const errorMessage = parseResult.error.issues.map(i => i.message).join(', ');
+       console.warn("Input validation failed:", errorMessage);
       return new Response(
-        JSON.stringify({ error: "No items provided" }),
+         JSON.stringify({ error: "Invalid input: " + errorMessage }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!customerEmail) {
-      return new Response(
-        JSON.stringify({ error: "Customer email is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+     const { items, customerEmail, customerName } = parseResult.data;
+ 
+     // Validate items have proper structure
+     for (const item of items) {
+       if (item.itemType === 'beat') {
+         if (!item.beatId || !item.beatTitle || !item.licenseTierId || !item.licenseName) {
+           return new Response(
+             JSON.stringify({ error: "Invalid beat item: missing required fields" }),
+             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+           );
+         }
+       } else if (item.itemType === 'sound_kit') {
+         if (!item.soundKitId || !item.soundKitTitle) {
+           return new Response(
+             JSON.stringify({ error: "Invalid sound kit item: missing required fields" }),
+             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+           );
+         }
+       }
     }
 
     // Calculate total

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -10,16 +11,27 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface OfferResponseRequest {
-  offerId: string;
-  customerEmail: string;
-  customerName: string;
-  beatTitle: string;
-  status: 'accepted' | 'rejected' | 'countered';
-  adminResponse?: string;
-  counterAmount?: number;
-  originalAmount: number;
-}
+ // Input validation schema
+ const offerResponseSchema = z.object({
+   offerId: z.string().uuid(),
+   customerEmail: z.string().email().max(255),
+   customerName: z.string().max(255),
+   beatTitle: z.string().max(255),
+   status: z.enum(['accepted', 'rejected', 'countered']),
+   adminResponse: z.string().max(5000).optional(),
+   counterAmount: z.number().min(1).max(999999).optional(),
+   originalAmount: z.number().min(0).max(999999),
+ });
+ 
+ // Sanitize text to prevent XSS in emails
+ function sanitizeHtml(text: string): string {
+   return text
+     .replace(/&/g, '&amp;')
+     .replace(/</g, '&lt;')
+     .replace(/>/g, '&gt;')
+     .replace(/"/g, '&quot;')
+     .replace(/'/g, '&#39;');
+ }
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -27,15 +39,33 @@ serve(async (req) => {
   }
 
   try {
-     const { offerId, customerEmail, customerName, beatTitle, status, adminResponse, counterAmount, originalAmount }: OfferResponseRequest = await req.json();
+      const body = await req.json();
  
-     // Validate required fields
-     if (!offerId || !customerEmail || !status) {
+      // Validate input with zod
+      const parseResult = offerResponseSchema.safeParse(body);
+      if (!parseResult.success) {
+        const errorMessage = parseResult.error.issues.map(i => i.message).join(', ');
+        console.warn("Input validation failed:", errorMessage);
        return new Response(
-         JSON.stringify({ error: "Missing required fields" }),
+          JSON.stringify({ error: "Invalid input" }),
          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
        );
      }
+ 
+      const { offerId, customerEmail, customerName, beatTitle, status, adminResponse, counterAmount, originalAmount } = parseResult.data;
+ 
+      // Validate counter amount is required for countered status
+      if (status === 'countered' && !counterAmount) {
+        return new Response(
+          JSON.stringify({ error: "Counter amount is required for counter offers" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+ 
+      // Sanitize inputs for email
+      const safeBeatTitle = sanitizeHtml(beatTitle);
+      const safeCustomerName = sanitizeHtml(customerName);
+      const safeAdminResponse = adminResponse ? sanitizeHtml(adminResponse) : undefined;
  
      // Authenticate the request - only admins can send offer responses
      const authHeader = req.headers.get("Authorization");
@@ -105,7 +135,7 @@ serve(async (req) => {
     let actionHtml = '';
 
     if (status === 'accepted') {
-      subject = `Your offer for "${beatTitle}" has been accepted!`;
+       subject = `Your offer for "${safeBeatTitle}" has been accepted!`;
       statusHtml = `
         <div style="background: #22c55e; color: white; padding: 20px; border-radius: 8px; text-align: center;">
           <h2 style="margin: 0;">🎉 Offer Accepted!</h2>
@@ -117,7 +147,7 @@ serve(async (req) => {
         <p>Please reply to this email if you have any questions.</p>
       `;
     } else if (status === 'rejected') {
-      subject = `Update on your offer for "${beatTitle}"`;
+       subject = `Update on your offer for "${safeBeatTitle}"`;
       statusHtml = `
         <div style="background: #ef4444; color: white; padding: 20px; border-radius: 8px; text-align: center;">
           <h2 style="margin: 0;">Offer Declined</h2>
@@ -128,7 +158,7 @@ serve(async (req) => {
         <p>Feel free to browse our other beats or submit a new offer in the future!</p>
       `;
     } else if (status === 'countered') {
-      subject = `Counter offer for "${beatTitle}"`;
+       subject = `Counter offer for "${safeBeatTitle}"`;
       statusHtml = `
         <div style="background: #3b82f6; color: white; padding: 20px; border-radius: 8px; text-align: center;">
           <h2 style="margin: 0;">Counter Offer</h2>
@@ -151,15 +181,15 @@ serve(async (req) => {
       subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Hi ${customerName},</h1>
+           <h1 style="color: #333;">Hi ${safeCustomerName},</h1>
           
-          <p style="color: #666;">Thank you for your interest in exclusive rights for <strong>${beatTitle}</strong>.</p>
+           <p style="color: #666;">Thank you for your interest in exclusive rights for <strong>${safeBeatTitle}</strong>.</p>
           
           ${statusHtml}
           
-          ${adminResponse ? `
+           ${safeAdminResponse ? `
             <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #333;">
-              <p style="margin: 0; color: #333;">${adminResponse}</p>
+               <p style="margin: 0; color: #333;">${safeAdminResponse}</p>
             </div>
           ` : ''}
           

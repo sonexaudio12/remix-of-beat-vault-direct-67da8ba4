@@ -7,8 +7,14 @@ const corsHeaders = {
    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
- // Internal service secret for validating internal calls
- const INTERNAL_SERVICE_SECRET = Deno.env.get("INTERNAL_SERVICE_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+ // Sanitize text to prevent PDF injection
+ function sanitizeForPdf(text: string): string {
+   if (!text) return '';
+   // Remove control characters and limit length
+   return text
+     .replace(/[\x00-\x1f\x7f]/g, '')
+     .substring(0, 500);
+ }
  
 interface LicenseGenerationRequest {
   orderId: string;
@@ -363,16 +369,22 @@ serve(async (req: Request) => {
 
   try {
      // This function should only be called by other edge functions (internal service)
-     // Validate using service role key or internal secret
+     // STRICT authentication - requires service role key in Authorization header
      const authHeader = req.headers.get("Authorization");
-     const internalSecret = req.headers.get("X-Internal-Secret");
+     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
      
-     const isValidServiceCall = 
-       authHeader?.includes(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "") ||
-       internalSecret === INTERNAL_SERVICE_SECRET;
+     if (!serviceRoleKey) {
+       console.error("SUPABASE_SERVICE_ROLE_KEY not configured");
+       return new Response(
+         JSON.stringify({ error: "Server configuration error" }),
+         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
      
-     if (!isValidServiceCall) {
-       console.warn("Unauthorized attempt to generate license PDF");
+     // Strict comparison - must be exact Bearer token match
+     const expectedAuth = `Bearer ${serviceRoleKey}`;
+     if (!authHeader || authHeader !== expectedAuth) {
+       console.warn("Unauthorized attempt to generate license PDF - invalid auth");
        return new Response(
          JSON.stringify({ error: "Unauthorized" }),
          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -381,6 +393,20 @@ serve(async (req: Request) => {
  
     const data: LicenseGenerationRequest = await req.json();
     
+     // Validate required fields
+     if (!data.orderId || !data.orderItemId || !data.itemTitle || !data.customerEmail) {
+       return new Response(
+         JSON.stringify({ error: "Missing required fields" }),
+         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
+     
+     // Sanitize inputs for PDF
+     data.itemTitle = sanitizeForPdf(data.itemTitle);
+     data.customerName = sanitizeForPdf(data.customerName);
+     data.customerEmail = sanitizeForPdf(data.customerEmail);
+     data.licenseName = sanitizeForPdf(data.licenseName);
+     
     console.log("Generating license PDF for:", {
       orderId: data.orderId,
       itemTitle: data.itemTitle,

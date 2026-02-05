@@ -8,6 +8,28 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+ // Rate limiting for checkout creation
+ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+ const RATE_LIMIT_MAX = 10;
+ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+ 
+ function checkRateLimit(key: string): boolean {
+   const now = Date.now();
+   const entry = rateLimitMap.get(key);
+   
+   if (!entry || now > entry.resetTime) {
+     rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+     return true;
+   }
+   
+   if (entry.count >= RATE_LIMIT_MAX) {
+     return false;
+   }
+   
+   entry.count++;
+   return true;
+ }
+ 
 interface OrderItem {
   itemType: "beat" | "sound_kit";
   beatId?: string;
@@ -46,6 +68,26 @@ serve(async (req) => {
       throw new Error("Customer email and name are required");
     }
 
+     // Validate email format
+     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+     if (!emailRegex.test(customerEmail)) {
+       throw new Error("Invalid email format");
+     }
+ 
+     // Rate limit by email and IP
+     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0] || 
+                      req.headers.get("cf-connecting-ip") || 
+                      "unknown";
+     const rateLimitKey = `${customerEmail.toLowerCase()}_${clientIp}`;
+     
+     if (!checkRateLimit(rateLimitKey)) {
+       console.warn(`Rate limit exceeded for checkout: ${rateLimitKey}`);
+       return new Response(
+         JSON.stringify({ error: "Too many checkout attempts. Please try again later." }),
+         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+       );
+     }
+ 
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });

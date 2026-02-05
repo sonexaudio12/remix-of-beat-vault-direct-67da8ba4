@@ -4,9 +4,12 @@ import { PDFDocument, rgb, StandardFonts } from "https://esm.sh/pdf-lib@1.17.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+ // Internal service secret for validating internal calls
+ const INTERNAL_SERVICE_SECRET = Deno.env.get("INTERNAL_SERVICE_SECRET") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+ 
 interface LicenseGenerationRequest {
   orderId: string;
   orderItemId: string;
@@ -359,6 +362,23 @@ serve(async (req: Request) => {
   }
 
   try {
+     // This function should only be called by other edge functions (internal service)
+     // Validate using service role key or internal secret
+     const authHeader = req.headers.get("Authorization");
+     const internalSecret = req.headers.get("X-Internal-Secret");
+     
+     const isValidServiceCall = 
+       authHeader?.includes(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "") ||
+       internalSecret === INTERNAL_SERVICE_SECRET;
+     
+     if (!isValidServiceCall) {
+       console.warn("Unauthorized attempt to generate license PDF");
+       return new Response(
+         JSON.stringify({ error: "Unauthorized" }),
+         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
+ 
     const data: LicenseGenerationRequest = await req.json();
     
     console.log("Generating license PDF for:", {

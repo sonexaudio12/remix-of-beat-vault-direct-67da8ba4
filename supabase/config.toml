@@ -1,5 +1,8 @@
 project_id = "xjlgzxaukgshcytevdin"
 
+ [functions.get-download-urls]
+ verify_jwt = false
+ 
 [functions.generate-license-pdf]
 verify_jwt = false
 

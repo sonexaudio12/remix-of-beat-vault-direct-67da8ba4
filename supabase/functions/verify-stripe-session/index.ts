@@ -5,9 +5,31 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+ // Rate limiting
+ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+ const RATE_LIMIT_MAX = 20;
+ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+ 
+ function checkRateLimit(key: string): boolean {
+   const now = Date.now();
+   const entry = rateLimitMap.get(key);
+   
+   if (!entry || now > entry.resetTime) {
+     rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+     return true;
+   }
+   
+   if (entry.count >= RATE_LIMIT_MAX) {
+     return false;
+   }
+   
+   entry.count++;
+   return true;
+ }
+ 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -25,6 +47,19 @@ serve(async (req) => {
       throw new Error("Session ID and Order ID are required");
     }
 
+     // Rate limit by IP
+     const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0] || 
+                      req.headers.get("cf-connecting-ip") || 
+                      "unknown";
+     
+     if (!checkRateLimit(clientIp)) {
+       console.warn(`Rate limit exceeded for session verification: ${clientIp}`);
+       return new Response(
+         JSON.stringify({ error: "Too many verification attempts. Please try again later." }),
+         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+       );
+     }
+ 
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
@@ -38,6 +73,15 @@ serve(async (req) => {
 
     console.log("Stripe session status:", session.payment_status);
 
+     // Verify that the session's order_id matches the requested orderId
+     if (session.metadata?.order_id !== orderId) {
+       console.warn(`Order ID mismatch: session has ${session.metadata?.order_id}, requested ${orderId}`);
+       return new Response(
+         JSON.stringify({ error: "Order ID mismatch" }),
+         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+       );
+     }
+ 
     if (session.payment_status === "paid") {
       // Check if order is already completed
       const { data: order } = await supabase

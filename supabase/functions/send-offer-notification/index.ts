@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -9,6 +10,28 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+ // Rate limiting
+ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+ const RATE_LIMIT_MAX = 5;
+ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+ 
+ function checkRateLimit(key: string): boolean {
+   const now = Date.now();
+   const entry = rateLimitMap.get(key);
+   
+   if (!entry || now > entry.resetTime) {
+     rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+     return true;
+   }
+   
+   if (entry.count >= RATE_LIMIT_MAX) {
+     return false;
+   }
+   
+   entry.count++;
+   return true;
+ }
+ 
 interface OfferNotificationRequest {
   beatId: string;
   beatTitle: string;
@@ -24,7 +47,51 @@ serve(async (req) => {
   }
 
   try {
-    const { beatTitle, customerName, customerEmail, offerAmount, message }: OfferNotificationRequest = await req.json();
+     const { beatId, beatTitle, customerName, customerEmail, offerAmount, message }: OfferNotificationRequest = await req.json();
+ 
+     // Validate required fields
+     if (!beatId || !customerEmail || !offerAmount) {
+       return new Response(
+         JSON.stringify({ error: "Missing required fields" }),
+         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
+ 
+     // Rate limit by email (prevent spam from same email)
+     if (!checkRateLimit(customerEmail.toLowerCase())) {
+       console.warn(`Rate limit exceeded for offer notifications: ${customerEmail}`);
+       return new Response(
+         JSON.stringify({ error: "Too many offers submitted. Please try again later." }),
+         { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
+ 
+     // Verify the beat exists and is available for exclusive offers
+     const supabase = createClient(
+       Deno.env.get("SUPABASE_URL")!,
+       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+     );
+ 
+     const { data: beat, error: beatError } = await supabase
+       .from("beats")
+       .select("id, title, is_exclusive_available")
+       .eq("id", beatId)
+       .single();
+ 
+     if (beatError || !beat) {
+       console.warn(`Beat not found: ${beatId}`);
+       return new Response(
+         JSON.stringify({ error: "Beat not found" }),
+         { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
+ 
+     if (!beat.is_exclusive_available) {
+       return new Response(
+         JSON.stringify({ error: "This beat is not available for exclusive purchase" }),
+         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+       );
+     }
 
     console.log("Sending offer notification for:", beatTitle);
 

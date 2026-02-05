@@ -507,6 +507,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_analytics_rate_limit: {
+        Args: {
+          p_max_count: number
+          p_session_id: string
+          p_table_name: string
+          p_window_minutes: number
+        }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {

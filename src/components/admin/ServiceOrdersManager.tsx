@@ -121,7 +121,24 @@ function ServiceOrderRow({ order, onUpdate }: { order: ServiceOrder; onUpdate: (
         status: newStatus,
         message: updateMessage || null,
       });
-      toast.success('Status updated');
+
+      // Send email notification to customer
+      try {
+        await supabase.functions.invoke('send-service-order-update', {
+          body: {
+            customerEmail: order.customer_email,
+            customerName: order.customer_name,
+            orderId: order.id,
+            serviceTitle: (order as any).services?.title || 'Service',
+            newStatus,
+            message: updateMessage || undefined,
+          },
+        });
+      } catch (emailErr) {
+        console.error('Failed to send status update email:', emailErr);
+      }
+
+      toast.success('Status updated & customer notified');
       setUpdateMessage('');
       onUpdate();
       loadDetails();

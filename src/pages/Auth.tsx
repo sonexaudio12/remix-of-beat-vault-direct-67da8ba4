@@ -117,7 +117,7 @@ const Auth = () => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -166,6 +166,14 @@ const Auth = () => {
                 <p className="text-sm text-destructive">{errors.password}</p>
               )}
             </div>
+
+            {mode === 'login' && (
+              <div className="flex justify-end">
+                <a href="/forgot-password" className="text-xs text-primary hover:underline">
+                  Forgot password?
+                </a>
+              </div>
+            )}
 
             <Button
               type="submit"

@@ -85,75 +85,27 @@ function buildPlaceholders(data: LicenseGenerationRequest): Record<string, strin
   };
 }
 
-/**
- * Replace placeholder text in every page of the PDF using pdf-lib's page.drawText overlay approach.
- * Since pdf-lib cannot edit existing text, we use a two-pass strategy:
- * 1. Extract text content via the PDF operators
- * 2. Overlay replacement text on known placeholder positions
- *
- * For a simpler and more reliable approach, we'll scan the raw PDF content stream bytes
- * and do text replacement at the content-stream level.
- */
-async function replaceTextInPdf(pdfBytes: Uint8Array, placeholders: Record<string, string>): Promise<Uint8Array> {
-  // Work on raw bytes as latin1 string
-  const decoder = new TextDecoder('latin1');
-  let pdfString = decoder.decode(pdfBytes);
-
-  let modified = false;
-  for (const [placeholder, value] of Object.entries(placeholders)) {
-    if (!pdfString.includes(placeholder)) continue;
-
-    // Escape special PDF text-string characters
-    let safeValue = value
-      .replace(/\\/g, '\\\\')
-      .replace(/\(/g, '\\(')
-      .replace(/\)/g, '\\)');
-
-    // Pad or truncate replacement to EXACT same byte length as placeholder
-    // to preserve PDF cross-reference table offsets
-    const pLen = placeholder.length;
-    if (safeValue.length < pLen) {
-      safeValue = safeValue + ' '.repeat(pLen - safeValue.length);
-    } else if (safeValue.length > pLen) {
-      safeValue = safeValue.substring(0, pLen);
-    }
-
-    pdfString = pdfString.replaceAll(placeholder, safeValue);
-    modified = true;
-  }
-
-  if (!modified) {
-    console.log("No placeholders found in PDF template - returning original");
-    return pdfBytes;
-  }
-
-  console.log("Placeholder replacement completed (length-preserving)");
-  const resultBytes = new Uint8Array(pdfString.length);
-  for (let i = 0; i < pdfString.length; i++) {
-    resultBytes[i] = pdfString.charCodeAt(i);
-  }
-  return resultBytes;
-}
-
 async function generateFromTemplate(
   supabase: any,
   templateFilePath: string,
   data: LicenseGenerationRequest
-): Promise<Uint8Array> {
+): Promise<Uint8Array | null> {
   const { data: fileData, error } = await supabase.storage
     .from('licenses')
     .download(templateFilePath);
 
   if (error) throw new Error(`Failed to download template: ${error.message}`);
 
-  let templateBytes = new Uint8Array(await fileData.arrayBuffer());
-  const placeholders = buildPlaceholders(data);
+  const templateBytes = new Uint8Array(await fileData.arrayBuffer());
+  
+  // Validate PDF header (%PDF)
+  if (templateBytes.length < 4 || templateBytes[0] !== 37 || templateBytes[1] !== 80 || templateBytes[2] !== 68 || templateBytes[3] !== 70) {
+    console.warn(`Template at ${templateFilePath} is not a valid PDF (starts with "${String.fromCharCode(...templateBytes.slice(0, 10))}"). Falling back to generated PDF.`);
+    return null; // Signal to caller to use fallback
+  }
 
-  // Replace placeholders in the PDF
-  templateBytes = await replaceTextInPdf(templateBytes, placeholders);
-
-  // Load the modified PDF and add a certificate overlay page
-  const pdfDoc = await PDFDocument.load(templateBytes);
+  // Load the template PDF as-is (no raw byte manipulation — it corrupts the PDF)
+  const pdfDoc = await PDFDocument.load(templateBytes, { ignoreEncryption: true });
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
@@ -458,13 +410,15 @@ serve(async (req: Request) => {
       .eq('type', templateType)
       .single();
 
-    let pdfBytes: Uint8Array;
+    let pdfBytes: Uint8Array | null = null;
 
     if (template?.file_path && template?.is_active) {
       console.log(`Using uploaded template for type: ${templateType}`);
       pdfBytes = await generateFromTemplate(supabase, template.file_path, data);
-    } else {
-      console.log(`No active template found, generating from scratch`);
+    }
+    
+    if (!pdfBytes) {
+      console.log(`No valid template, generating from scratch`);
       pdfBytes = await generateFromScratch(data);
     }
 

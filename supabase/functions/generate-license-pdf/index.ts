@@ -95,35 +95,39 @@ function buildPlaceholders(data: LicenseGenerationRequest): Record<string, strin
  * and do text replacement at the content-stream level.
  */
 async function replaceTextInPdf(pdfBytes: Uint8Array, placeholders: Record<string, string>): Promise<Uint8Array> {
-  // Convert PDF bytes to string for text replacement in content streams
-  // This works because placeholder text like {CUSTOMER_FULLNAME} will appear as literal text in the PDF content stream
-  let pdfString = '';
+  // Work on raw bytes as latin1 string
   const decoder = new TextDecoder('latin1');
-  pdfString = decoder.decode(pdfBytes);
+  let pdfString = decoder.decode(pdfBytes);
 
   let modified = false;
   for (const [placeholder, value] of Object.entries(placeholders)) {
-    // Escape special PDF characters in replacement value
-    const safeValue = value
+    if (!pdfString.includes(placeholder)) continue;
+
+    // Escape special PDF text-string characters
+    let safeValue = value
       .replace(/\\/g, '\\\\')
       .replace(/\(/g, '\\(')
       .replace(/\)/g, '\\)');
-    
-    // Replace in both regular text strings (text) and hex strings
-    if (pdfString.includes(placeholder)) {
-      pdfString = pdfString.replaceAll(placeholder, safeValue);
-      modified = true;
+
+    // Pad or truncate replacement to EXACT same byte length as placeholder
+    // to preserve PDF cross-reference table offsets
+    const pLen = placeholder.length;
+    if (safeValue.length < pLen) {
+      safeValue = safeValue + ' '.repeat(pLen - safeValue.length);
+    } else if (safeValue.length > pLen) {
+      safeValue = safeValue.substring(0, pLen);
     }
+
+    pdfString = pdfString.replaceAll(placeholder, safeValue);
+    modified = true;
   }
 
   if (!modified) {
-    console.log("No placeholders found in PDF template - returning original with overlay page");
+    console.log("No placeholders found in PDF template - returning original");
     return pdfBytes;
   }
 
-  console.log("Placeholder replacement completed in PDF content streams");
-  const encoder = new TextEncoder();
-  // Encode back to latin1 bytes
+  console.log("Placeholder replacement completed (length-preserving)");
   const resultBytes = new Uint8Array(pdfString.length);
   for (let i = 0; i < pdfString.length; i++) {
     resultBytes[i] = pdfString.charCodeAt(i);

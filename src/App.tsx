@@ -27,6 +27,8 @@ import Privacy from "./pages/Privacy policy";
 import Refund from "./pages/Refund policy";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Services from "./pages/Services";
+import ServiceOrder from "./pages/ServiceOrder";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,8 @@ const App = () => (
                 <Route path="/refunds" element={<Refund />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/service-order/:serviceId" element={<ServiceOrder />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

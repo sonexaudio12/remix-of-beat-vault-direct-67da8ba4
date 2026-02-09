@@ -5,33 +5,29 @@ import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo-new.png';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-
 export function Header() {
-  const { itemCount } = useCart();
-  const { user, isAdmin, signOut } = useAuth();
+  const {
+    itemCount
+  } = useCart();
+  const {
+    user,
+    isAdmin,
+    signOut
+  } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
     toast.success('Signed out successfully');
   };
-
-  return (
-    <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  return <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Sonex Beats" className="h-12 w-auto" />
+          <img src={logo} alt="Sonex Beats" className="h-12 w-auto rounded-full" />
         </Link>
 
         {/* Desktop Navigation */}
@@ -58,17 +54,14 @@ export function Header() {
           <Link to="/cart">
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
-              {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
+              {itemCount > 0 && <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
                   {itemCount}
-                </span>
-              )}
+                </span>}
             </Button>
           </Link>
 
           {/* User Menu - Admin Only */}
-          {user && isAdmin ? (
-            <DropdownMenu>
+          {user && isAdmin ? <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="hidden md:flex">
                   <User className="h-5 w-5" />
@@ -86,36 +79,25 @@ export function Header() {
                   Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
-          ) : user ? (
-            <Link to="/account" className="hidden md:flex">
+            </DropdownMenu> : user ? <Link to="/account" className="hidden md:flex">
               <Button variant="ghost" size="icon">
                 <User className="h-5 w-5" />
               </Button>
-            </Link>
-          ) : (
-            <Link to="/login" className="hidden md:block">
+            </Link> : <Link to="/login" className="hidden md:block">
               <Button variant="outline" size="sm">
                 Sign In
               </Button>
-            </Link>
-          )}
+            </Link>}
 
           {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border/40 bg-background">
+      {mobileMenuOpen && <div className="md:hidden border-t border-border/40 bg-background">
           <nav className="container py-4 flex flex-col gap-2">
             <Link to="/beats" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
               Beats
@@ -133,33 +115,22 @@ export function Header() {
               About
             </Link>
             <div className="border-t border-border/40 my-2" />
-            {user && isAdmin ? (
-              <>
+            {user && isAdmin ? <>
                 <Link to="/admin" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
                   Admin Dashboard
                 </Link>
-                <button
-                  onClick={() => {
-                    handleSignOut();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="py-2 text-sm font-medium text-left text-destructive"
-                >
+                <button onClick={() => {
+            handleSignOut();
+            setMobileMenuOpen(false);
+          }} className="py-2 text-sm font-medium text-left text-destructive">
                   Sign Out
                 </button>
-              </>
-            ) : user ? (
-              <Link to="/account" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+              </> : user ? <Link to="/account" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
                 My Account
-              </Link>
-            ) : (
-              <Link to="/login" className="py-2 text-sm font-medium text-primary" onClick={() => setMobileMenuOpen(false)}>
+              </Link> : <Link to="/login" className="py-2 text-sm font-medium text-primary" onClick={() => setMobileMenuOpen(false)}>
                 Sign In
-              </Link>
-            )}
+              </Link>}
           </nav>
-        </div>
-      )}
-    </header>
-  );
+        </div>}
+    </header>;
 }

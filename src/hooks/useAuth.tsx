@@ -86,6 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: redirectUrl,
       },
     });
+
+    // Send branded welcome email via Resend
+    if (!error) {
+      try {
+        await supabase.functions.invoke('send-verification-email', {
+          body: { email },
+        });
+      } catch (e) {
+        console.error('Failed to send welcome email:', e);
+      }
+    }
+
     return { error: error as Error | null };
   };
 

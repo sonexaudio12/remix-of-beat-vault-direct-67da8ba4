@@ -21,6 +21,7 @@ import Auth from "./pages/Auth";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import About from "@/pages/About";
+import Account from "./pages/Account";
 import Terms from "./pages/Terms of service";
 import Privacy from "./pages/Privacy policy";
 import Refund from "./pages/Refund policy";
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/account" element={<Account />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/refunds" element={<Refund />} />

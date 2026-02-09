@@ -31,13 +31,11 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const siteUrl = "https://www.sonexbeats.shop";
-
     const { data, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
       email,
       options: {
-        redirectTo: `${siteUrl}/reset-password`,
+        redirectTo: "https://www.sonexbeats.shop/reset-password",
       },
     });
 
@@ -50,13 +48,27 @@ serve(async (req) => {
       });
     }
 
-    const resetLink = data?.properties?.action_link;
+    let resetLink = data?.properties?.action_link;
     if (!resetLink) {
       console.error("No action link returned");
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
+    }
+
+    // Rewrite the link to use the custom domain instead of Supabase/Lovable preview URL
+    // The action_link points to Supabase's /verify endpoint, which redirects to the Site URL.
+    // We parse the verification URL and rebuild it to redirect to our custom domain.
+    try {
+      const url = new URL(resetLink);
+      const redirectTo = url.searchParams.get("redirect_to");
+      if (redirectTo && !redirectTo.includes("sonexbeats.shop")) {
+        url.searchParams.set("redirect_to", "https://www.sonexbeats.shop/reset-password");
+        resetLink = url.toString();
+      }
+    } catch (e) {
+      console.error("Failed to rewrite reset link:", e);
     }
 
     const emailResponse = await resend.emails.send({

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Package, Download, FileText, User, LogOut, Loader2, Calendar, Mail, RefreshCw, Headphones } from 'lucide-react';
+import { Package, Download, FileText, User, LogOut, Loader2, Calendar, Mail, RefreshCw, Headphones, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,6 +42,8 @@ const Account = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [downloadingOrder, setDownloadingOrder] = useState<string | null>(null);
+  const [downloadingLicense, setDownloadingLicense] = useState<string | null>(null);
+  const [orderLicenses, setOrderLicenses] = useState<Record<string, { name: string; path: string }[]>>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -85,11 +88,57 @@ const Account = () => {
 
       if (error) throw error;
       setOrders(data || []);
+
+      // Fetch generated license PDFs for each order
+      const licensesMap: Record<string, { name: string; path: string }[]> = {};
+      for (const order of data || []) {
+        try {
+          const { data: files } = await supabase.storage
+            .from('licenses')
+            .list(`generated/${order.id}`);
+
+          if (files && files.length > 0) {
+            licensesMap[order.id] = files.map(f => ({
+              name: f.name,
+              path: `generated/${order.id}/${f.name}`,
+            }));
+          }
+        } catch {
+          // Ignore storage errors for individual orders
+        }
+      }
+      setOrderLicenses(licensesMap);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast.error('Failed to load orders');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDownloadLicense = async (path: string, filename: string) => {
+    setDownloadingLicense(path);
+    try {
+      const { data, error } = await supabase.storage
+        .from('licenses')
+        .download(path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('License downloaded');
+    } catch (error) {
+      console.error('License download error:', error);
+      toast.error('Failed to download license');
+    } finally {
+      setDownloadingLicense(null);
     }
   };
 
@@ -332,6 +381,35 @@ const Account = () => {
                               </div>
                             ))}
                           </div>
+
+                          {/* License PDFs */}
+                          {orderLicenses[order.id] && orderLicenses[order.id].length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-border">
+                              <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                                <FileText className="h-3 w-3" />
+                                License PDFs
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {orderLicenses[order.id].map((license, idx) => (
+                                  <Button
+                                    key={idx}
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs h-7 gap-1.5"
+                                    disabled={downloadingLicense === license.path}
+                                    onClick={() => handleDownloadLicense(license.path, license.name)}
+                                  >
+                                    {downloadingLicense === license.path ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <Download className="h-3 w-3" />
+                                    )}
+                                    {license.name.length > 30 ? license.name.slice(0, 27) + '...' : license.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {expired && (
                             <p className="text-xs text-destructive mt-3">

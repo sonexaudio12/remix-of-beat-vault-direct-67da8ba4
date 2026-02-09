@@ -25,7 +25,6 @@ serve(async (req) => {
       );
     }
 
-    // Generate a password reset link using Supabase Admin
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -34,9 +33,6 @@ serve(async (req) => {
     const { data, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
       email,
-      options: {
-        redirectTo: "https://www.sonexbeats.shop/reset-password",
-      },
     });
 
     if (resetError) {
@@ -48,8 +44,9 @@ serve(async (req) => {
       });
     }
 
-    let resetLink = data?.properties?.action_link;
-    if (!resetLink) {
+    // Extract the hashed token from the action_link instead of using Supabase's /verify redirect
+    const actionLink = data?.properties?.action_link;
+    if (!actionLink) {
       console.error("No action link returned");
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
@@ -57,19 +54,15 @@ serve(async (req) => {
       });
     }
 
-    // Rewrite the link to use the custom domain instead of Supabase/Lovable preview URL
-    // The action_link points to Supabase's /verify endpoint, which redirects to the Site URL.
-    // We parse the verification URL and rebuild it to redirect to our custom domain.
-    try {
-      const url = new URL(resetLink);
-      const redirectTo = url.searchParams.get("redirect_to");
-      if (redirectTo && !redirectTo.includes("sonexbeats.shop")) {
-        url.searchParams.set("redirect_to", "https://www.sonexbeats.shop/reset-password");
-        resetLink = url.toString();
-      }
-    } catch (e) {
-      console.error("Failed to rewrite reset link:", e);
-    }
+    // Parse the token_hash and type from the Supabase action link
+    const actionUrl = new URL(actionLink);
+    const tokenHash = actionUrl.searchParams.get("token") || actionUrl.searchParams.get("token_hash");
+    const type = actionUrl.searchParams.get("type") || "recovery";
+
+    // Build a direct link to the custom domain with the token
+    const resetLink = `https://www.sonexbeats.shop/reset-password?token_hash=${encodeURIComponent(tokenHash!)}&type=${type}`;
+
+    console.log("Built custom reset link for domain: www.sonexbeats.shop");
 
     const emailResponse = await resend.emails.send({
       from: "Sonex Studio <support@sonexbeats.shop>",

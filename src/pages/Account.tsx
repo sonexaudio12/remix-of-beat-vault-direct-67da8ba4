@@ -142,6 +142,20 @@ const Account = () => {
     }
   };
 
+  const handlePreviewLicense = async (path: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('licenses')
+        .createSignedUrl(path, 300);
+
+      if (error) throw error;
+      window.open(data.signedUrl, '_blank');
+    } catch (error) {
+      console.error('License preview error:', error);
+      toast.error('Failed to preview license');
+    }
+  };
+
   const handleDownloadOrder = async (orderId: string, customerEmail: string) => {
     setDownloadingOrder(orderId);
     try {
@@ -389,23 +403,34 @@ const Account = () => {
                                 <FileText className="h-3 w-3" />
                                 License PDFs
                               </p>
-                              <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2">
                                 {orderLicenses[order.id].map((license, idx) => (
-                                  <Button
-                                    key={idx}
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs h-7 gap-1.5"
-                                    disabled={downloadingLicense === license.path}
-                                    onClick={() => handleDownloadLicense(license.path, license.name)}
-                                  >
-                                    {downloadingLicense === license.path ? (
-                                      <Loader2 className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                      <Download className="h-3 w-3" />
-                                    )}
-                                    {license.name.length > 30 ? license.name.slice(0, 27) + '...' : license.name}
-                                  </Button>
+                                  <div key={idx} className="flex items-center gap-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-xs h-7 gap-1.5"
+                                      onClick={() => handlePreviewLicense(license.path)}
+                                      title="Preview in browser"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                      {license.name.length > 30 ? license.name.slice(0, 27) + '...' : license.name}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-xs h-7 px-2"
+                                      disabled={downloadingLicense === license.path}
+                                      onClick={() => handleDownloadLicense(license.path, license.name)}
+                                      title="Download"
+                                    >
+                                      {downloadingLicense === license.path ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <Download className="h-3 w-3" />
+                                      )}
+                                    </Button>
+                                  </div>
                                 ))}
                               </div>
                             </div>

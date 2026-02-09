@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Save, Mail, User, Phone } from 'lucide-react';
+import { Loader2, Save, Mail, User, Phone, Scale, Mic } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminSetting {
@@ -18,6 +18,9 @@ export function ContactSettingsManager() {
     contact_email: '',
     contact_name: '',
     contact_phone: '',
+    producer_legal_name: '',
+    producer_alias: '',
+    producer_jurisdiction: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -150,6 +153,66 @@ export function ContactSettingsManager() {
           />
           <p className="text-xs text-muted-foreground">
             Optional contact number for business inquiries
+          </p>
+        </div>
+
+        <hr className="my-2 border-border" />
+        <h3 className="font-semibold text-sm pt-2">License Agreement Settings</h3>
+        <p className="text-xs text-muted-foreground -mt-4">
+          These fields are used as placeholders in your license PDF templates.
+        </p>
+
+        <div className="space-y-2">
+          <Label htmlFor="producer_legal_name" className="flex items-center gap-2">
+            <Scale className="h-4 w-4" />
+            Producer Legal Name
+          </Label>
+          <Input
+            id="producer_legal_name"
+            placeholder="e.g. Steven J. Lopez"
+            value={settings.producer_legal_name}
+            onChange={(e) =>
+              setSettings((prev) => ({ ...prev, producer_legal_name: e.target.value }))
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            Used as {'{PRODUCT_OWNER_FULLNAME}'} in license templates
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="producer_alias" className="flex items-center gap-2">
+            <Mic className="h-4 w-4" />
+            Producer Alias / Brand Name
+          </Label>
+          <Input
+            id="producer_alias"
+            placeholder="e.g. SonexLite"
+            value={settings.producer_alias}
+            onChange={(e) =>
+              setSettings((prev) => ({ ...prev, producer_alias: e.target.value }))
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            Used as {'{PRODUCER_ALIAS}'} in license templates
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="producer_jurisdiction" className="flex items-center gap-2">
+            <Scale className="h-4 w-4" />
+            Governing Law (State / Province / Country)
+          </Label>
+          <Input
+            id="producer_jurisdiction"
+            placeholder="e.g. State of New York, United States"
+            value={settings.producer_jurisdiction}
+            onChange={(e) =>
+              setSettings((prev) => ({ ...prev, producer_jurisdiction: e.target.value }))
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            Used as {'{STATE_PROVINCE_COUNTRY}'} in license templates
           </p>
         </div>
 

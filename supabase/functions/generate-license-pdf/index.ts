@@ -21,10 +21,17 @@ interface LicenseGenerationRequest {
   licenseType: string;
   customerName: string;
   customerEmail: string;
+  customerAddress?: string;
   purchaseDate: string;
   price: number;
   bpm?: number;
   genre?: string;
+  // Producer settings (fetched from admin_settings)
+  producerLegalName?: string;
+  producerAlias?: string;
+  producerJurisdiction?: string;
+  // Preview mode
+  preview?: boolean;
 }
 
 interface LicenseTerms {
@@ -34,23 +41,94 @@ interface LicenseTerms {
   commercialRights: boolean;
   exclusiveRights: boolean;
   description: string;
+  fileType: string;
 }
 
 function getLicenseTerms(licenseType: string): LicenseTerms {
   switch (licenseType.toLowerCase()) {
     case 'mp3':
-      return { streamLimit: '5,000 streams', radioRights: false, videoRights: false, commercialRights: false, exclusiveRights: false, description: 'MP3 Lease License - Non-exclusive rights for personal and promotional use' };
+      return { streamLimit: '5,000 streams', radioRights: false, videoRights: false, commercialRights: false, exclusiveRights: false, description: 'MP3 Lease License - Non-exclusive rights for personal and promotional use', fileType: 'MP3' };
     case 'wav':
-      return { streamLimit: '50,000 streams', radioRights: true, videoRights: true, commercialRights: false, exclusiveRights: false, description: 'WAV Lease License - Non-exclusive rights with radio and video broadcasting' };
+      return { streamLimit: '50,000 streams', radioRights: true, videoRights: true, commercialRights: false, exclusiveRights: false, description: 'WAV Lease License - Non-exclusive rights with radio and video broadcasting', fileType: 'WAV' };
     case 'stems':
-      return { streamLimit: '500,000 streams', radioRights: true, videoRights: true, commercialRights: true, exclusiveRights: false, description: 'Trackout/Stems License - Full commercial rights with individual track files' };
+      return { streamLimit: '500,000 streams', radioRights: true, videoRights: true, commercialRights: true, exclusiveRights: false, description: 'Trackout/Stems License - Full commercial rights with individual track files', fileType: 'STEMS' };
     case 'exclusive':
-      return { streamLimit: 'Unlimited', radioRights: true, videoRights: true, commercialRights: true, exclusiveRights: true, description: 'Exclusive License - Full ownership and exclusive rights transfer' };
+      return { streamLimit: 'Unlimited', radioRights: true, videoRights: true, commercialRights: true, exclusiveRights: true, description: 'Exclusive License - Full ownership and exclusive rights transfer', fileType: 'WAV + STEMS' };
     case 'sound_kit':
-      return { streamLimit: 'Unlimited', radioRights: true, videoRights: true, commercialRights: true, exclusiveRights: false, description: 'Sound Kit License - Royalty-free usage in your productions' };
+      return { streamLimit: 'Unlimited', radioRights: true, videoRights: true, commercialRights: true, exclusiveRights: false, description: 'Sound Kit License - Royalty-free usage in your productions', fileType: 'ZIP' };
     default:
-      return { streamLimit: '5,000 streams', radioRights: false, videoRights: false, commercialRights: false, exclusiveRights: false, description: 'Standard Lease License' };
+      return { streamLimit: '5,000 streams', radioRights: false, videoRights: false, commercialRights: false, exclusiveRights: false, description: 'Standard Lease License', fileType: 'MP3' };
   }
+}
+
+/**
+ * Build the placeholder map from request data + admin settings.
+ */
+function buildPlaceholders(data: LicenseGenerationRequest): Record<string, string> {
+  const purchaseDate = new Date(data.purchaseDate);
+  const terms = getLicenseTerms(data.licenseType);
+
+  return {
+    '{CONTRACT_DATE}': purchaseDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    '{CURRENT_YEAR}': String(purchaseDate.getFullYear()),
+    '{CUSTOMER_FULLNAME}': data.customerName || data.customerEmail,
+    '{CUSTOMER_EMAIL}': data.customerEmail,
+    '{CUSTOMER_ADDRESS}': data.customerAddress || 'N/A',
+    '{PRODUCT_TITLE}': data.itemTitle,
+    '{LICENSE_NAME}': data.licenseName,
+    '{FILE_TYPE}': terms.fileType,
+    '{PRODUCT_PRICE}': `$${data.price.toFixed(2)}`,
+    '{ORDER_ID}': data.orderId,
+    '{PRODUCT_OWNER_FULLNAME}': data.producerLegalName || 'N/A',
+    '{PRODUCER_ALIAS}': data.producerAlias || 'SonexLite',
+    '{STATE_PROVINCE_COUNTRY}': data.producerJurisdiction || 'N/A',
+  };
+}
+
+/**
+ * Replace placeholder text in every page of the PDF using pdf-lib's page.drawText overlay approach.
+ * Since pdf-lib cannot edit existing text, we use a two-pass strategy:
+ * 1. Extract text content via the PDF operators
+ * 2. Overlay replacement text on known placeholder positions
+ *
+ * For a simpler and more reliable approach, we'll scan the raw PDF content stream bytes
+ * and do text replacement at the content-stream level.
+ */
+async function replaceTextInPdf(pdfBytes: Uint8Array, placeholders: Record<string, string>): Promise<Uint8Array> {
+  // Convert PDF bytes to string for text replacement in content streams
+  // This works because placeholder text like {CUSTOMER_FULLNAME} will appear as literal text in the PDF content stream
+  let pdfString = '';
+  const decoder = new TextDecoder('latin1');
+  pdfString = decoder.decode(pdfBytes);
+
+  let modified = false;
+  for (const [placeholder, value] of Object.entries(placeholders)) {
+    // Escape special PDF characters in replacement value
+    const safeValue = value
+      .replace(/\\/g, '\\\\')
+      .replace(/\(/g, '\\(')
+      .replace(/\)/g, '\\)');
+    
+    // Replace in both regular text strings (text) and hex strings
+    if (pdfString.includes(placeholder)) {
+      pdfString = pdfString.replaceAll(placeholder, safeValue);
+      modified = true;
+    }
+  }
+
+  if (!modified) {
+    console.log("No placeholders found in PDF template - returning original with overlay page");
+    return pdfBytes;
+  }
+
+  console.log("Placeholder replacement completed in PDF content streams");
+  const encoder = new TextEncoder();
+  // Encode back to latin1 bytes
+  const resultBytes = new Uint8Array(pdfString.length);
+  for (let i = 0; i < pdfString.length; i++) {
+    resultBytes[i] = pdfString.charCodeAt(i);
+  }
+  return resultBytes;
 }
 
 async function generateFromTemplate(
@@ -58,14 +136,19 @@ async function generateFromTemplate(
   templateFilePath: string,
   data: LicenseGenerationRequest
 ): Promise<Uint8Array> {
-  // Download the template PDF
   const { data: fileData, error } = await supabase.storage
     .from('licenses')
     .download(templateFilePath);
 
   if (error) throw new Error(`Failed to download template: ${error.message}`);
 
-  const templateBytes = new Uint8Array(await fileData.arrayBuffer());
+  let templateBytes = new Uint8Array(await fileData.arrayBuffer());
+  const placeholders = buildPlaceholders(data);
+
+  // Replace placeholders in the PDF
+  templateBytes = await replaceTextInPdf(templateBytes, placeholders);
+
+  // Load the modified PDF and add a certificate overlay page
   const pdfDoc = await PDFDocument.load(templateBytes);
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -73,7 +156,7 @@ async function generateFromTemplate(
   const pages = pdfDoc.getPages();
   if (pages.length === 0) throw new Error("Template PDF has no pages");
 
-  // Add an overlay page at the end with purchase details
+  // Add a certificate overlay page at the end
   const page = pdfDoc.addPage([612, 792]);
   const { height } = page.getSize();
   let y = height - 60;
@@ -84,7 +167,6 @@ async function generateFromTemplate(
     year: 'numeric', month: 'long', day: 'numeric',
   });
 
-  // Header
   page.drawText("LICENSE CERTIFICATE", {
     x: leftMargin, y, size: 20, font: helveticaBold, color: rgb(0.2, 0.1, 0.4),
   });
@@ -106,6 +188,8 @@ async function generateFromTemplate(
     ["Purchase Date:", purchaseDate],
     ["Purchase Price:", `$${data.price.toFixed(2)}`],
     ["Order Reference:", data.orderId],
+    ["Producer:", `${data.producerAlias || 'SonexLite'} (${data.producerLegalName || 'N/A'})`],
+    ["Governing Law:", data.producerJurisdiction || 'N/A'],
   ];
 
   if (data.itemType === 'beat' && data.bpm) {
@@ -130,7 +214,7 @@ async function generateFromTemplate(
     x: leftMargin, y, size: 9, font: helvetica, color: rgb(0.5, 0.5, 0.5),
   });
   y -= 14;
-  page.drawText("Sonex Beats - All Rights Reserved", {
+  page.drawText(`${data.producerAlias || 'Sonex Beats'} - All Rights Reserved`, {
     x: leftMargin, y, size: 9, font: helveticaBold, color: rgb(0.2, 0.1, 0.4),
   });
 
@@ -148,6 +232,10 @@ async function generateFromScratch(data: LicenseGenerationRequest): Promise<Uint
   const purchaseDate = new Date(data.purchaseDate).toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
   });
+
+  const producerAlias = data.producerAlias || 'SonexLite';
+  const producerLegalName = data.producerLegalName || producerAlias;
+  const jurisdiction = data.producerJurisdiction || 'the applicable jurisdiction';
 
   let y = height - 60;
   const leftMargin = 50;
@@ -173,11 +261,15 @@ async function generateFromScratch(data: LicenseGenerationRequest): Promise<Uint
   y -= sectionGap;
   page.drawText("BETWEEN:", { x: leftMargin, y, size: 12, font: timesRomanBold });
   y -= lineHeight;
-  page.drawText(`Producer: SonexLite ("Licensor")`, { x: leftMargin + 20, y, size: 11, font: timesRoman });
+  page.drawText(`Producer: ${producerLegalName} a/k/a "${producerAlias}" ("Licensor")`, { x: leftMargin + 20, y, size: 11, font: timesRoman });
   y -= lineHeight;
   page.drawText(`Licensee: ${data.customerName || data.customerEmail} ("Licensee")`, { x: leftMargin + 20, y, size: 11, font: timesRoman });
   y -= lineHeight;
   page.drawText(`Email: ${data.customerEmail}`, { x: leftMargin + 20, y, size: 11, font: timesRoman });
+  if (data.customerAddress) {
+    y -= lineHeight;
+    page.drawText(`Address: ${data.customerAddress}`, { x: leftMargin + 20, y, size: 11, font: timesRoman });
+  }
 
   y -= sectionGap;
   page.drawText("LICENSED WORK:", { x: leftMargin, y, size: 12, font: timesRomanBold });
@@ -191,6 +283,8 @@ async function generateFromScratch(data: LicenseGenerationRequest): Promise<Uint
 
   y -= lineHeight;
   page.drawText(`License Type: ${data.licenseName}`, { x: leftMargin + 20, y, size: 11, font: timesRoman });
+  y -= lineHeight;
+  page.drawText(`File Format: ${terms.fileType}`, { x: leftMargin + 20, y, size: 11, font: timesRoman });
   y -= lineHeight;
   page.drawText(`Purchase Price: $${data.price.toFixed(2)}`, { x: leftMargin + 20, y, size: 11, font: timesRoman });
   y -= lineHeight;
@@ -218,7 +312,7 @@ async function generateFromScratch(data: LicenseGenerationRequest): Promise<Uint
   y -= lineHeight;
 
   const termsText = [
-    '1. Credit Requirement: The Licensee must credit the Producer as "prod. by SonexLite"',
+    `1. Credit Requirement: The Licensee must credit the Producer as "prod. by ${producerAlias}"`,
     "   in all works using this beat, unless explicitly waived in writing.",
     "",
     "2. Ownership: The Producer retains ownership of the underlying composition and",
@@ -232,6 +326,8 @@ async function generateFromScratch(data: LicenseGenerationRequest): Promise<Uint
     "",
     `5. Stream Limits: Usage is limited to ${terms.streamLimit} across all platforms.`,
     "   Additional streams require a new license purchase.",
+    "",
+    `6. Governing Law: This agreement shall be governed by the laws of ${jurisdiction}.`,
   ];
 
   for (const line of termsText) {
@@ -248,9 +344,39 @@ async function generateFromScratch(data: LicenseGenerationRequest): Promise<Uint
   y -= 14;
   page.drawText(`Generated on ${new Date().toISOString().split('T')[0]} | Order: ${data.orderId}`, { x: leftMargin, y, size: 9, font: timesRoman, color: rgb(0.5, 0.5, 0.5) });
   y -= 14;
-  page.drawText("Sonex Beats - All Rights Reserved", { x: leftMargin, y, size: 9, font: timesRomanBold, color: rgb(0.2, 0.1, 0.4) });
+  page.drawText(`${producerAlias} - All Rights Reserved`, { x: leftMargin, y, size: 9, font: timesRomanBold, color: rgb(0.2, 0.1, 0.4) });
 
   return await pdfDoc.save();
+}
+
+/**
+ * Fetch producer settings from admin_settings table.
+ */
+async function fetchProducerSettings(supabase: any): Promise<{
+  producerLegalName: string;
+  producerAlias: string;
+  producerJurisdiction: string;
+}> {
+  const { data, error } = await supabase
+    .from('admin_settings')
+    .select('setting_key, setting_value')
+    .in('setting_key', ['producer_legal_name', 'producer_alias', 'producer_jurisdiction']);
+
+  if (error) {
+    console.error("Error fetching producer settings:", error);
+    return { producerLegalName: '', producerAlias: 'SonexLite', producerJurisdiction: '' };
+  }
+
+  const map: Record<string, string> = {};
+  for (const row of data || []) {
+    map[row.setting_key] = row.setting_value;
+  }
+
+  return {
+    producerLegalName: map['producer_legal_name'] || '',
+    producerAlias: map['producer_alias'] || 'SonexLite',
+    producerJurisdiction: map['producer_jurisdiction'] || '',
+  };
 }
 
 serve(async (req: Request) => {
@@ -283,6 +409,7 @@ serve(async (req: Request) => {
     data.customerName = sanitizeForPdf(data.customerName);
     data.customerEmail = sanitizeForPdf(data.customerEmail);
     data.licenseName = sanitizeForPdf(data.licenseName);
+    if (data.customerAddress) data.customerAddress = sanitizeForPdf(data.customerAddress);
 
     console.log("Generating license PDF for:", {
       orderId: data.orderId, itemTitle: data.itemTitle,
@@ -293,6 +420,12 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Fetch producer settings and merge into request data
+    const producerSettings = await fetchProducerSettings(supabase);
+    data.producerLegalName = data.producerLegalName || producerSettings.producerLegalName;
+    data.producerAlias = data.producerAlias || producerSettings.producerAlias;
+    data.producerJurisdiction = data.producerJurisdiction || producerSettings.producerJurisdiction;
 
     // Check if an active template exists for this license type
     const templateType = data.itemType === 'sound_kit' ? 'sound_kit' : data.licenseType;
@@ -310,6 +443,14 @@ serve(async (req: Request) => {
     } else {
       console.log(`No active template found, generating from scratch`);
       pdfBytes = await generateFromScratch(data);
+    }
+
+    // For preview mode, return PDF directly without storing
+    if (data.preview) {
+      return new Response(pdfBytes, {
+        status: 200,
+        headers: { "Content-Type": "application/pdf", ...corsHeaders },
+      });
     }
 
     const sanitizedTitle = data.itemTitle.replace(/[^a-zA-Z0-9]/g, '_');

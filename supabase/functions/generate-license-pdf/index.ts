@@ -387,13 +387,32 @@ serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     if (!serviceRoleKey) {
       return new Response(JSON.stringify({ error: "Server configuration error" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
-    if (!authHeader || authHeader !== `Bearer ${serviceRoleKey}`) {
+    // Allow service role key OR authenticated admin user
+    let isServiceRole = authHeader === `Bearer ${serviceRoleKey}`;
+    let isAdmin = false;
+
+    if (!isServiceRole && authHeader?.startsWith('Bearer ')) {
+      // Verify user JWT and check admin role
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const token = authHeader.replace('Bearer ', '');
+      const { data: userData, error: userError } = await userClient.auth.getUser(token);
+      if (!userError && userData?.user) {
+        const { data: roleData } = await userClient.rpc('is_admin');
+        isAdmin = roleData === true;
+      }
+    }
+
+    if (!isServiceRole && !isAdmin) {
       return new Response(JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }

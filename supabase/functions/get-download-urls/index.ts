@@ -230,8 +230,34 @@ serve(async (req: Request) => {
           }
         }
 
-        // Generate signed URL for license PDF
-        if (licenseTier.license_pdf_path) {
+        // Check for generated license PDF first
+        const { data: genLicenseFiles } = await supabase.storage
+          .from("licenses")
+          .list(`generated/${orderId}`, { search: item.id });
+
+        let foundGeneratedLicense = false;
+        if (genLicenseFiles && genLicenseFiles.length > 0) {
+          for (const lf of genLicenseFiles) {
+            if (lf.name.includes(item.id)) {
+              const licensePath = `generated/${orderId}/${lf.name}`;
+              const { data: genPdfUrl, error: genPdfErr } = await supabase.storage
+                .from("licenses")
+                .createSignedUrl(licensePath, 3600);
+
+              if (!genPdfErr && genPdfUrl) {
+                itemDownloads.files.push({
+                  name: `License_${item.beat_title || item.item_title}_${licenseTier.type}.pdf`,
+                  url: genPdfUrl.signedUrl,
+                  type: "license",
+                });
+                foundGeneratedLicense = true;
+              }
+            }
+          }
+        }
+
+        // Fall back to static license PDF from tier
+        if (!foundGeneratedLicense && licenseTier.license_pdf_path) {
           const { data: pdfUrl, error: pdfError } = await supabase.storage
             .from("licenses")
             .createSignedUrl(licenseTier.license_pdf_path, 3600);
@@ -263,7 +289,7 @@ serve(async (req: Request) => {
         // Generate signed URL for sound kit file
         const { data: signedUrl, error: signError } = await supabase.storage
           .from("soundkits")
-          .createSignedUrl(soundKit.file_path, 3600); // 1 hour expiry
+          .createSignedUrl(soundKit.file_path, 3600);
 
         if (!signError && signedUrl) {
           const fileName = soundKit.file_path.split("/").pop() || `${soundKit.title}.zip`;
@@ -272,6 +298,30 @@ serve(async (req: Request) => {
             url: signedUrl.signedUrl,
             type: "soundkit",
           });
+        }
+
+        // Check for generated license PDF for this sound kit order item
+        const { data: licenseFiles } = await supabase.storage
+          .from("licenses")
+          .list(`generated/${orderId}`, { search: item.id });
+
+        if (licenseFiles && licenseFiles.length > 0) {
+          for (const lf of licenseFiles) {
+            if (lf.name.includes(item.id)) {
+              const licensePath = `generated/${orderId}/${lf.name}`;
+              const { data: licensePdfUrl, error: lpErr } = await supabase.storage
+                .from("licenses")
+                .createSignedUrl(licensePath, 3600);
+
+              if (!lpErr && licensePdfUrl) {
+                itemDownloads.files.push({
+                  name: `License_${soundKit.title || 'SoundKit'}.pdf`,
+                  url: licensePdfUrl.signedUrl,
+                  type: "license",
+                });
+              }
+            }
+          }
         }
 
         downloads.push(itemDownloads);

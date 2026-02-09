@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, FileText, Check, Loader2, Trash2 } from 'lucide-react';
+import { Upload, FileText, Check, Loader2, Trash2, Power, PowerOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -9,6 +11,7 @@ interface LicenseTemplate {
   type: string;
   name: string;
   file_path: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -18,12 +21,14 @@ const LICENSE_TYPES = [
   { type: 'wav', name: 'WAV Lease' },
   { type: 'stems', name: 'Trackout (Stems)' },
   { type: 'exclusive', name: 'Exclusive' },
+  { type: 'sound_kit', name: 'Sound Kit License' },
 ];
 
 export function LicenseTemplatesManager() {
   const [templates, setTemplates] = useState<LicenseTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
+  const [togglingType, setTogglingType] = useState<string | null>(null);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   useEffect(() => {
@@ -69,36 +74,23 @@ export function LicenseTemplatesManager() {
 
     try {
       const fileName = `${type}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      
-      // Get existing template to check for old file
       const existingTemplate = templates.find(t => t.type === type);
-      
-      // Upload new file
+
       const { error: uploadError } = await supabase.storage
         .from('licenses')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
+        .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
       if (uploadError) throw uploadError;
 
-      // Update database record
       const { error: updateError } = await supabase
         .from('license_templates')
-        .update({ 
-          file_path: fileName,
-          updated_at: new Date().toISOString()
-        })
+        .update({ file_path: fileName, updated_at: new Date().toISOString() })
         .eq('type', type);
 
       if (updateError) throw updateError;
 
-      // Delete old file if it exists
       if (existingTemplate?.file_path) {
-        await supabase.storage
-          .from('licenses')
-          .remove([existingTemplate.file_path]);
+        await supabase.storage.from('licenses').remove([existingTemplate.file_path]);
       }
 
       toast.success(`${LICENSE_TYPES.find(l => l.type === type)?.name} template uploaded!`);
@@ -108,10 +100,28 @@ export function LicenseTemplatesManager() {
       toast.error(error.message || 'Failed to upload template');
     } finally {
       setUploadingType(null);
-      // Reset the input
       if (fileInputRefs.current[type]) {
         fileInputRefs.current[type]!.value = '';
       }
+    }
+  };
+
+  const handleToggleActive = async (type: string, currentActive: boolean) => {
+    setTogglingType(type);
+    try {
+      const { error } = await supabase
+        .from('license_templates')
+        .update({ is_active: !currentActive, updated_at: new Date().toISOString() })
+        .eq('type', type);
+
+      if (error) throw error;
+      toast.success(`Template ${!currentActive ? 'enabled' : 'disabled'}`);
+      await fetchTemplates();
+    } catch (error: any) {
+      console.error('Toggle error:', error);
+      toast.error(error.message || 'Failed to update template');
+    } finally {
+      setTogglingType(null);
     }
   };
 
@@ -120,20 +130,15 @@ export function LicenseTemplatesManager() {
     if (!template?.file_path) return;
 
     try {
-      // Delete file from storage
       const { error: deleteError } = await supabase.storage
         .from('licenses')
         .remove([template.file_path]);
 
       if (deleteError) throw deleteError;
 
-      // Update database record
       const { error: updateError } = await supabase
         .from('license_templates')
-        .update({ 
-          file_path: null,
-          updated_at: new Date().toISOString()
-        })
+        .update({ file_path: null, updated_at: new Date().toISOString() })
         .eq('type', type);
 
       if (updateError) throw updateError;
@@ -143,6 +148,14 @@ export function LicenseTemplatesManager() {
     } catch (error: any) {
       console.error('Delete error:', error);
       toast.error(error.message || 'Failed to delete template');
+    }
+  };
+
+  const getAssignedProducts = (type: string) => {
+    switch (type) {
+      case 'sound_kit': return 'Sound Kits';
+      case 'exclusive': return 'Exclusive Beat Purchases';
+      default: return `Beat ${LICENSE_TYPES.find(l => l.type === type)?.name || type} Purchases`;
     }
   };
 
@@ -156,29 +169,48 @@ export function LicenseTemplatesManager() {
 
   return (
     <div className="rounded-xl bg-card border border-border p-6">
-      <h3 className="font-display font-semibold mb-4">License Templates</h3>
-      <p className="text-muted-foreground text-sm mb-4">
-        Upload PDF license templates for each tier. These will be automatically included with purchases.
+      <h3 className="font-display font-semibold mb-2">License Templates</h3>
+      <p className="text-muted-foreground text-sm mb-6">
+        Upload PDF license templates for each tier. After a sale, buyer name and purchase date are automatically injected into the template and delivered with the order.
       </p>
-      
+
       <div className="grid gap-4 md:grid-cols-2">
         {LICENSE_TYPES.map(({ type, name }) => {
           const template = templates.find(t => t.type === type);
           const hasFile = !!template?.file_path;
           const isUploading = uploadingType === type;
+          const isActive = template?.is_active ?? true;
 
           return (
-            <div key={type} className="p-4 rounded-lg bg-secondary/50 border border-border">
-              <div className="flex items-center justify-between mb-2">
+            <div
+              key={type}
+              className={`p-4 rounded-lg border transition-colors ${
+                isActive
+                  ? 'bg-secondary/50 border-border'
+                  : 'bg-muted/30 border-border/50 opacity-70'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
                 <p className="font-medium">{name}</p>
-                {hasFile && (
-                  <div className="flex items-center gap-1 text-xs text-green-400">
-                    <Check className="h-3 w-3" />
-                    Uploaded
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {hasFile && isActive && (
+                    <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30 text-xs">
+                      <Check className="h-3 w-3 mr-1" />
+                      Active
+                    </Badge>
+                  )}
+                  {hasFile && !isActive && (
+                    <Badge variant="outline" className="text-muted-foreground text-xs">
+                      Disabled
+                    </Badge>
+                  )}
+                </div>
               </div>
-              
+
+              <p className="text-xs text-muted-foreground mb-1">
+                Assigned to: {getAssignedProducts(type)}
+              </p>
+
               {hasFile ? (
                 <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
                   <FileText className="h-3 w-3" />
@@ -188,7 +220,7 @@ export function LicenseTemplatesManager() {
                 <p className="text-xs text-muted-foreground mb-3">No PDF uploaded yet</p>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <input
                   type="file"
                   accept=".pdf,application/pdf"
@@ -196,9 +228,9 @@ export function LicenseTemplatesManager() {
                   ref={(el) => (fileInputRefs.current[type] = el)}
                   onChange={(e) => handleFileSelect(type, e)}
                 />
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleUploadClick(type)}
                   disabled={isUploading}
                 >
@@ -209,16 +241,25 @@ export function LicenseTemplatesManager() {
                   )}
                   {hasFile ? 'Replace PDF' : 'Upload PDF'}
                 </Button>
-                
+
                 {hasFile && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(type)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <>
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      <Switch
+                        checked={isActive}
+                        onCheckedChange={() => handleToggleActive(type, isActive)}
+                        disabled={togglingType === type}
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(type)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
                 )}
               </div>
             </div>

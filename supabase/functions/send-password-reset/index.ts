@@ -10,6 +10,31 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// In-memory rate limiting: max 3 requests per email per 15 minutes, max 10 per IP per 15 minutes
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_PER_EMAIL = 3;
+const MAX_PER_IP = 10;
+
+function isRateLimited(key: string, max: number): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+
+  if (entry.count >= max) {
+    return true;
+  }
+
+  entry.count++;
+  return false;
+}
+
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -18,11 +43,40 @@ serve(async (req) => {
   try {
     const { email } = await req.json();
 
-    if (!email) {
+    if (!email || typeof email !== "string") {
       return new Response(
         JSON.stringify({ error: "Email is required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
+    }
+
+    // Validate email format
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!emailRegex.test(trimmedEmail) || trimmedEmail.length > 255) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email address" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Rate limit by IP
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (isRateLimited(`ip:${clientIp}`, MAX_PER_IP)) {
+      console.warn(`Rate limited IP: ${clientIp}`);
+      // Return success to not reveal rate limiting to attackers
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Rate limit by email
+    if (isRateLimited(`email:${trimmedEmail}`, MAX_PER_EMAIL)) {
+      console.warn(`Rate limited email: ${trimmedEmail}`);
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
     const supabaseAdmin = createClient(
@@ -32,19 +86,17 @@ serve(async (req) => {
 
     const { data, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
-      email,
+      email: trimmedEmail,
     });
 
     if (resetError) {
       console.error("Error generating reset link:", resetError);
-      // Don't reveal if user exists or not
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Extract the hashed token from the action_link instead of using Supabase's /verify redirect
     const actionLink = data?.properties?.action_link;
     if (!actionLink) {
       console.error("No action link returned");
@@ -54,19 +106,17 @@ serve(async (req) => {
       });
     }
 
-    // Parse the token_hash and type from the Supabase action link
     const actionUrl = new URL(actionLink);
     const tokenHash = actionUrl.searchParams.get("token") || actionUrl.searchParams.get("token_hash");
     const type = actionUrl.searchParams.get("type") || "recovery";
 
-    // Build a direct link to the custom domain with the token
     const resetLink = `https://www.sonexbeats.shop/reset-password?token_hash=${encodeURIComponent(tokenHash!)}&type=${type}`;
 
     console.log("Built custom reset link for domain: www.sonexbeats.shop");
 
     const emailResponse = await resend.emails.send({
       from: "Sonex Studio <support@sonexbeats.shop>",
-      to: [email],
+      to: [trimmedEmail],
       subject: "Reset Your Password - Sonex Beats",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #111; color: #fff; padding: 40px; border-radius: 12px;">

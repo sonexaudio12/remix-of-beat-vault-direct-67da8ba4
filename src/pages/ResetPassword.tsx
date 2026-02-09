@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import logo from '@/assets/logo-new.png';
@@ -19,6 +20,7 @@ const ResetPassword = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; confirm?: string }>({});
   const navigate = useNavigate();
+  const { clearPasswordRecovery } = useAuth();
 
   useEffect(() => {
     // Listen for the PASSWORD_RECOVERY event from the reset link
@@ -57,6 +59,7 @@ const ResetPassword = () => {
         toast.error(error.message);
       } else {
         setIsSuccess(true);
+        clearPasswordRecovery();
         toast.success('Password updated successfully!');
         setTimeout(() => navigate('/auth'), 3000);
       }

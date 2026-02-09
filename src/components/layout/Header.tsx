@@ -45,6 +45,9 @@ export function Header() {
           <Link to="/licenses" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Licensing
           </Link>
+          <Link to="/services" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Services
+          </Link>
           <Link to="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             About
           </Link>
@@ -122,6 +125,9 @@ export function Header() {
             </Link>
             <Link to="/licenses" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
               Licensing
+            </Link>
+            <Link to="/services" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+              Services
             </Link>
             <Link to="/about" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
               About

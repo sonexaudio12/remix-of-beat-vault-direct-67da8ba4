@@ -16,6 +16,8 @@ import {
   Users,
   BarChart3,
   MessageSquare,
+  Headphones,
+  ClipboardList,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -34,6 +36,8 @@ import { AdminUsersManager } from '@/components/admin/AdminUsersManager';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { DashboardAnalytics } from '@/components/admin/DashboardAnalytics';
 import { ExclusiveOffersManager } from '@/components/admin/ExclusiveOffersManager';
+import { ServicesManager } from '@/components/admin/ServicesManager';
+import { ServiceOrdersManager } from '@/components/admin/ServiceOrdersManager';
 
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
@@ -53,6 +57,8 @@ const navItems = [
   { id: 'licenses', label: 'License Templates', icon: FileText },
   { id: 'generated-licenses', label: 'Generated Licenses', icon: ScrollText },
   { id: 'orders', label: 'Orders', icon: Package },
+  { id: 'services-manage', label: 'Manage Services', icon: Headphones },
+  { id: 'service-orders', label: 'Service Orders', icon: ClipboardList },
   { id: 'admins', label: 'Admin Users', icon: Users },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -182,6 +188,8 @@ export default function Admin() {
             <GeneratedLicensesContent isAdmin={isAdmin} />
           )}
           {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
+          {activeTab === 'services-manage' && <ServicesManageContent isAdmin={isAdmin} />}
+          {activeTab === 'service-orders' && <ServiceOrdersContent isAdmin={isAdmin} />}
           {activeTab === 'admins' && <AdminUsersContent isAdmin={isAdmin} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>
@@ -317,6 +325,14 @@ function GeneratedLicensesContent({ isAdmin }: any) {
 
 function OrdersContent({ isAdmin }: any) {
   return isAdmin ? <OrdersManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function ServicesManageContent({ isAdmin }: any) {
+  return isAdmin ? <ServicesManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+
+function ServiceOrdersContent({ isAdmin }: any) {
+  return isAdmin ? <ServiceOrdersManager /> : <Guard isAdmin={false} message="Admin access required." />;
 }
 
 function AdminUsersContent({ isAdmin }: any) {

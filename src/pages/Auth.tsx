@@ -20,14 +20,18 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  const { user, signIn, signUp, isLoading } = useAuth();
+  const { user, signIn, signUp, isLoading, isPasswordRecovery } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user && !isLoading) {
-      navigate('/admin');
+      if (isPasswordRecovery) {
+        navigate('/reset-password');
+      } else {
+        navigate('/admin');
+      }
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, isPasswordRecovery, navigate]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};

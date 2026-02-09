@@ -84,13 +84,19 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : !user ? (
+          ) : user ? (
+            <Link to="/account" className="hidden md:flex">
+              <Button variant="ghost" size="icon">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
+          ) : (
             <Link to="/login" className="hidden md:block">
               <Button variant="outline" size="sm">
                 Sign In
               </Button>
             </Link>
-          ) : null}
+          )}
 
           {/* Mobile Menu Toggle */}
           <Button
@@ -136,11 +142,15 @@ export function Header() {
                   Sign Out
                 </button>
               </>
-            ) : !user ? (
-              <Link to="/login" className="py-2 text-sm font-medium text-primary" onClick={() => setMobileMenuOpen(false)}>
-                Admin Login
+            ) : user ? (
+              <Link to="/account" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                My Account
               </Link>
-            ) : null}
+            ) : (
+              <Link to="/login" className="py-2 text-sm font-medium text-primary" onClick={() => setMobileMenuOpen(false)}>
+                Sign In
+              </Link>
+            )}
           </nav>
         </div>
       )}

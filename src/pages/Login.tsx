@@ -147,6 +147,14 @@ const Login = () => {
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
 
+            {mode === 'login' && (
+              <div className="flex justify-end">
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+            )}
+
             <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : mode === 'login' ? 'Sign In' : 'Create Account'}
             </Button>

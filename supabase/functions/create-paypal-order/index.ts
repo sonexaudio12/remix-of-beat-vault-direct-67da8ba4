@@ -23,6 +23,8 @@ const corsHeaders = {
    items: z.array(cartItemSchema).min(1).max(50),
    customerEmail: z.string().email().max(255),
    customerName: z.string().max(255).optional(),
+   discountCode: z.string().max(100).nullable().optional(),
+   discountAmount: z.number().min(0).max(100000).optional(),
  });
  
  type CartItem = z.infer<typeof cartItemSchema>;
@@ -115,7 +117,7 @@ serve(async (req: Request) => {
       );
     }
 
-     const { items, customerEmail, customerName } = parseResult.data;
+     const { items, customerEmail, customerName, discountCode, discountAmount: discountAmt } = parseResult.data;
  
      // Validate items have proper structure
      for (const item of items) {
@@ -209,7 +211,9 @@ serve(async (req: Request) => {
         paypal_order_id: paypalOrderData.id,
         status: "pending",
         total: total,
-        download_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+        discount_code: discountCode || null,
+        discount_amount: discountAmt || 0,
+        download_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select()
       .single();

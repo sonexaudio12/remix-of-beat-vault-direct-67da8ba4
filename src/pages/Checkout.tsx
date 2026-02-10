@@ -212,7 +212,7 @@ const Checkout = () => {
         }
         return clone;
       });
-      const result = await createOrder(discountedItems, email, name);
+      const result = await createOrder(discountedItems, email, name, appliedDiscount?.code, discountAmount);
       if (result?.approvalUrl) {
         window.location.href = result.approvalUrl;
       } else {

@@ -111,6 +111,8 @@ serve(async (req) => {
         customer_name: customerName,
         total,
         status: "pending",
+        discount_code: discountCode || null,
+        discount_amount: validDiscount,
         download_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select()

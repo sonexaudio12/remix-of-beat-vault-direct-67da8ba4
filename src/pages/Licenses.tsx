@@ -114,7 +114,7 @@ const Licenses = () => {
                 return (
                   <div
                     key={license.name}
-                    className={`relative flex flex-col rounded-2xl border-2 p-6 md:p-8 transition-all bg-card ${colorClass} ${license.popular ? "md:-mt-4 md:mb-4 shadow-glow" : ""}`}
+                    className={`relative flex flex-col rounded-2xl border-2 p-6 md:p-8 transition-all bg-background ${colorClass} ${license.popular ? "md:-mt-4 md:mb-4 shadow-glow" : ""}`}
                   >
                     {license.popular && (
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-tier-premium text-xs font-bold uppercase tracking-wider text-primary-foreground">

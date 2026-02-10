@@ -336,7 +336,7 @@ export function BeatUploadForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Basic Info */}
-      <div className="rounded-xl bg-card border border-border p-6">
+      <div className="rounded-xl bg-background border border-border p-6">
         <h3 className="font-display font-semibold text-lg mb-4">Beat Information</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">

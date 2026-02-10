@@ -101,22 +101,22 @@ export function OrdersManager() {
   const completedOrders = orders.filter(o => o.status === 'completed').length;
   return <div className="space-y-6">
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="p-4 rounded-xl bg-card border border-border">
+      <div className="grid gap-4 md:grid-cols-3 bg-popover">
+        <div className="p-4 rounded-xl border border-border bg-sidebar-border">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <DollarSign className="h-4 w-4" />
             <span className="text-sm">Total Revenue</span>
           </div>
           <p className="text-2xl font-bold text-primary">${totalRevenue.toFixed(2)}</p>
         </div>
-        <div className="p-4 rounded-xl bg-card border border-border">
+        <div className="p-4 rounded-xl border border-border bg-sidebar-border">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <Package className="h-4 w-4" />
             <span className="text-sm">Completed Orders</span>
           </div>
           <p className="text-2xl font-bold">{completedOrders}</p>
         </div>
-        <div className="p-4 rounded-xl bg-card border border-border">
+        <div className="p-4 rounded-xl border border-border bg-[sidebar-accent-foreground] bg-sidebar-border">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <Clock className="h-4 w-4" />
             <span className="text-sm">Pending Orders</span>
@@ -126,7 +126,7 @@ export function OrdersManager() {
       </div>
 
       {/* Orders List */}
-      <div className="flex items-center justify-between text-secondary-foreground">
+      <div className="flex items-center justify-between text-secondary-foreground bg-popover">
         <p className="text-sm text-muted-foreground">
           {orders.length} order{orders.length !== 1 ? 's' : ''} total
         </p>

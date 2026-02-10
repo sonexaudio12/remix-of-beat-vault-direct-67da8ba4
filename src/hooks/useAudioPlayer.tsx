@@ -6,12 +6,15 @@ interface AudioPlayerContextType {
   isPlaying: boolean;
   progress: number;
   duration: number;
+  playlist: Beat[];
   play: (beat: Beat) => void;
   pause: () => void;
   toggle: (beat: Beat) => void;
   seek: (time: number) => void;
   skipForward: (seconds?: number) => void;
   skipBackward: (seconds?: number) => void;
+  setPlaylist: (beats: Beat[]) => void;
+  playNext: () => void;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
@@ -21,6 +24,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playlist, setPlaylist] = useState<Beat[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
@@ -98,9 +102,16 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const playNext = () => {
+    if (!currentBeat || playlist.length === 0) return;
+    const currentIndex = playlist.findIndex(b => b.id === currentBeat.id);
+    const nextIndex = (currentIndex + 1) % playlist.length;
+    play(playlist[nextIndex]);
+  };
+
   return (
     <AudioPlayerContext.Provider
-      value={{ currentBeat, isPlaying, progress, duration, play, pause, toggle, seek, skipForward, skipBackward }}
+      value={{ currentBeat, isPlaying, progress, duration, playlist, play, pause, toggle, seek, skipForward, skipBackward, setPlaylist, playNext }}
     >
       {children}
     </AudioPlayerContext.Provider>

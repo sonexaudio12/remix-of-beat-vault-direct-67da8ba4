@@ -39,7 +39,7 @@ export function LicenseModal({ beat, open, onOpenChange }: LicenseModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl bg-card border-border">
+      <DialogContent className="sm:max-w-2xl bg-background border-border">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">
             Choose License for "{beat.title}"

@@ -12,6 +12,7 @@ import { SoundKitUploadForm } from '@/components/admin/SoundKitUploadForm';
 import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
 import { PaymentSettingsManager } from '@/components/admin/PaymentSettingsManager';
 import { ContactSettingsManager } from '@/components/admin/ContactSettingsManager';
+import { StripeSettingsPanel } from '@/components/admin/StripeSettingsPanel';
 import { AdminUsersManager } from '@/components/admin/AdminUsersManager';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { DashboardAnalytics } from '@/components/admin/DashboardAnalytics';
@@ -381,44 +382,13 @@ function SettingsContent({
         {openSection === 'paypal' && <div className="px-2 pb-2"><PaymentSettingsManager /></div>}
       </div>
 
-      {/* Payment Details (Stripe) */}
+      {/* Stripe Configuration */}
       <div className="rounded-xl border border-border overflow-hidden">
         <button onClick={() => toggle('stripe')} className="w-full flex items-center justify-between px-6 py-4 bg-card hover:bg-muted/30 transition-colors">
-          <span className="font-semibold">Payment Details (Stripe)</span>
+          <span className="font-semibold">Stripe Configuration</span>
           <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'stripe' ? 'rotate-180' : ''}`} />
         </button>
-        {openSection === 'stripe' && (
-          <div className="px-6 pb-6 space-y-4">
-            <div className="rounded-lg bg-muted/30 border border-border p-4 space-y-3">
-              <h3 className="font-semibold text-sm">Stripe Integration Setup</h3>
-              <p className="text-sm text-muted-foreground">
-                Stripe is available as a payment method alongside PayPal. Follow these steps to configure Stripe for your store:
-              </p>
-              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                <li>Create a <a href="https://dashboard.stripe.com/register" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Stripe account</a> if you don't have one</li>
-                <li>Go to <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Developers → API Keys</a> in your Stripe Dashboard</li>
-                <li>Copy your <strong>Secret Key</strong> (starts with <code className="bg-muted px-1 rounded text-xs">sk_live_</code> or <code className="bg-muted px-1 rounded text-xs">sk_test_</code>)</li>
-                <li>Add it as a backend secret named <code className="bg-muted px-1 rounded text-xs">STRIPE_SECRET_KEY</code></li>
-                <li>For testing, use your test mode key. Switch to live when ready for real payments</li>
-              </ol>
-            </div>
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2">
-              <h4 className="font-semibold text-sm text-primary">How it works</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Customers select Stripe at checkout and are redirected to a secure Stripe-hosted page</li>
-                <li>• Stripe handles card processing, 3D Secure, and compliance</li>
-                <li>• Orders are automatically fulfilled after successful payment</li>
-                <li>• All transactions appear in your Stripe Dashboard</li>
-              </ul>
-            </div>
-            <div className="rounded-lg bg-muted/30 border border-border p-4">
-              <h4 className="font-semibold text-sm mb-1">Supported Payment Methods</h4>
-              <p className="text-sm text-muted-foreground">
-                Credit/debit cards (Visa, Mastercard, Amex), Apple Pay, Google Pay, and other methods enabled in your Stripe dashboard.
-              </p>
-            </div>
-          </div>
-        )}
+        {openSection === 'stripe' && <div className="px-2 pb-2"><StripeSettingsPanel /></div>}
       </div>
     </div>;
 }

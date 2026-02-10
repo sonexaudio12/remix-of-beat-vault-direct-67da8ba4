@@ -4,14 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCart } from '@/hooks/useCart';
-
 const Cart = () => {
   const navigate = useNavigate();
-  const { items, removeItem, total } = useCart();
-
+  const {
+    items,
+    removeItem,
+    total
+  } = useCart();
   if (items.length === 0) {
-    return (
-      <div className="min-h-screen flex flex-col">
+    return <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container py-16 md:py-24">
           <div className="max-w-lg mx-auto text-center">
@@ -31,12 +32,9 @@ const Cart = () => {
           </div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container py-16 md:py-24">
         <div className="max-w-4xl mx-auto">
@@ -45,18 +43,10 @@ const Cart = () => {
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {items.map((item) => {
-                if (item.itemType === 'beat' && item.beat && item.license) {
-                  return (
-                    <div
-                      key={`beat-${item.beat.id}-${item.license.id}`}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border"
-                    >
-                      <img
-                        src={item.beat.coverUrl}
-                        alt={item.beat.title}
-                        className="w-16 h-16 rounded-lg object-cover"
-                      />
+              {items.map(item => {
+              if (item.itemType === 'beat' && item.beat && item.license) {
+                return <div key={`beat-${item.beat.id}-${item.license.id}`} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-background">
+                      <img src={item.beat.coverUrl} alt={item.beat.title} className="w-16 h-16 rounded-lg object-cover" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <Music2 className="h-4 w-4 text-muted-foreground" />
@@ -66,51 +56,26 @@ const Cart = () => {
                           {item.license.name}
                         </p>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {item.license.includes.slice(0, 2).map((inc, i) => (
-                            <span
-                              key={i}
-                              className="inline-block px-2 py-0.5 text-xs rounded bg-secondary text-secondary-foreground"
-                            >
+                          {item.license.includes.slice(0, 2).map((inc, i) => <span key={i} className="inline-block px-2 py-0.5 text-xs rounded bg-secondary text-secondary-foreground">
                               {inc}
-                            </span>
-                          ))}
-                          {item.license.includes.length > 2 && (
-                            <span className="text-xs text-muted-foreground">
+                            </span>)}
+                          {item.license.includes.length > 2 && <span className="text-xs text-muted-foreground">
                               +{item.license.includes.length - 2} more
-                            </span>
-                          )}
+                            </span>}
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-lg">${item.license.price.toFixed(2)}</p>
-                        <Button
-                          variant="ghost"
-                          size="iconSm"
-                          onClick={() => removeItem(item.beat!.id, 'beat')}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-1"
-                        >
+                        <Button variant="ghost" size="iconSm" onClick={() => removeItem(item.beat!.id, 'beat')} className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-1">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  );
-                } else if (item.itemType === 'sound_kit' && item.soundKit) {
-                  return (
-                    <div
-                      key={`soundkit-${item.soundKit.id}`}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border"
-                    >
-                      {item.soundKit.coverUrl ? (
-                        <img
-                          src={item.soundKit.coverUrl}
-                          alt={item.soundKit.title}
-                          className="w-16 h-16 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center">
+                    </div>;
+              } else if (item.itemType === 'sound_kit' && item.soundKit) {
+                return <div key={`soundkit-${item.soundKit.id}`} className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border">
+                      {item.soundKit.coverUrl ? <img src={item.soundKit.coverUrl} alt={item.soundKit.title} className="w-16 h-16 rounded-lg object-cover" /> : <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center">
                           <Archive className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                      )}
+                        </div>}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <Archive className="h-4 w-4 text-muted-foreground" />
@@ -122,25 +87,19 @@ const Cart = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-lg">${item.soundKit.price.toFixed(2)}</p>
-                        <Button
-                          variant="ghost"
-                          size="iconSm"
-                          onClick={() => removeItem(item.soundKit!.id, 'sound_kit')}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-1"
-                        >
+                        <Button variant="ghost" size="iconSm" onClick={() => removeItem(item.soundKit!.id, 'sound_kit')} className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-1">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  );
-                }
-                return null;
-              })}
+                    </div>;
+              }
+              return null;
+            })}
             </div>
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="rounded-xl bg-card border border-border p-6 sticky top-24">
+              <div className="rounded-xl border border-border p-6 sticky top-24 bg-background">
                 <h2 className="font-display text-xl font-semibold mb-4">Order Summary</h2>
                 
                 <div className="space-y-3 mb-6">
@@ -159,12 +118,7 @@ const Cart = () => {
                   </div>
                 </div>
 
-                <Button 
-                  variant="hero" 
-                  size="lg" 
-                  className="w-full"
-                  onClick={() => navigate('/checkout')}
-                >
+                <Button variant="hero" size="lg" className="w-full" onClick={() => navigate('/checkout')}>
                   Proceed to Checkout
                 </Button>
 
@@ -177,8 +131,6 @@ const Cart = () => {
         </div>
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Cart;

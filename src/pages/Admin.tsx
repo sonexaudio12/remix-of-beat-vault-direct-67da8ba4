@@ -19,7 +19,7 @@ import { ExclusiveOffersManager } from '@/components/admin/ExclusiveOffersManage
 import { ServicesManager } from '@/components/admin/ServicesManager';
 import { ServiceOrdersManager } from '@/components/admin/ServiceOrdersManager';
 import { ThemeEditor } from '@/components/admin/ThemeEditor';
-import { SectionEditor } from '@/components/admin/SectionEditor';
+import { VisualPageBuilder } from '@/components/admin/VisualPageBuilder';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 
@@ -77,7 +77,7 @@ const navItems = [{
   icon: ClipboardList
 }, {
   id: 'section-editor',
-  label: 'Section Editor',
+  label: 'Page Builder',
   icon: LayoutDashboard
 }, {
   id: 'theme-editor',
@@ -192,7 +192,7 @@ export default function Admin() {
           {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
           {activeTab === 'services-manage' && <ServicesManageContent isAdmin={isAdmin} />}
           {activeTab === 'service-orders' && <ServiceOrdersContent isAdmin={isAdmin} />}
-          {activeTab === 'section-editor' && isAdmin && <SectionEditor />}
+          {activeTab === 'section-editor' && isAdmin && <VisualPageBuilder />}
           {activeTab === 'theme-editor' && isAdmin && <ThemeEditor />}
           {activeTab === 'admins' && <AdminUsersContent isAdmin={isAdmin} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}

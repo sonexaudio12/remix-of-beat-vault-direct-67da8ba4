@@ -179,7 +179,7 @@ export default function Admin() {
           </h1>
         </header>
 
-        <div className="p-8">
+        <div className="p-8 text-secondary">
           {activeTab === 'dashboard' && <DashboardWithAnalytics isAdmin={isAdmin} setActiveTab={setActiveTab} />}
           {activeTab === 'analytics' && <AnalyticsContent isAdmin={isAdmin} />}
           {activeTab === 'upload' && <UploadContent isAdmin={isAdmin} onSuccess={() => setActiveTab('beats')} />}

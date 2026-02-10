@@ -104,7 +104,7 @@ const Auth = () => {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <img src={logo} alt="Sonex Beats" className="h-12 w-auto" />
+          <img src={logo} alt="Sonex Beats" className="h-12 w-auto opacity-65 rounded-full" />
         </div>
 
         {/* Card */}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GripVertical, Eye, EyeOff, Save, Check, Loader2, RotateCcw, LayoutTemplate, ChevronDown, ChevronRight, ZoomIn, ZoomOut, Monitor, Tablet, Smartphone } from 'lucide-react';
+import { GripVertical, Eye, EyeOff, Save, Check, Loader2, RotateCcw, LayoutTemplate, ChevronDown, ChevronRight, ZoomIn, ZoomOut, Monitor, Tablet, Smartphone, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,7 +45,7 @@ const SECTION_SETTING_LABELS: Record<string, Record<string, { label: string; typ
   },
 };
 
-export function VisualPageBuilder() {
+export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
   const { data: draft, isLoading } = useSectionsDraft();
   const saveDraft = useSaveSectionsDraft();
   const publishSections = usePublishSections();
@@ -143,9 +143,9 @@ export function VisualPageBuilder() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Top Toolbar */}
-      <div className="flex items-center gap-3 pb-4 border-b border-border mb-4 flex-wrap">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border flex-wrap">
         <h2 className="text-xl font-bold mr-auto">Visual Page Builder</h2>
 
         {/* Viewport controls */}
@@ -184,11 +184,19 @@ export function VisualPageBuilder() {
         <Button size="sm" onClick={handlePublish} disabled={publishSections.isPending}>
           {publishSections.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />} Publish
         </Button>
+        {onClose && (
+          <div className="w-px h-6 bg-border mx-1" />
+        )}
+        {onClose && (
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+            <X className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
       {/* Templates panel */}
       {showTemplates && (
-        <div className="grid grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-4 gap-3 px-4 py-3">
           {SECTION_TEMPLATES.map(t => (
             <button
               key={t.id}
@@ -204,9 +212,9 @@ export function VisualPageBuilder() {
       )}
 
       {/* Main split: Sidebar + Preview */}
-      <div className="flex flex-1 gap-4 overflow-hidden">
+      <div className="flex flex-1 gap-0 overflow-hidden">
         {/* Left: Section list + editing panel */}
-        <div className="w-80 flex-shrink-0 flex flex-col overflow-y-auto border border-border rounded-lg bg-card">
+        <div className="w-80 flex-shrink-0 flex flex-col overflow-y-auto border-r border-border bg-card">
           {/* Section list */}
           <div className="p-3 border-b border-border">
             <h3 className="text-sm font-semibold mb-2">Sections</h3>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Mail, User, Loader2, CheckCircle2, AlertCircle, Music2, Archive } from 'lucide-react';
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
+import { ArrowLeft, CreditCard, Mail, User, Loader2, CheckCircle2, AlertCircle, Music2, Archive, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,7 +39,22 @@ const Checkout = () => {
     error
   } = usePayPal();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+
+  // Get discount from Cart page via route state
+  const appliedDiscount = (location.state as any)?.discount as {
+    code: string;
+    type: string;
+    value: number;
+  } | null;
+
+  const discountAmount = appliedDiscount
+    ? appliedDiscount.type === 'percentage'
+      ? total * (appliedDiscount.value / 100)
+      : Math.min(appliedDiscount.value, total)
+    : 0;
+  const finalTotal = Math.max(0, total - discountAmount);
 
   // Pre-fill email for logged-in users
   useEffect(() => {
@@ -170,7 +185,9 @@ const Checkout = () => {
             throw new Error('Invalid cart item');
           }),
           customerEmail: email,
-          customerName: name
+          customerName: name,
+          discountCode: appliedDiscount?.code || null,
+          discountAmount: discountAmount
         }
       });
       if (invokeError || data?.error) {
@@ -182,8 +199,20 @@ const Checkout = () => {
         window.location.href = data.url;
       }
     } else {
-      // PayPal flow
-      const result = await createOrder(items, email, name);
+      // PayPal flow - pass discounted prices
+      const discountedItems = items.map(item => {
+        const clone = { ...item };
+        if (discountAmount > 0 && total > 0) {
+          const ratio = finalTotal / total;
+          if (clone.itemType === 'beat' && clone.beat && clone.license) {
+            clone.license = { ...clone.license, price: Math.round(clone.license.price * ratio * 100) / 100 };
+          } else if (clone.itemType === 'sound_kit' && clone.soundKit) {
+            clone.soundKit = { ...clone.soundKit, price: Math.round(clone.soundKit.price * ratio * 100) / 100 };
+          }
+        }
+        return clone;
+      });
+      const result = await createOrder(discountedItems, email, name);
       if (result?.approvalUrl) {
         window.location.href = result.approvalUrl;
       } else {
@@ -325,7 +354,7 @@ const Checkout = () => {
                       <Button type="submit" variant="hero" size="lg" className="w-full mt-6" disabled={isLoading}>
                         {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>
                             <CreditCard className="h-5 w-5" />
-                            {paymentMethod === 'stripe' ? 'Pay with Card' : 'Pay with PayPal'} - ${total.toFixed(2)}
+                            {paymentMethod === 'stripe' ? 'Pay with Card' : 'Pay with PayPal'} - ${finalTotal.toFixed(2)}
                           </>}
                       </Button>
                     </form>
@@ -373,13 +402,22 @@ const Checkout = () => {
                         <span className="text-muted-foreground">Subtotal</span>
                         <span>${total.toFixed(2)}</span>
                       </div>
+                      {appliedDiscount && (
+                        <div className="flex justify-between text-sm">
+                          <span className="flex items-center gap-1 text-primary">
+                            <Tag className="h-3 w-3" />
+                            Discount ({appliedDiscount.code})
+                          </span>
+                          <span className="text-primary">-${discountAmount.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Processing</span>
                         <span className="text-primary">Free</span>
                       </div>
                       <div className="flex justify-between font-semibold text-lg pt-2">
                         <span>Total</span>
-                        <span className="text-primary">${total.toFixed(2)}</span>
+                        <span className="text-primary">${finalTotal.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>

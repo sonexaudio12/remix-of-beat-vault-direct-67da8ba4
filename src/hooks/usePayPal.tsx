@@ -32,7 +32,9 @@ export function usePayPal() {
   const createOrder = async (
     items: UnifiedCartItem[],
     customerEmail: string,
-    customerName?: string
+    customerName?: string,
+    discountCode?: string | null,
+    discountAmt?: number
   ): Promise<PayPalOrderResponse | null> => {
     setIsLoading(true);
     setError(null);
@@ -66,6 +68,8 @@ export function usePayPal() {
             items: orderItems,
             customerEmail,
             customerName,
+            discountCode: discountCode || null,
+            discountAmount: discountAmt || 0,
           },
         }
       );

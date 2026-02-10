@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
 interface OrderItem {
   id: string;
   beat_title: string;
@@ -12,7 +11,6 @@ interface OrderItem {
   price: number;
   download_count: number;
 }
-
 interface Order {
   id: string;
   customer_email: string;
@@ -25,17 +23,16 @@ interface Order {
   download_expires_at: string | null;
   order_items: OrderItem[];
 }
-
 export function OrdersManager() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
+      const {
+        data,
+        error
+      } = await supabase.from('orders').select(`
           id,
           customer_email,
           customer_name,
@@ -52,9 +49,9 @@ export function OrdersManager() {
             price,
             download_count
           )
-        `)
-        .order('created_at', { ascending: false });
-
+        `).order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
       setOrders(data || []);
     } catch (error: any) {
@@ -64,11 +61,9 @@ export function OrdersManager() {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchOrders();
   }, []);
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -83,41 +78,28 @@ export function OrdersManager() {
         return 'bg-secondary text-muted-foreground';
     }
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
+      minute: '2-digit'
     });
   };
-
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
+    return <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+      </div>;
   }
-
   if (orders.length === 0) {
-    return (
-      <div className="rounded-xl bg-card border border-border p-8 text-center">
+    return <div className="rounded-xl bg-card border border-border p-8 text-center">
         <p className="text-muted-foreground">No orders yet. Orders will appear here after customers make purchases.</p>
-      </div>
-    );
+      </div>;
   }
-
-  const totalRevenue = orders
-    .filter(o => o.status === 'completed')
-    .reduce((sum, o) => sum + Number(o.total), 0);
-
+  const totalRevenue = orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + Number(o.total), 0);
   const completedOrders = orders.filter(o => o.status === 'completed').length;
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <div className="p-4 rounded-xl bg-card border border-border">
@@ -144,7 +126,7 @@ export function OrdersManager() {
       </div>
 
       {/* Orders List */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between text-secondary-foreground">
         <p className="text-sm text-muted-foreground">
           {orders.length} order{orders.length !== 1 ? 's' : ''} total
         </p>
@@ -154,11 +136,7 @@ export function OrdersManager() {
       </div>
 
       <div className="space-y-4">
-        {orders.map((order) => (
-          <div
-            key={order.id}
-            className="rounded-xl bg-card border border-border p-4"
-          >
+        {orders.map(order => <div key={order.id} className="rounded-xl border border-border p-4 text-secondary-foreground bg-popover">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -168,9 +146,7 @@ export function OrdersManager() {
                   </Badge>
                 </div>
                 <p className="font-medium">{order.customer_email}</p>
-                {order.customer_name && (
-                  <p className="text-sm text-muted-foreground">{order.customer_name}</p>
-                )}
+                {order.customer_name && <p className="text-sm text-muted-foreground">{order.customer_name}</p>}
               </div>
               <div className="text-right">
                 <p className="text-lg font-bold text-primary">${Number(order.total).toFixed(2)}</p>
@@ -180,11 +156,7 @@ export function OrdersManager() {
 
             {/* Order Items */}
             <div className="space-y-2 mb-4">
-              {order.order_items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-2 rounded bg-secondary/50 text-sm"
-                >
+              {order.order_items.map(item => <div key={item.id} className="flex items-center justify-between p-2 rounded bg-secondary/50 text-sm">
                   <div>
                     <span className="font-medium">{item.beat_title}</span>
                     <span className="text-muted-foreground"> - {item.license_name}</span>
@@ -195,27 +167,17 @@ export function OrdersManager() {
                     </span>
                     <span>${Number(item.price).toFixed(2)}</span>
                   </div>
-                </div>
-              ))}
+                </div>)}
             </div>
 
             {/* PayPal Info */}
-            {order.paypal_transaction_id && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {order.paypal_transaction_id && <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>PayPal Transaction: {order.paypal_transaction_id}</span>
-                <a
-                  href={`https://www.paypal.com/activity/payment/${order.paypal_transaction_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline inline-flex items-center gap-1"
-                >
+                <a href={`https://www.paypal.com/activity/payment/${order.paypal_transaction_id}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
                   View <ExternalLink className="h-3 w-3" />
                 </a>
-              </div>
-            )}
-          </div>
-        ))}
+              </div>}
+          </div>)}
       </div>
-    </div>
-  );
+    </div>;
 }

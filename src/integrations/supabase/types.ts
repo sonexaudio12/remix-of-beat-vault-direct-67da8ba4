@@ -652,6 +652,39 @@ export type Database = {
         }
         Relationships: []
       }
+      store_config: {
+        Row: {
+          config_data: Json
+          config_type: string
+          created_at: string
+          id: string
+          is_published: boolean
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          config_data?: Json
+          config_type?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          config_data?: Json
+          config_type?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

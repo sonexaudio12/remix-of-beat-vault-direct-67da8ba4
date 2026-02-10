@@ -38,7 +38,7 @@ export default function Services() {
       <main className="flex-1 container py-16">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">Studio Services</h1>
+            <h1 className="font-display text-4xl md:text-5xl font-bold mb-4 bg-background">Studio Services</h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Professional mixing, mastering, and custom production — tailored to your sound.
             </p>

@@ -12,14 +12,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
-
 const checkoutSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  name: z.string().min(2, 'Full name is required for the license agreement').max(100, 'Name must be less than 100 characters'),
+  name: z.string().min(2, 'Full name is required for the license agreement').max(100, 'Name must be less than 100 characters')
 });
-
 const Checkout = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -27,9 +27,17 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState<'paypal' | 'stripe'>('stripe');
   const [step, setStep] = useState<'info' | 'processing' | 'success' | 'error'>('info');
   const [orderId, setOrderId] = useState<string | null>(null);
-
-  const { items, total, clearCart } = useCart();
-  const { createOrder, captureOrder, isLoading, error } = usePayPal();
+  const {
+    items,
+    total,
+    clearCart
+  } = useCart();
+  const {
+    createOrder,
+    captureOrder,
+    isLoading,
+    error
+  } = usePayPal();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -44,7 +52,6 @@ const Checkout = () => {
   useEffect(() => {
     const paypalOrderId = searchParams.get('token');
     const savedOrderId = searchParams.get('orderId');
-    
     if (paypalOrderId && savedOrderId) {
       handlePayPalReturn(paypalOrderId, savedOrderId);
     }
@@ -54,25 +61,26 @@ const Checkout = () => {
   useEffect(() => {
     const stripeSessionId = searchParams.get('stripe_session_id');
     const savedOrderId = searchParams.get('orderId');
-    
     if (stripeSessionId && savedOrderId) {
       handleStripeReturn(stripeSessionId, savedOrderId);
     }
   }, [searchParams]);
-
   const handleStripeReturn = async (sessionId: string, savedOrderId: string) => {
     setStep('processing');
-    
     try {
       // Verify the session and complete the order
-      const { data, error } = await supabase.functions.invoke('verify-stripe-session', {
-        body: { sessionId, orderId: savedOrderId },
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('verify-stripe-session', {
+        body: {
+          sessionId,
+          orderId: savedOrderId
+        }
       });
-      
       if (error || data?.error) {
         throw new Error(error?.message || data?.error);
       }
-      
       if (data?.success) {
         setOrderId(savedOrderId);
         setStep('success');
@@ -86,12 +94,9 @@ const Checkout = () => {
       console.error('Stripe verification error:', err);
       // Even if verification fails, the webhook should have processed the order
       // Check if order is already completed
-      const { data: order } = await supabase
-        .from('orders')
-        .select('status')
-        .eq('id', savedOrderId)
-        .single();
-      
+      const {
+        data: order
+      } = await supabase.from('orders').select('status').eq('id', savedOrderId).single();
       if (order?.status === 'completed') {
         setOrderId(savedOrderId);
         setStep('success');
@@ -103,12 +108,9 @@ const Checkout = () => {
       }
     }
   };
-
   const handlePayPalReturn = async (paypalOrderId: string, savedOrderId: string) => {
     setStep('processing');
-    
     const result = await captureOrder(paypalOrderId, savedOrderId);
-    
     if (result?.success) {
       setOrderId(savedOrderId);
       setStep('success');
@@ -119,12 +121,14 @@ const Checkout = () => {
       toast.error('Payment failed. Please try again.');
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate form
-    const validation = checkoutSchema.safeParse({ email, name });
+    const validation = checkoutSchema.safeParse({
+      email,
+      name
+    });
     if (!validation.success) {
       const errors = validation.error.flatten().fieldErrors;
       setEmailError(errors.email?.[0] || '');
@@ -133,19 +137,19 @@ const Checkout = () => {
     }
     setEmailError('');
     setNameError('');
-
     if (items.length === 0) {
       toast.error('Your cart is empty');
       return;
     }
-
     setStep('processing');
-
     if (paymentMethod === 'stripe') {
       // Create Stripe checkout session
-      const { data, error: invokeError } = await supabase.functions.invoke('create-stripe-checkout', {
+      const {
+        data,
+        error: invokeError
+      } = await supabase.functions.invoke('create-stripe-checkout', {
         body: {
-          items: items.map((item) => {
+          items: items.map(item => {
             if (item.itemType === 'beat' && item.beat && item.license) {
               return {
                 itemType: 'beat',
@@ -153,36 +157,33 @@ const Checkout = () => {
                 beatTitle: item.beat.title,
                 licenseTierId: item.license.id,
                 licenseName: item.license.name,
-                price: item.license.price,
+                price: item.license.price
               };
             } else if (item.itemType === 'sound_kit' && item.soundKit) {
               return {
                 itemType: 'sound_kit',
                 soundKitId: item.soundKit.id,
                 soundKitTitle: item.soundKit.title,
-                price: item.soundKit.price,
+                price: item.soundKit.price
               };
             }
             throw new Error('Invalid cart item');
           }),
           customerEmail: email,
-          customerName: name,
-        },
+          customerName: name
+        }
       });
-
       if (invokeError || data?.error) {
         setStep('error');
         toast.error(invokeError?.message || data?.error || 'Failed to create checkout');
         return;
       }
-
       if (data?.url) {
         window.location.href = data.url;
       }
     } else {
       // PayPal flow
       const result = await createOrder(items, email, name);
-
       if (result?.approvalUrl) {
         window.location.href = result.approvalUrl;
       } else {
@@ -191,10 +192,8 @@ const Checkout = () => {
       }
     }
   };
-
   if (items.length === 0 && step === 'info') {
-    return (
-      <div className="min-h-screen flex flex-col">
+    return <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container py-16 md:py-24">
           <div className="max-w-lg mx-auto text-center">
@@ -209,18 +208,14 @@ const Checkout = () => {
           </div>
         </main>
         <Footer />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container py-16 md:py-24">
         <div className="max-w-2xl mx-auto">
           {/* Success State */}
-          {step === 'success' && (
-            <div className="text-center py-12">
+          {step === 'success' && <div className="text-center py-12">
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
                 <CheckCircle2 className="h-10 w-10 text-primary" />
               </div>
@@ -234,19 +229,13 @@ const Checkout = () => {
               <p className="text-muted-foreground mb-8">
                 We've sent download links to your email. Links expire in 7 days.
               </p>
-              <Button 
-                variant="hero" 
-                size="lg"
-                onClick={() => navigate(`/order-confirmation?orderId=${orderId}&email=${email}`)}
-              >
+              <Button variant="hero" size="lg" onClick={() => navigate(`/order-confirmation?orderId=${orderId}&email=${email}`)}>
                 View Order & Download Files
               </Button>
-            </div>
-          )}
+            </div>}
 
           {/* Error State */}
-          {step === 'error' && (
-            <div className="text-center py-12">
+          {step === 'error' && <div className="text-center py-12">
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-destructive/20 flex items-center justify-center">
                 <AlertCircle className="h-10 w-10 text-destructive" />
               </div>
@@ -257,28 +246,20 @@ const Checkout = () => {
               <Button variant="hero" onClick={() => setStep('info')}>
                 Try Again
               </Button>
-            </div>
-          )}
+            </div>}
 
           {/* Processing State */}
-          {step === 'processing' && (
-            <div className="text-center py-12">
+          {step === 'processing' && <div className="text-center py-12">
               <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-6" />
               <h1 className="font-display text-2xl font-bold mb-2">Processing Payment...</h1>
               <p className="text-muted-foreground">
                 Please wait while we confirm your payment.
               </p>
-            </div>
-          )}
+            </div>}
 
           {/* Checkout Form */}
-          {step === 'info' && (
-            <>
-              <Button
-                variant="ghost"
-                className="mb-6"
-                onClick={() => navigate('/cart')}
-              >
+          {step === 'info' && <>
+              <Button variant="ghost" className="mb-6" onClick={() => navigate('/cart')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Cart
               </Button>
@@ -288,7 +269,7 @@ const Checkout = () => {
               <div className="grid gap-8 lg:grid-cols-2">
                 {/* Customer Info Form */}
                 <div>
-                  <div className="rounded-xl bg-card border border-border p-6">
+                  <div className="rounded-xl border border-border p-6 bg-background">
                     <h2 className="font-display text-xl font-semibold mb-6">
                       Customer Information
                     </h2>
@@ -298,22 +279,12 @@ const Checkout = () => {
                         <Label htmlFor="email">Email Address *</Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="your@email.com"
-                            value={email}
-                            onChange={(e) => {
-                              setEmail(e.target.value);
-                              if (emailError) setEmailError('');
-                            }}
-                            className="pl-10 bg-secondary"
-                            required
-                          />
+                          <Input id="email" type="email" placeholder="your@email.com" value={email} onChange={e => {
+                        setEmail(e.target.value);
+                        if (emailError) setEmailError('');
+                      }} className="pl-10 bg-secondary" required />
                         </div>
-                        {emailError && (
-                          <p className="text-sm text-destructive">{emailError}</p>
-                        )}
+                        {emailError && <p className="text-sm text-destructive">{emailError}</p>}
                         <p className="text-xs text-muted-foreground">
                           Download links will be sent to this email
                         </p>
@@ -323,22 +294,12 @@ const Checkout = () => {
                         <Label htmlFor="name">Full Name *</Label>
                         <div className="relative">
                           <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="name"
-                            type="text"
-                            placeholder="Your full name"
-                            value={name}
-                            onChange={(e) => {
-                              setName(e.target.value);
-                              if (nameError) setNameError('');
-                            }}
-                            className="pl-10 bg-secondary"
-                            required
-                          />
+                          <Input id="name" type="text" placeholder="Your full name" value={name} onChange={e => {
+                        setName(e.target.value);
+                        if (nameError) setNameError('');
+                      }} className="pl-10 bg-secondary" required />
                         </div>
-                        {nameError && (
-                          <p className="text-sm text-destructive">{nameError}</p>
-                        )}
+                        {nameError && <p className="text-sm text-destructive">{nameError}</p>}
                         <p className="text-xs text-muted-foreground">
                           Used for your license agreement
                         </p>
@@ -348,113 +309,63 @@ const Checkout = () => {
                       <div className="space-y-3 pt-2">
                         <Label>Payment Method</Label>
                         <div className="grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setPaymentMethod('stripe')}
-                            className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-                              paymentMethod === 'stripe'
-                                ? 'border-primary bg-primary/10'
-                                : 'border-border hover:border-muted-foreground'
-                            }`}
-                          >
+                          <button type="button" onClick={() => setPaymentMethod('stripe')} className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${paymentMethod === 'stripe' ? 'border-primary bg-primary/10' : 'border-border hover:border-muted-foreground'}`}>
                             <CreditCard className="h-5 w-5" />
                             <span className="font-medium">Card</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setPaymentMethod('paypal')}
-                            className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${
-                              paymentMethod === 'paypal'
-                                ? 'border-primary bg-primary/10'
-                                : 'border-border hover:border-muted-foreground'
-                            }`}
-                          >
+                          <button type="button" onClick={() => setPaymentMethod('paypal')} className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all ${paymentMethod === 'paypal' ? 'border-primary bg-primary/10' : 'border-border hover:border-muted-foreground'}`}>
                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106z"/>
+                              <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106z" />
                             </svg>
                             <span className="font-medium">PayPal</span>
                           </button>
                         </div>
                       </div>
 
-                      <Button
-                        type="submit"
-                        variant="hero"
-                        size="lg"
-                        className="w-full mt-6"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <>
+                      <Button type="submit" variant="hero" size="lg" className="w-full mt-6" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>
                             <CreditCard className="h-5 w-5" />
                             {paymentMethod === 'stripe' ? 'Pay with Card' : 'Pay with PayPal'} - ${total.toFixed(2)}
-                          </>
-                        )}
+                          </>}
                       </Button>
                     </form>
 
                     <p className="text-xs text-muted-foreground text-center mt-4">
-                      {paymentMethod === 'stripe' 
-                        ? 'Secure payment powered by Stripe.' 
-                        : 'Secure payment powered by PayPal. No account required.'}
+                      {paymentMethod === 'stripe' ? 'Secure payment powered by Stripe.' : 'Secure payment powered by PayPal. No account required.'}
                     </p>
                   </div>
                 </div>
 
                 {/* Order Summary */}
                 <div>
-                  <div className="rounded-xl bg-card border border-border p-6">
+                  <div className="rounded-xl border border-border p-6 bg-background">
                     <h2 className="font-display text-xl font-semibold mb-4">Order Summary</h2>
 
                     <div className="space-y-4 mb-6">
-                      {items.map((item) => {
-                        if (item.itemType === 'beat' && item.beat && item.license) {
-                          return (
-                            <div
-                              key={`beat-${item.beat.id}-${item.license.id}`}
-                              className="flex items-center gap-3"
-                            >
-                              <img
-                                src={item.beat.coverUrl}
-                                alt={item.beat.title}
-                                className="w-12 h-12 rounded-lg object-cover"
-                              />
+                      {items.map(item => {
+                    if (item.itemType === 'beat' && item.beat && item.license) {
+                      return <div key={`beat-${item.beat.id}-${item.license.id}`} className="flex items-center gap-3">
+                              <img src={item.beat.coverUrl} alt={item.beat.title} className="w-12 h-12 rounded-lg object-cover" />
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate text-sm">{item.beat.title}</p>
                                 <p className="text-xs text-muted-foreground">{item.license.name}</p>
                               </div>
                               <p className="font-semibold">${item.license.price.toFixed(2)}</p>
-                            </div>
-                          );
-                        } else if (item.itemType === 'sound_kit' && item.soundKit) {
-                          return (
-                            <div
-                              key={`soundkit-${item.soundKit.id}`}
-                              className="flex items-center gap-3"
-                            >
-                              {item.soundKit.coverUrl ? (
-                                <img
-                                  src={item.soundKit.coverUrl}
-                                  alt={item.soundKit.title}
-                                  className="w-12 h-12 rounded-lg object-cover"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+                            </div>;
+                    } else if (item.itemType === 'sound_kit' && item.soundKit) {
+                      return <div key={`soundkit-${item.soundKit.id}`} className="flex items-center gap-3">
+                              {item.soundKit.coverUrl ? <img src={item.soundKit.coverUrl} alt={item.soundKit.title} className="w-12 h-12 rounded-lg object-cover" /> : <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
                                   <Archive className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                              )}
+                                </div>}
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate text-sm">{item.soundKit.title}</p>
                                 <p className="text-xs text-muted-foreground">{item.soundKit.category}</p>
                               </div>
                               <p className="font-semibold">${item.soundKit.price.toFixed(2)}</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })}
+                            </div>;
+                    }
+                    return null;
+                  })}
                     </div>
 
                     <div className="border-t border-border pt-4 space-y-2">
@@ -484,13 +395,10 @@ const Checkout = () => {
                   </div>
                 </div>
               </div>
-            </>
-          )}
+            </>}
         </div>
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Checkout;

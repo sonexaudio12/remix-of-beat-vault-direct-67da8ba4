@@ -105,7 +105,7 @@ export function BeatsManager() {
       </div>;
   }
   return <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-popover text-secondary-foreground">
         <p className="text-sm text-muted-foreground">
           {beats.length} beat{beats.length !== 1 ? 's' : ''} total
         </p>
@@ -127,7 +127,7 @@ export function BeatsManager() {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold truncate">{beat.title}</h3>
+                  <h3 className="font-semibold truncate text-secondary-foreground">{beat.title}</h3>
                   {!beat.is_active && <span className="text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground">
                       Hidden
                     </span>}
@@ -141,7 +141,7 @@ export function BeatsManager() {
                 <p className="text-sm text-muted-foreground">
                   {beat.bpm} BPM • {beat.genre} • {beat.mood}
                 </p>
-                <div className="flex gap-2 mt-1">
+                <div className="flex gap-2 mt-1 text-secondary-foreground">
                   {beat.license_tiers.map(tier => <span key={tier.id} className="text-xs px-2 py-0.5 rounded bg-primary-foreground">
                       {tier.type.toUpperCase()}: ${tier.price}
                     </span>)}
@@ -149,7 +149,7 @@ export function BeatsManager() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-muted">
                 <Button variant="ghost" size="iconSm" onClick={() => setEditingBeat(beat)} title="Edit beat">
                   <Edit2 className="h-4 w-4" />
                 </Button>

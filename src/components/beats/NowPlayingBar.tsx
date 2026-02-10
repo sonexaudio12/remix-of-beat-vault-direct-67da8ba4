@@ -1,8 +1,9 @@
-import { useRef } from 'react';
-import { Play, Pause, X, Volume2, SkipBack, SkipForward } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Play, Pause, X, Volume2, SkipBack, SkipForward, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { Slider } from '@/components/ui/slider';
+import { LicenseModal } from './LicenseModal';
 export function NowPlayingBar() {
   const {
     currentBeat,
@@ -16,6 +17,7 @@ export function NowPlayingBar() {
     skipBackward
   } = useAudioPlayer();
   const progressBarRef = useRef<HTMLDivElement>(null);
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
   if (!currentBeat) return null;
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -80,14 +82,27 @@ export function NowPlayingBar() {
           </span>
         </div>
 
-        {/* Volume & Close */}
-        <div className="hidden md:flex items-center gap-3 flex-1 justify-end">
-          <Volume2 className="h-4 w-4 text-muted-foreground" />
-          <Slider defaultValue={[100]} max={100} step={1} className="w-24" />
+        {/* Add to Cart, Volume & Close */}
+        <div className="flex items-center gap-3 flex-1 justify-end">
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={() => setShowLicenseModal(true)} 
+            className="gap-1.5"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            <span className="hidden sm:inline">Add to Cart</span>
+          </Button>
+          <div className="hidden md:flex items-center gap-3">
+            <Volume2 className="h-4 w-4 text-muted-foreground" />
+            <Slider defaultValue={[100]} max={100} step={1} className="w-24" />
+          </div>
           <Button variant="ghost" size="iconSm" onClick={pause} className="text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
           </Button>
         </div>
       </div>
+
+      <LicenseModal beat={currentBeat} open={showLicenseModal} onOpenChange={setShowLicenseModal} />
     </div>;
 }

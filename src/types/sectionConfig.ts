@@ -61,10 +61,21 @@ export const DEFAULT_SECTIONS: SectionConfig[] = [
     },
   },
   {
+    id: 'beat_player',
+    label: 'Beat Player',
+    enabled: false,
+    order: 4,
+    settings: {
+      title: 'Listen & Explore',
+      subtitle: 'Preview our beats with the built-in player',
+      count: '6',
+    },
+  },
+  {
     id: 'cta',
     label: 'Call to Action',
     enabled: false,
-    order: 4,
+    order: 5,
     settings: {
       title: 'Ready to Create?',
       subtitle: 'Browse our catalog and find the perfect beat for your next project.',

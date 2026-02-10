@@ -63,6 +63,7 @@ export function HomepageLivePreview({
   const sectionRenderers: Record<string, (s: SectionConfig) => React.ReactNode> = {
     hero: (s) => <HeroPreview settings={s.settings} />,
     beats: (s) => <BeatsPreview settings={s.settings} beats={displayBeats} />,
+    beat_player: (s) => <BeatPlayerPreview settings={s.settings} beats={displayBeats} />,
     soundkits: (s) => <SoundKitsPreview settings={s.settings} soundKits={soundKits || []} />,
     services: (s) => <ServicesPreview settings={s.settings} services={services} />,
     cta: (s) => <CTAPreview settings={s.settings} />,
@@ -275,6 +276,41 @@ function ServicesPreview({ settings, services }: { settings: Record<string, stri
             ))}
           </div>
         )}
+      </div>
+    </section>
+  );
+}
+
+function BeatPlayerPreview({ settings, beats }: { settings: Record<string, string>; beats: any[] }) {
+  const count = parseInt(settings.count || '6', 10);
+  const display = beats.slice(0, count);
+  return (
+    <section className="py-16 md:py-24 bg-card/50">
+      <div className="container">
+        <div className="text-center mb-8">
+          <h2 className="font-display text-3xl md:text-4xl font-bold mb-2">{settings.title || 'Listen & Explore'}</h2>
+          <p className="text-muted-foreground">{settings.subtitle || 'Preview our beats with the built-in player'}</p>
+        </div>
+        <div className="space-y-2 max-w-4xl mx-auto">
+          {display.map((beat, i) => (
+            <div key={i} className="flex items-center gap-4 p-3 rounded-lg border border-border bg-background hover:bg-muted/30 transition-colors">
+              <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                {beat.cover_url && <img src={beat.cover_url} alt={beat.title} className="w-full h-full object-cover" />}
+              </div>
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Play className="h-3.5 w-3.5 text-primary ml-0.5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{beat.title}</p>
+                <p className="text-xs text-muted-foreground">{beat.bpm} BPM · {beat.genre}</p>
+              </div>
+              <div className="flex-shrink-0 h-1 w-32 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary/40 rounded-full" style={{ width: `${30 + Math.random() * 50}%` }} />
+              </div>
+              <span className="text-xs text-muted-foreground flex-shrink-0">3:24</span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

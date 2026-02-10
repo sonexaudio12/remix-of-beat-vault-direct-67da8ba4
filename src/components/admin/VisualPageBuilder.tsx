@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   GripVertical, Eye, EyeOff, Save, Check, Loader2, RotateCcw,
   LayoutTemplate, ZoomIn, ZoomOut, Monitor, Tablet, Smartphone, X,
-  Palette, Type, Upload, Ruler, Layers, Sparkles, Image,
+  Palette, Type, Upload, Ruler, Layers, Sparkles, Image, FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,6 +81,7 @@ const SECTION_SETTING_LABELS: Record<string, Record<string, { label: string; typ
     secondaryCtaLink: { label: 'Secondary Link', type: 'text' },
   },
   beats: { title: { label: 'Title', type: 'text' }, subtitle: { label: 'Subtitle', type: 'text' }, count: { label: 'Count', type: 'number' } },
+  beat_player: { title: { label: 'Title', type: 'text' }, subtitle: { label: 'Subtitle', type: 'text' }, count: { label: 'Tracks to show', type: 'number' } },
   soundkits: { title: { label: 'Title', type: 'text' }, subtitle: { label: 'Subtitle', type: 'text' }, count: { label: 'Count', type: 'number' } },
   services: { title: { label: 'Title', type: 'text' }, subtitle: { label: 'Subtitle', type: 'text' }, count: { label: 'Count', type: 'number' } },
   cta: { title: { label: 'Title', type: 'text' }, subtitle: { label: 'Subtitle', type: 'textarea' }, ctaText: { label: 'Button Text', type: 'text' }, ctaLink: { label: 'Button Link', type: 'text' } },
@@ -104,7 +105,7 @@ const COLOR_GROUPS = [
   ]},
 ];
 
-type SidebarTab = 'sections' | 'presets' | 'colors' | 'fonts' | 'logo' | 'layout';
+type SidebarTab = 'sections' | 'pages' | 'presets' | 'colors' | 'fonts' | 'logo' | 'layout';
 
 export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
   /* ---- Sections state ---- */
@@ -252,6 +253,7 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
   /* ---- Sidebar tab icons ---- */
   const tabs: { id: SidebarTab; icon: React.ReactNode; label: string }[] = [
     { id: 'sections', icon: <Layers className="h-4 w-4" />, label: 'Sections' },
+    { id: 'pages', icon: <FileText className="h-4 w-4" />, label: 'Pages' },
     { id: 'presets', icon: <Sparkles className="h-4 w-4" />, label: 'Presets' },
     { id: 'colors', icon: <Palette className="h-4 w-4" />, label: 'Colors' },
     { id: 'fonts', icon: <Type className="h-4 w-4" />, label: 'Fonts' },
@@ -330,6 +332,7 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
         {/* Sidebar panel content */}
         <div className="w-72 flex-shrink-0 border-r border-border bg-card overflow-y-auto">
           {sidebarTab === 'sections' && <SectionsPanel sections={sections} selectedId={selectedId} selectedSection={selectedSection} settingsDef={settingsDef} onSelect={setSelectedId} onToggle={toggleEnabled} onUpdateSetting={updateSetting} onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={handleDragEnd} />}
+          {sidebarTab === 'pages' && <PagesPanel />}
           {sidebarTab === 'presets' && <PresetsPanel onApply={applyPreset} />}
           {sidebarTab === 'colors' && <ColorsPanel theme={theme} onUpdate={updateTheme} />}
           {sidebarTab === 'fonts' && <FontsPanel theme={theme} onUpdate={updateTheme} />}
@@ -395,6 +398,73 @@ function SectionsPanel({ sections, selectedId, selectedSection, settingsDef, onS
       ) : (
         <div className="p-4 flex-1 flex items-center justify-center">
           <p className="text-xs text-muted-foreground text-center">Click a section to edit</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PagesPanel() {
+  const [aboutContent, setAboutContent] = useState({
+    title: 'About Sonex Beats',
+    intro: 'Sonex Beats is a modern beat marketplace and creative platform developed by Hit Chasers Collective — a group of producers with placements alongside major artists and experience working within the professional music industry.',
+    body: 'Built by producers, for producers and artists, Sonex Beats was created to simplify how beats are sold, licensed, and discovered — while encouraging real collaboration instead of one-off transactions.',
+    vision: 'Sonex Beats aims to become more than a marketplace. Our vision is to grow a trusted, community-driven platform where talented producers and serious artists can connect, collaborate, and create records that move culture forward.',
+  });
+  const [licensingContent, setLicensingContent] = useState({
+    heroTitle: 'Simple, Transparent Licensing',
+    heroSubtitle: 'Choose the license that fits your project. All licenses include instant digital delivery and a PDF with your usage rights.',
+  });
+  const [expandedPage, setExpandedPage] = useState<'about' | 'licensing' | null>('about');
+
+  return (
+    <div className="p-3 space-y-2">
+      <h3 className="text-sm font-semibold mb-2">Edit Pages</h3>
+      <p className="text-[10px] text-muted-foreground mb-3">Edit content for your About and Licensing pages.</p>
+
+      {/* About Page */}
+      <button onClick={() => setExpandedPage(expandedPage === 'about' ? null : 'about')} className="w-full flex items-center justify-between p-2 rounded-lg border border-border hover:bg-muted/50 text-sm font-medium">
+        About Page
+        <span className="text-xs text-muted-foreground">{expandedPage === 'about' ? '▼' : '▶'}</span>
+      </button>
+      {expandedPage === 'about' && (
+        <div className="space-y-2 pl-1">
+          <div>
+            <Label className="text-[10px] mb-0.5 block">Page Title</Label>
+            <Input value={aboutContent.title} onChange={e => setAboutContent(p => ({ ...p, title: e.target.value }))} className="text-xs h-8" />
+          </div>
+          <div>
+            <Label className="text-[10px] mb-0.5 block">Introduction</Label>
+            <Textarea value={aboutContent.intro} onChange={e => setAboutContent(p => ({ ...p, intro: e.target.value }))} rows={3} className="text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px] mb-0.5 block">Body Text</Label>
+            <Textarea value={aboutContent.body} onChange={e => setAboutContent(p => ({ ...p, body: e.target.value }))} rows={3} className="text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px] mb-0.5 block">Vision Statement</Label>
+            <Textarea value={aboutContent.vision} onChange={e => setAboutContent(p => ({ ...p, vision: e.target.value }))} rows={3} className="text-xs" />
+          </div>
+          <p className="text-[9px] text-muted-foreground italic">Page content editing will be saved with the store config in a future update.</p>
+        </div>
+      )}
+
+      {/* Licensing Page */}
+      <button onClick={() => setExpandedPage(expandedPage === 'licensing' ? null : 'licensing')} className="w-full flex items-center justify-between p-2 rounded-lg border border-border hover:bg-muted/50 text-sm font-medium">
+        Licensing Page
+        <span className="text-xs text-muted-foreground">{expandedPage === 'licensing' ? '▼' : '▶'}</span>
+      </button>
+      {expandedPage === 'licensing' && (
+        <div className="space-y-2 pl-1">
+          <div>
+            <Label className="text-[10px] mb-0.5 block">Hero Title</Label>
+            <Input value={licensingContent.heroTitle} onChange={e => setLicensingContent(p => ({ ...p, heroTitle: e.target.value }))} className="text-xs h-8" />
+          </div>
+          <div>
+            <Label className="text-[10px] mb-0.5 block">Hero Subtitle</Label>
+            <Textarea value={licensingContent.heroSubtitle} onChange={e => setLicensingContent(p => ({ ...p, heroSubtitle: e.target.value }))} rows={2} className="text-xs" />
+          </div>
+          <p className="text-[9px] text-muted-foreground italic">License tiers are managed in the License Templates tab. Page content editing will be saved with the store config in a future update.</p>
         </div>
       )}
     </div>

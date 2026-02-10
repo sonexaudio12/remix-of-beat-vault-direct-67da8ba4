@@ -261,7 +261,7 @@ export function LicenseTemplatesManager() {
       <div className="rounded-xl bg-card border border-border p-6">
         <h3 className="font-display font-semibold mb-2">License Templates</h3>
         <p className="text-muted-foreground text-sm mb-6">
-          Upload PDF license templates for each tier. Use placeholders like <code className="text-xs px-1.5 py-0.5 rounded text-secondary bg-primary-foreground">{'{CUSTOMER_FULLNAME}'}</code> in your PDFs — they'll be automatically replaced with real data after each purchase.
+          Upload PDF license templates for each tier. Use placeholders like <code className="text-xs px-1.5 py-0.5 rounded text-secondary bg-secondary-foreground">{'{CUSTOMER_FULLNAME}'}</code> in your PDFs — they'll be automatically replaced with real data after each purchase.
         </p>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -274,7 +274,7 @@ export function LicenseTemplatesManager() {
           const isUploading = uploadingType === type;
           const isActive = template?.is_active ?? true;
           return <div key={type} className={`p-4 rounded-lg border transition-colors ${isActive ? 'bg-secondary/50 border-border' : 'bg-muted/30 border-border/50 opacity-70'}`}>
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1 text-secondary-foreground">
                   <p className="font-medium">{name}</p>
                   <div className="flex items-center gap-2">
                     {hasFile && isActive && <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30 text-xs">
@@ -296,7 +296,7 @@ export function LicenseTemplatesManager() {
                     {template.file_path?.split('/').pop()}
                   </p> : <p className="text-xs text-muted-foreground mb-3">No PDF uploaded yet</p>}
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-secondary-foreground">
                   <input type="file" accept=".pdf,application/pdf" className="hidden" ref={el => fileInputRefs.current[type] = el} onChange={e => handleFileSelect(type, e)} />
                   <Button variant="outline" size="sm" onClick={() => handleUploadClick(type)} disabled={isUploading}>
                     {isUploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
@@ -321,7 +321,7 @@ export function LicenseTemplatesManager() {
       </div>
 
       {/* Placeholder Reference */}
-      <div className="rounded-xl bg-card border border-border p-6">
+      <div className="rounded-xl bg-card border border-border p-6 text-secondary-foreground">
         <h3 className="font-display font-semibold mb-2">Available Placeholders</h3>
         <p className="text-muted-foreground text-sm mb-4">
           Use these placeholders in your PDF templates. They will be replaced with real data when a license is generated after purchase.
@@ -331,7 +331,7 @@ export function LicenseTemplatesManager() {
           key,
           desc
         }) => <div key={key} className="flex items-center gap-3 py-1.5">
-              <code className="text-xs px-2 py-1 rounded font-mono shrink-0 text-secondary bg-primary-foreground">{key}</code>
+              <code className="text-xs px-2 py-1 rounded font-mono shrink-0 text-secondary bg-popover-foreground">{key}</code>
               <span className="text-xs text-muted-foreground">{desc}</span>
             </div>)}
         </div>

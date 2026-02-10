@@ -27,8 +27,8 @@ export default function About() {
           encouraging real collaboration instead of one-off transactions.
         </p>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-xl border border-border bg-card p-6">
+        <div className="grid gap-6 md:grid-cols-2 bg-background">
+          <div className="rounded-xl border border-border p-6 bg-secondary">
             <h3 className="font-semibold mb-2">Hit Chasers Collective</h3>
             <p className="text-sm text-muted-foreground">
               Hit Chasers is a collective of producers focused on quality,
@@ -38,7 +38,7 @@ export default function About() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6">
+          <div className="rounded-xl border border-border p-6 bg-secondary">
             <h3 className="font-semibold mb-2">Why Sonex Beats Exists</h3>
             <p className="text-sm text-muted-foreground">
               Traditional beat stores focus on volume. Sonex Beats focuses on

@@ -86,7 +86,7 @@ export function BeatCard({
             {beat.isFree && <div className="license-badge bg-green-500 text-white">
                 Free
               </div>}
-            {beat.isExclusiveAvailable && <div className="license-badge license-badge-exclusive">
+            {beat.isExclusiveAvailable && <div className="license-badge license-badge-exclusive text-secondary">
                 Exclusive
               </div>}
           </div>
@@ -96,7 +96,7 @@ export function BeatCard({
         <div className="p-4">
           <div className="flex items-start justify-between gap-2 mb-3 text-secondary">
             <div>
-              <h3 className="font-display font-semibold text-lg leading-tight truncate">
+              <h3 className="font-display font-semibold text-lg leading-tight truncate text-secondary">
                 {beat.title}
               </h3>
               <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">

@@ -8,6 +8,7 @@ import { CartProvider } from "@/hooks/useCart";
 import { AudioPlayerProvider } from "@/hooks/useAudioPlayer";
 import { AuthProvider } from "@/hooks/useAuth";
 import { PageTracker } from "@/components/PageTracker";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import Beats from "./pages/Beats";
 import Cart from "./pages/Cart";
@@ -42,6 +43,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <PageTracker />
+              <ThemeProvider>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/beats" element={<Beats />} />
@@ -66,6 +68,7 @@ const App = () => (
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </ThemeProvider>
             </BrowserRouter>
           </AudioPlayerProvider>
         </CartProvider>

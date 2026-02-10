@@ -45,6 +45,8 @@ interface CheckoutRequest {
   items: OrderItem[];
   customerEmail: string;
   customerName: string;
+  discountCode?: string | null;
+  discountAmount?: number;
 }
 
 serve(async (req) => {
@@ -58,7 +60,7 @@ serve(async (req) => {
       throw new Error("Stripe secret key not configured");
     }
 
-    const { items, customerEmail, customerName }: CheckoutRequest = await req.json();
+    const { items, customerEmail, customerName, discountCode, discountAmount }: CheckoutRequest = await req.json();
 
     if (!items || items.length === 0) {
       throw new Error("No items provided");
@@ -96,8 +98,10 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Calculate total
-    const total = items.reduce((sum, item) => sum + item.price, 0);
+    // Calculate total with discount
+    const subtotal = items.reduce((sum, item) => sum + item.price, 0);
+    const validDiscount = discountAmount && discountAmount > 0 ? Math.min(discountAmount, subtotal) : 0;
+    const total = Math.max(0, subtotal - validDiscount);
 
     // Create order in database
     const { data: order, error: orderError } = await supabase
@@ -157,8 +161,8 @@ serve(async (req) => {
     // Get the origin for redirect URLs
     const origin = req.headers.get("origin") || "https://sonex.shop";
 
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Build checkout session params
+    const sessionParams: any = {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
@@ -168,8 +172,24 @@ serve(async (req) => {
       metadata: {
         order_id: order.id,
         customer_name: customerName,
+        discount_code: discountCode || "",
+        discount_amount: String(validDiscount),
       },
-    });
+    };
+
+    // Apply discount via Stripe coupon if applicable
+    if (validDiscount > 0 && discountCode) {
+      const coupon = await stripe.coupons.create({
+        amount_off: Math.round(validDiscount * 100),
+        currency: "usd",
+        duration: "once",
+        name: `Discount: ${discountCode}`,
+      });
+      sessionParams.discounts = [{ coupon: coupon.id }];
+    }
+
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     console.log("Stripe session created:", session.id);
 

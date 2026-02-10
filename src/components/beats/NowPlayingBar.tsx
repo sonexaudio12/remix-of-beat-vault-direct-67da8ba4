@@ -13,8 +13,8 @@ export function NowPlayingBar() {
     toggle,
     seek,
     pause,
-    skipBackward,
     playNext,
+    playPrevious,
     playlist
   } = useAudioPlayer();
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -63,8 +63,8 @@ export function NowPlayingBar() {
             {formatTime(progress)}
           </span>
           
-          {/* Rewind Button */}
-          <Button variant="ghost" size="iconSm" onClick={() => skipBackward(10)} className="text-muted-foreground hover:text-foreground" title="Rewind 10 seconds">
+          {/* Previous Beat Button */}
+          <Button variant="ghost" size="iconSm" onClick={playPrevious} className="text-muted-foreground hover:text-foreground" title="Previous beat" disabled={playlist.length === 0}>
             <SkipBack className="h-4 w-4" />
           </Button>
 

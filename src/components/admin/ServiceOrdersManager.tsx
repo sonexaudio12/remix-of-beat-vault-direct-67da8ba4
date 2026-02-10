@@ -169,7 +169,7 @@ function ServiceOrderRow({
         <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
-      {expanded && <div className="border-t border-border p-4 space-y-4">
+      {expanded && <div className="border-t border-border p-4 space-y-4 bg-popover text-secondary-foreground">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <p className="text-sm text-muted-foreground">Email: {order.customer_email}</p>

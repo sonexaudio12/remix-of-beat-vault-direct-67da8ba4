@@ -11,7 +11,7 @@ export function BeatGrid({
         <p className="text-muted-foreground text-lg">No beats found</p>
       </div>;
   }
-  return <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 bg-secondary">
+  return <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 bg-background">
       {beats.map(beat => <BeatCard key={beat.id} beat={beat} />)}
     </div>;
 }

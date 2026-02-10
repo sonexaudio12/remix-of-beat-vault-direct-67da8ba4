@@ -53,7 +53,7 @@ export function Header() {
         <div className="flex items-center gap-4">
           <Link to="/cart">
             <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
+              <ShoppingCart className="h-5 w-5 rounded-none" />
               {itemCount > 0 && <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
                   {itemCount}
                 </span>}

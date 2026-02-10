@@ -230,10 +230,10 @@ export function SoundKitUploadForm({
     </div>;
   return <form onSubmit={handleSubmit} className="space-y-8">
       {/* Basic Info */}
-      <div className="rounded-xl border border-border p-6 text-secondary bg-background">
+      <div className="rounded-xl border border-border p-6 bg-background text-secondary-foreground">
         <h3 className="font-display font-semibold text-lg mb-4">Sound Kit Information</h3>
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2 md:col-span-2 bg-primary-foreground text-secondary">
+          <div className="space-y-2 md:col-span-2 bg-primary-foreground text-secondary-foreground">
             <Label htmlFor="title">Title *</Label>
             <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter sound kit title" className="bg-secondary" required />
           </div>
@@ -263,7 +263,7 @@ export function SoundKitUploadForm({
       </div>
 
       {/* File Uploads */}
-      <div className="rounded-xl bg-card border border-border p-6">
+      <div className="rounded-xl border border-border p-6 text-secondary-foreground bg-popover">
         <h3 className="font-display font-semibold text-lg mb-4">Files</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <FileUploadInput id="cover" label="Cover Image" accept="image/*" icon={ImageIcon} fileState={coverImage} onChange={e => handleFileSelect(e, setCoverImage)} required />

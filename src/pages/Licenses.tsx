@@ -6,7 +6,7 @@ const licenses = [
     name: "MP3 Lease",
     price: "$24.99",
     priceNote: "starting at",
-    color: "Background",
+    color: "Primary",
     icon: Music,
     description: "Perfect for demos and online distribution",
     includes: [

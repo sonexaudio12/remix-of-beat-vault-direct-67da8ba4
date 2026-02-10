@@ -3,19 +3,8 @@ import { Loader2, Trash2, Eye, EyeOff, Edit2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { BeatEditModal } from './BeatEditModal';
-
 interface Beat {
   id: string;
   title: string;
@@ -34,18 +23,17 @@ interface Beat {
     price: number;
   }[];
 }
-
 export function BeatsManager() {
   const [beats, setBeats] = useState<Beat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingBeat, setEditingBeat] = useState<Beat | null>(null);
-
   const fetchBeats = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('beats')
-        .select(`
+      const {
+        data,
+        error
+      } = await supabase.from('beats').select(`
           id,
           title,
           bpm,
@@ -62,9 +50,9 @@ export function BeatsManager() {
             name,
             price
           )
-        `)
-        .order('created_at', { ascending: false });
-
+        `).order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
       setBeats(data || []);
     } catch (error: any) {
@@ -74,66 +62,49 @@ export function BeatsManager() {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchBeats();
   }, []);
-
   const toggleBeatActive = async (beatId: string, currentState: boolean) => {
     try {
-      const { error } = await supabase
-        .from('beats')
-        .update({ is_active: !currentState })
-        .eq('id', beatId);
-
+      const {
+        error
+      } = await supabase.from('beats').update({
+        is_active: !currentState
+      }).eq('id', beatId);
       if (error) throw error;
-      
-      setBeats(prev => 
-        prev.map(beat => 
-          beat.id === beatId ? { ...beat, is_active: !currentState } : beat
-        )
-      );
-      
+      setBeats(prev => prev.map(beat => beat.id === beatId ? {
+        ...beat,
+        is_active: !currentState
+      } : beat));
       toast.success(currentState ? 'Beat hidden from store' : 'Beat now visible in store');
     } catch (error: any) {
       toast.error('Failed to update beat');
     }
   };
-
   const deleteBeat = async (beatId: string) => {
     try {
-      const { error } = await supabase
-        .from('beats')
-        .delete()
-        .eq('id', beatId);
-
+      const {
+        error
+      } = await supabase.from('beats').delete().eq('id', beatId);
       if (error) throw error;
-      
       setBeats(prev => prev.filter(beat => beat.id !== beatId));
       toast.success('Beat deleted successfully');
     } catch (error: any) {
       toast.error('Failed to delete beat');
     }
   };
-
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
+    return <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+      </div>;
   }
-
   if (beats.length === 0) {
-    return (
-      <div className="rounded-xl bg-card border border-border p-8 text-center">
+    return <div className="rounded-xl bg-card border border-border p-8 text-center">
         <p className="text-muted-foreground">No beats uploaded yet. Add your first beat using the Upload tab.</p>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           {beats.length} beat{beats.length !== 1 ? 's' : ''} total
@@ -144,95 +115,52 @@ export function BeatsManager() {
       </div>
 
       <div className="grid gap-4">
-        {beats.map((beat) => (
-          <div
-            key={beat.id}
-            className={`rounded-xl bg-card border border-border p-4 transition-opacity ${
-              !beat.is_active ? 'opacity-60' : ''
-            }`}
-          >
+        {beats.map(beat => <div key={beat.id} className={`rounded-xl bg-card border border-border p-4 transition-opacity ${!beat.is_active ? 'opacity-60' : ''}`}>
             <div className="flex items-center gap-4">
               {/* Cover Image */}
               <div className="w-16 h-16 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
-                {beat.cover_url ? (
-                  <img
-                    src={beat.cover_url}
-                    alt={beat.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                {beat.cover_url ? <img src={beat.cover_url} alt={beat.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     ?
-                  </div>
-                )}
+                  </div>}
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold truncate">{beat.title}</h3>
-                  {!beat.is_active && (
-                    <span className="text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground">
+                  {!beat.is_active && <span className="text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground">
                       Hidden
-                    </span>
-                  )}
-                  {beat.is_free && (
-                    <span className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400">
+                    </span>}
+                  {beat.is_free && <span className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400">
                       Free
-                    </span>
-                  )}
-                  {beat.is_exclusive_available && (
-                    <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">
+                    </span>}
+                  {beat.is_exclusive_available && <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400">
                       Exclusive
-                    </span>
-                  )}
+                    </span>}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {beat.bpm} BPM • {beat.genre} • {beat.mood}
                 </p>
                 <div className="flex gap-2 mt-1">
-                  {beat.license_tiers.map((tier) => (
-                    <span
-                      key={tier.id}
-                      className="text-xs px-2 py-0.5 rounded bg-secondary"
-                    >
+                  {beat.license_tiers.map(tier => <span key={tier.id} className="text-xs px-2 py-0.5 rounded bg-primary-foreground">
                       {tier.type.toUpperCase()}: ${tier.price}
-                    </span>
-                  ))}
+                    </span>)}
                 </div>
               </div>
 
               {/* Actions */}
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="iconSm"
-                  onClick={() => setEditingBeat(beat)}
-                  title="Edit beat"
-                >
+                <Button variant="ghost" size="iconSm" onClick={() => setEditingBeat(beat)} title="Edit beat">
                   <Edit2 className="h-4 w-4" />
                 </Button>
 
-                <Button
-                  variant="ghost"
-                  size="iconSm"
-                  onClick={() => toggleBeatActive(beat.id, beat.is_active)}
-                  title={beat.is_active ? 'Hide from store' : 'Show in store'}
-                >
-                  {beat.is_active ? (
-                    <Eye className="h-4 w-4" />
-                  ) : (
-                    <EyeOff className="h-4 w-4" />
-                  )}
+                <Button variant="ghost" size="iconSm" onClick={() => toggleBeatActive(beat.id, beat.is_active)} title={beat.is_active ? 'Hide from store' : 'Show in store'}>
+                  {beat.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                 </Button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="iconSm"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
+                    <Button variant="ghost" size="iconSm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </AlertDialogTrigger>
@@ -246,10 +174,7 @@ export function BeatsManager() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => deleteBeat(beat.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
+                      <AlertDialogAction onClick={() => deleteBeat(beat.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                         Delete
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -257,16 +182,9 @@ export function BeatsManager() {
                 </AlertDialog>
               </div>
             </div>
-          </div>
-        ))}
+          </div>)}
       </div>
 
-      <BeatEditModal
-        beat={editingBeat}
-        open={!!editingBeat}
-        onOpenChange={(open) => !open && setEditingBeat(null)}
-        onSuccess={fetchBeats}
-      />
-    </div>
-  );
+      <BeatEditModal beat={editingBeat} open={!!editingBeat} onOpenChange={open => !open && setEditingBeat(null)} onSuccess={fetchBeats} />
+    </div>;
 }

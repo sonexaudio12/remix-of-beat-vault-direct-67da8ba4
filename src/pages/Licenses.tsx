@@ -71,7 +71,7 @@ const Licenses = () => {
         {/* License Cards */}
         <section className="py-16 md:py-24">
           <div className="container bg-slate-200">
-            <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
+            <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto bg-background">
               {licenses.map(license => {
               const Icon = license.icon;
               const colorClass = license.color === 'primary' ? 'border-primary/30 hover:border-primary' : `border-${license.color}/30 hover:border-${license.color}`;

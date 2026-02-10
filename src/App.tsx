@@ -8,7 +8,6 @@ import { CartProvider } from "@/hooks/useCart";
 import { AudioPlayerProvider } from "@/hooks/useAudioPlayer";
 import { AuthProvider } from "@/hooks/useAuth";
 import { PageTracker } from "@/components/PageTracker";
-import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import Beats from "./pages/Beats";
 import Cart from "./pages/Cart";
@@ -39,7 +38,6 @@ const App = () => (
       <AuthProvider>
         <CartProvider>
           <AudioPlayerProvider>
-            <ThemeProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -69,7 +67,6 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
-            </ThemeProvider>
           </AudioPlayerProvider>
         </CartProvider>
       </AuthProvider>

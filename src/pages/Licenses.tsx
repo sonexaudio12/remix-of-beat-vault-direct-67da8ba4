@@ -84,7 +84,7 @@ const Licenses = () => {
                         <Icon className={`h-6 w-6 text-${license.color}`} />
                       </div>
                       <div>
-                        <h3 className="font-display text-xl font-bold">{license.name}</h3>
+                        <h3 className="font-display text-xl font-bold bg-background">{license.name}</h3>
                         <p className="text-sm text-muted-foreground">{license.priceNote}</p>
                       </div>
                     </div>

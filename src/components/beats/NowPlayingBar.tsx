@@ -13,8 +13,9 @@ export function NowPlayingBar() {
     toggle,
     seek,
     pause,
-    skipForward,
-    skipBackward
+    skipBackward,
+    playNext,
+    playlist
   } = useAudioPlayer();
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [showLicenseModal, setShowLicenseModal] = useState(false);
@@ -72,8 +73,8 @@ export function NowPlayingBar() {
             {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
           </Button>
 
-          {/* Forward Button */}
-          <Button variant="ghost" size="iconSm" onClick={() => skipForward(10)} className="text-muted-foreground hover:text-foreground" title="Forward 10 seconds">
+          {/* Next Beat Button */}
+          <Button variant="ghost" size="iconSm" onClick={playNext} className="text-muted-foreground hover:text-foreground" title="Next beat" disabled={playlist.length === 0}>
             <SkipForward className="h-4 w-4" />
           </Button>
 

@@ -62,7 +62,7 @@ const Index = () => {
 
         {/* Latest Beats Section */}
         <section className="py-16 md:py-24">
-          <div className="container text-secondary bg-sidebar">
+          <div className="container text-secondary bg-slate-200">
             <div className="flex items-end justify-between gap-4 mb-8">
               <div>
                 <h2 className="font-display text-3xl md:text-4xl font-bold mb-2 text-primary-foreground">

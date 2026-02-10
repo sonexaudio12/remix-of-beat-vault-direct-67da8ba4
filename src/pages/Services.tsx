@@ -47,7 +47,7 @@ export default function Services() {
           {loading ? <div className="flex justify-center py-16">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div> : <div className="grid gap-6 md:grid-cols-2">
-              {services.map(service => <div key={service.id} className="rounded-xl border border-border p-8 flex flex-col hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 bg-sidebar-border">
+              {services.map(service => <div key={service.id} className="rounded-xl border border-border p-8 flex flex-col hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 bg-background">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="p-3 rounded-xl bg-primary/10 text-primary">
                       {typeIcons[service.type] || <Music className="h-8 w-8" />}

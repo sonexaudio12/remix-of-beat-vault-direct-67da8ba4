@@ -5,7 +5,7 @@ export function Footer() {
       <div className="container py-12 text-secondary bg-primary-foreground">
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 rounded-full opacity-75">
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img src={logo} alt="Sonex Beats Logo" className="h-9 w-auto" />
             </Link>

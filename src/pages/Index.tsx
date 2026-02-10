@@ -120,7 +120,7 @@ const Index = () => {
         </section>
 
         {/* Services Summary Section */}
-        <section className="py-16 md:py-24">
+        <section className="py-16 md:py-24 bg-background">
           <div className="container text-secondary bg-slate-200">
             <div className="flex items-end justify-between gap-4 mb-8 text-primary-foreground">
               <div>

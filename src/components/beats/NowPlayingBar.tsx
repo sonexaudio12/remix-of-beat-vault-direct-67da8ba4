@@ -34,7 +34,7 @@ export function NowPlayingBar() {
     const newTime = percentage * duration;
     seek(Math.max(0, Math.min(newTime, duration)));
   };
-  return <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl">
+  return <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border backdrop-blur-xl bg-background">
       {/* Progress Bar - Clickable */}
       <div ref={progressBarRef} className="h-2 w-full bg-muted cursor-pointer group hover:h-3 transition-all" onClick={handleProgressClick}>
         <div className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-100 relative" style={{
@@ -85,12 +85,7 @@ export function NowPlayingBar() {
 
         {/* Add to Cart, Volume & Close */}
         <div className="flex items-center gap-3 flex-1 justify-end">
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={() => setShowLicenseModal(true)} 
-            className="gap-1.5"
-          >
+          <Button variant="default" size="sm" onClick={() => setShowLicenseModal(true)} className="gap-1.5">
             <ShoppingCart className="h-4 w-4" />
             <span className="hidden sm:inline">Add to Cart</span>
           </Button>

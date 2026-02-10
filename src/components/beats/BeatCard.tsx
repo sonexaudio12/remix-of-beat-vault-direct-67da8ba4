@@ -120,12 +120,12 @@ export function BeatCard({
 
           {/* Mood Tag & Actions */}
           <div className="flex items-center justify-between gap-2">
-            <span className="inline-block px-2 py-1 text-xs font-medium rounded-md bg-secondary text-secondary-foreground">
+            <span className="inline-block px-2 py-1 text-xs font-medium rounded-md bg-secondary text-white">
               {beat.mood}
             </span>
             
             <div className="flex gap-2">
-              {beat.isExclusiveAvailable && <Button variant="outline" size="sm" onClick={() => setShowOfferModal(true)} className="gap-1 text-xs" title="Make an offer for exclusive rights">
+              {beat.isExclusiveAvailable && <Button variant="outline" size="sm" onClick={() => setShowOfferModal(true)} className="gap-1 text-xs text-white [&_svg]:text-white" title="Make an offer for exclusive rights">
                   <DollarSign className="h-3 w-3" />
                   Offer
                 </Button>}

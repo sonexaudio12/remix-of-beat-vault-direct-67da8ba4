@@ -1,9 +1,14 @@
-import { Trash2, ShoppingBag, ArrowLeft, Music2, Archive } from 'lucide-react';
+import { useState } from 'react';
+import { Trash2, ShoppingBag, ArrowLeft, Music2, Archive, Tag, Loader2, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useCart } from '@/hooks/useCart';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
 const Cart = () => {
   const navigate = useNavigate();
   const {
@@ -11,6 +16,64 @@ const Cart = () => {
     removeItem,
     total
   } = useCart();
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState<{
+    code: string;
+    type: string;
+    value: number;
+  } | null>(null);
+  const [applyingCode, setApplyingCode] = useState(false);
+
+  const applyDiscountCode = async () => {
+    if (!discountCode.trim()) return;
+    setApplyingCode(true);
+    try {
+      const { data, error } = await supabase
+        .from('discount_codes')
+        .select('*')
+        .eq('code', discountCode.toUpperCase().trim())
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) { toast.error('Invalid discount code'); setApplyingCode(false); return; }
+
+      // Check expiry
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        toast.error('This code has expired'); setApplyingCode(false); return;
+      }
+      // Check max uses
+      if (data.max_uses && data.current_uses >= data.max_uses) {
+        toast.error('This code has reached its usage limit'); setApplyingCode(false); return;
+      }
+      // Check min order
+      if (data.min_order_amount && total < data.min_order_amount) {
+        toast.error(`Minimum order of $${data.min_order_amount} required`); setApplyingCode(false); return;
+      }
+
+      setAppliedDiscount({
+        code: data.code,
+        type: data.discount_type,
+        value: data.discount_value,
+      });
+      toast.success(`Code "${data.code}" applied!`);
+    } catch (err) {
+      toast.error('Failed to validate code');
+    }
+    setApplyingCode(false);
+  };
+
+  const removeDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountCode('');
+  };
+
+  const discountAmount = appliedDiscount
+    ? appliedDiscount.type === 'percentage'
+      ? total * (appliedDiscount.value / 100)
+      : Math.min(appliedDiscount.value, total)
+    : 0;
+  const finalTotal = Math.max(0, total - discountAmount);
   if (items.length === 0) {
     return <div className="min-h-screen flex flex-col">
         <Header />
@@ -102,11 +165,48 @@ const Cart = () => {
               <div className="rounded-xl border border-border p-6 sticky top-24 bg-background">
                 <h2 className="font-display text-xl font-semibold mb-4">Order Summary</h2>
                 
+                {/* Discount Code Input */}
+                <div className="mb-4">
+                  {appliedDiscount ? (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-mono font-bold text-primary">{appliedDiscount.code}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({appliedDiscount.type === 'percentage' ? `${appliedDiscount.value}% off` : `$${appliedDiscount.value} off`})
+                        </span>
+                      </div>
+                      <button onClick={removeDiscount} className="text-muted-foreground hover:text-foreground">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Discount code"
+                        value={discountCode}
+                        onChange={e => setDiscountCode(e.target.value.toUpperCase())}
+                        onKeyDown={e => e.key === 'Enter' && applyDiscountCode()}
+                        className="font-mono text-sm"
+                      />
+                      <Button variant="outline" size="sm" onClick={applyDiscountCode} disabled={applyingCode || !discountCode.trim()}>
+                        {applyingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
+                  {appliedDiscount && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-primary">Discount</span>
+                      <span className="text-primary">-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Processing fee</span>
                     <span className="text-primary">$0.00</span>
@@ -114,16 +214,16 @@ const Cart = () => {
                   <div className="h-px bg-border" />
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
-                    <span className="text-primary">${total.toFixed(2)}</span>
+                    <span className="text-primary">${finalTotal.toFixed(2)}</span>
                   </div>
                 </div>
 
-                <Button variant="hero" size="lg" className="w-full" onClick={() => navigate('/checkout')}>
+                <Button variant="hero" size="lg" className="w-full" onClick={() => navigate('/checkout', { state: { discount: appliedDiscount } })}>
                   Proceed to Checkout
                 </Button>
 
                 <p className="text-xs text-muted-foreground text-center mt-4">
-                  Secure checkout powered by PayPal. Instant digital delivery after payment.
+                  Secure checkout powered by PayPal & Stripe. Instant digital delivery after payment.
                 </p>
               </div>
             </div>

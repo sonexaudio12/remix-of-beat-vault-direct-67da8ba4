@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList, Paintbrush, ChevronDown } from 'lucide-react';
+import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList, Paintbrush, ChevronDown, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { BeatUploadForm } from '@/components/admin/BeatUploadForm';
@@ -20,6 +20,7 @@ import { ExclusiveOffersManager } from '@/components/admin/ExclusiveOffersManage
 import { ServicesManager } from '@/components/admin/ServicesManager';
 import { ServiceOrdersManager } from '@/components/admin/ServiceOrdersManager';
 import { VisualPageBuilder } from '@/components/admin/VisualPageBuilder';
+import { DiscountCodesManager } from '@/components/admin/DiscountCodesManager';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 
@@ -67,6 +68,10 @@ const navItems = [{
   id: 'orders',
   label: 'Orders',
   icon: Package
+}, {
+  id: 'discount-codes',
+  label: 'Discount Codes',
+  icon: Tag
 }, {
   id: 'services-manage',
   label: 'Manage Services',
@@ -186,6 +191,7 @@ export default function Admin() {
           {activeTab === 'licenses' && <LicensesContent isAdmin={isAdmin} />}
           {activeTab === 'generated-licenses' && <GeneratedLicensesContent isAdmin={isAdmin} />}
           {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
+          {activeTab === 'discount-codes' && <DiscountCodesContent isAdmin={isAdmin} />}
           {activeTab === 'services-manage' && <ServicesManageContent isAdmin={isAdmin} />}
           {activeTab === 'service-orders' && <ServiceOrdersContent isAdmin={isAdmin} />}
 {activeTab === 'page-builder' && isAdmin && <VisualPageBuilder onClose={() => setActiveTab('dashboard')} />}
@@ -344,6 +350,11 @@ function ServicesManageContent({
   isAdmin
 }: any) {
   return isAdmin ? <ServicesManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+function DiscountCodesContent({
+  isAdmin
+}: any) {
+  return isAdmin ? <DiscountCodesManager /> : <Guard isAdmin={false} message="Admin access required." />;
 }
 function ServiceOrdersContent({
   isAdmin

@@ -103,7 +103,7 @@ const Login = () => {
         </Link>
 
         {/* Card */}
-        <div className="rounded-2xl border border-border bg-card p-8">
+        <div className="rounded-2xl border border-border p-8 bg-secondary">
           <div className="text-center mb-6">
             <h1 className="font-display text-2xl font-bold mb-2">
               {mode === 'login' ? 'Welcome Back' : 'Create Account'}
@@ -147,13 +147,11 @@ const Login = () => {
               {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
 
-            {mode === 'login' && (
-              <div className="flex justify-end">
+            {mode === 'login' && <div className="flex justify-end">
                 <Link to="/forgot-password" className="text-xs text-primary hover:underline">
                   Forgot password?
                 </Link>
-              </div>
-            )}
+              </div>}
 
             <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : mode === 'login' ? 'Sign In' : 'Create Account'}

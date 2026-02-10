@@ -49,7 +49,7 @@ const ForgotPassword = () => {
           <img src={logo} alt="Sonex Beats" className="h-12 w-auto rounded-full shadow opacity-60" />
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-8">
+        <div className="rounded-2xl border border-border p-8 bg-secondary">
           {isSent ? <div className="text-center space-y-4">
               <CheckCircle className="h-12 w-12 text-primary mx-auto" />
               <h1 className="font-display text-2xl font-bold">Check Your Email</h1>

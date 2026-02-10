@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Upload, Palette, Type, Ruler, Eye, Save, Loader2, Check, RotateCcw } from 'lucide-react';
+import { Upload, Palette, Type, Ruler, Eye, Save, Loader2, Check, RotateCcw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +42,24 @@ function hexToHsl(hex: string): string {
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+/* ---- Color Swatch ---- */
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="color"
+        value={hslToHex(value)}
+        onChange={e => onChange(hexToHsl(e.target.value))}
+        className="w-9 h-9 rounded-lg border border-border cursor-pointer flex-shrink-0"
+      />
+      <div className="flex-1 min-w-0">
+        <Label className="text-xs">{label}</Label>
+        <p className="text-[10px] text-muted-foreground font-mono truncate">{value}</p>
+      </div>
+    </div>
+  );
+}
+
 export function ThemeEditor() {
   const { data: draft, isLoading } = useThemeDraft();
   const saveDraft = useSaveThemeDraft();
@@ -49,9 +67,10 @@ export function ThemeEditor() {
   const [config, setConfig] = useState<ThemeConfig>(DEFAULT_THEME);
   const [uploading, setUploading] = useState(false);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [showPresets, setShowPresets] = useState(false);
 
   useEffect(() => {
-    if (draft?.config) setConfig(draft.config);
+    if (draft?.config) setConfig(draft.config as ThemeConfig);
   }, [draft]);
 
   const update = useCallback((path: string, value: any) => {
@@ -64,6 +83,12 @@ export function ThemeEditor() {
       return next;
     });
   }, []);
+
+  const applyPreset = (preset: typeof COLOR_PRESETS[number]) => {
+    setConfig(prev => ({ ...prev, colors: { ...prev.colors, ...preset.colors } }));
+    setShowPresets(false);
+    toast.success(`Applied "${preset.name}" theme`);
+  };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -85,24 +110,14 @@ export function ThemeEditor() {
   };
 
   const handleSave = () => {
-    saveDraft.mutate({
-      config,
-      existingId: draft?.id ?? null,
-      version: draft?.version ?? 0,
-    });
+    saveDraft.mutate({ config, existingId: draft?.id ?? null, version: draft?.version ?? 0 });
   };
 
   const handlePublish = () => {
     if (!draft?.id) {
-      // Save first, then publish
       saveDraft.mutate(
         { config, existingId: null, version: 0 },
-        {
-          onSuccess: () => {
-            // Re-fetch and publish
-            toast.info('Saved. Click publish again to go live.');
-          },
-        }
+        { onSuccess: () => toast.info('Saved. Click publish again to go live.') }
       );
       return;
     }
@@ -118,8 +133,55 @@ export function ThemeEditor() {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
+  const COLOR_GROUPS: { title: string; items: { key: string; label: string }[] }[] = [
+    {
+      title: 'Core',
+      items: [
+        { key: 'colors.primary', label: 'Primary' },
+        { key: 'colors.primaryForeground', label: 'Primary Text' },
+        { key: 'colors.background', label: 'Background' },
+        { key: 'colors.foreground', label: 'Text' },
+      ],
+    },
+    {
+      title: 'Cards & Popovers',
+      items: [
+        { key: 'colors.card', label: 'Card' },
+        { key: 'colors.cardForeground', label: 'Card Text' },
+        { key: 'colors.popover', label: 'Popover' },
+        { key: 'colors.popoverForeground', label: 'Popover Text' },
+      ],
+    },
+    {
+      title: 'Secondary & Accent',
+      items: [
+        { key: 'colors.secondary', label: 'Secondary' },
+        { key: 'colors.secondaryForeground', label: 'Secondary Text' },
+        { key: 'colors.accent', label: 'Accent' },
+        { key: 'colors.accentForeground', label: 'Accent Text' },
+      ],
+    },
+    {
+      title: 'Muted & Borders',
+      items: [
+        { key: 'colors.muted', label: 'Muted' },
+        { key: 'colors.mutedForeground', label: 'Muted Text' },
+        { key: 'colors.border', label: 'Border' },
+        { key: 'colors.input', label: 'Input Border' },
+        { key: 'colors.ring', label: 'Focus Ring' },
+      ],
+    },
+    {
+      title: 'Destructive',
+      items: [
+        { key: 'colors.destructive', label: 'Destructive' },
+        { key: 'colors.destructiveForeground', label: 'Destructive Text' },
+      ],
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-8">
+    <div className="grid grid-cols-1 xl:grid-cols-[1fr_460px] gap-8">
       {/* Preview */}
       <div className="order-2 xl:order-1">
         <div className="flex items-center gap-2 mb-4">
@@ -127,13 +189,7 @@ export function ThemeEditor() {
           <h3 className="text-lg font-semibold">Live Preview</h3>
           <div className="ml-auto flex gap-1">
             {(['desktop', 'tablet', 'mobile'] as const).map(mode => (
-              <Button
-                key={mode}
-                size="sm"
-                variant={previewMode === mode ? 'default' : 'outline'}
-                onClick={() => setPreviewMode(mode)}
-                className="capitalize text-xs"
-              >
+              <Button key={mode} size="sm" variant={previewMode === mode ? 'default' : 'outline'} onClick={() => setPreviewMode(mode)} className="capitalize text-xs">
                 {mode}
               </Button>
             ))}
@@ -141,10 +197,7 @@ export function ThemeEditor() {
         </div>
         <div
           className="border border-border rounded-xl overflow-hidden mx-auto transition-all duration-300"
-          style={{
-            width: previewMode === 'mobile' ? '375px' : previewMode === 'tablet' ? '768px' : '100%',
-            maxWidth: '100%',
-          }}
+          style={{ width: previewMode === 'mobile' ? '375px' : previewMode === 'tablet' ? '768px' : '100%', maxWidth: '100%' }}
         >
           <ThemePreview config={config} />
         </div>
@@ -154,80 +207,61 @@ export function ThemeEditor() {
       <div className="order-1 xl:order-2">
         <div className="flex items-center gap-3 mb-6">
           <h2 className="text-xl font-bold">Theme Editor</h2>
-          <div className="ml-auto flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4 mr-1" /> Reset
-            </Button>
+          <div className="ml-auto flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={handleReset}><RotateCcw className="h-4 w-4 mr-1" /> Reset</Button>
             <Button variant="outline" size="sm" onClick={handleSave} disabled={saveDraft.isPending}>
-              {saveDraft.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-              Save Draft
+              {saveDraft.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />} Save Draft
             </Button>
             <Button size="sm" onClick={handlePublish} disabled={publishTheme.isPending}>
-              {publishTheme.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
-              Publish
+              {publishTheme.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />} Publish
             </Button>
           </div>
         </div>
 
-        <Tabs defaultValue="colors" className="w-full">
-          <TabsList className="grid grid-cols-4 w-full">
+        <Tabs defaultValue="presets" className="w-full">
+          <TabsList className="grid grid-cols-5 w-full">
+            <TabsTrigger value="presets"><Sparkles className="h-4 w-4 mr-1" /> Presets</TabsTrigger>
             <TabsTrigger value="colors"><Palette className="h-4 w-4 mr-1" /> Colors</TabsTrigger>
             <TabsTrigger value="fonts"><Type className="h-4 w-4 mr-1" /> Fonts</TabsTrigger>
             <TabsTrigger value="logo"><Upload className="h-4 w-4 mr-1" /> Logo</TabsTrigger>
             <TabsTrigger value="spacing"><Ruler className="h-4 w-4 mr-1" /> Layout</TabsTrigger>
           </TabsList>
 
-          {/* Colors */}
-          <TabsContent value="colors" className="space-y-6 mt-4">
-            <div>
-              <Label className="text-sm font-medium mb-3 block">Color Presets</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {COLOR_PRESETS.map(preset => (
-                  <button
-                    key={preset.name}
-                    className="flex items-center gap-2 p-2 rounded-lg border border-border hover:border-primary/50 transition-colors text-left"
-                    onClick={() => {
-                      update('colors.primary', preset.primary);
-                      update('colors.background', preset.background);
-                      update('colors.foreground', preset.foreground);
-                    }}
-                  >
-                    <div
-                      className="w-6 h-6 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: hslToHex(preset.primary) }}
-                    />
-                    <span className="text-xs">{preset.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {[
-              { key: 'colors.primary', label: 'Primary' },
-              { key: 'colors.background', label: 'Background' },
-              { key: 'colors.foreground', label: 'Text' },
-              { key: 'colors.card', label: 'Card' },
-              { key: 'colors.cardForeground', label: 'Card Text' },
-              { key: 'colors.accent', label: 'Accent' },
-              { key: 'colors.muted', label: 'Muted' },
-              { key: 'colors.mutedForeground', label: 'Muted Text' },
-            ].map(({ key, label }) => {
-              const value = key.split('.').reduce((o: any, k) => o[k], config);
-              return (
-                <div key={key} className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={hslToHex(value)}
-                    onChange={e => update(key, hexToHsl(e.target.value))}
-                    className="w-10 h-10 rounded-lg border border-border cursor-pointer"
-                  />
-                  <div className="flex-1">
-                    <Label className="text-sm">{label}</Label>
-                    <p className="text-xs text-muted-foreground font-mono">{value}</p>
+          {/* Presets */}
+          <TabsContent value="presets" className="space-y-4 mt-4">
+            <p className="text-sm text-muted-foreground">Pick a preset to start, then fine-tune individual colors.</p>
+            <div className="grid grid-cols-2 gap-3">
+              {COLOR_PRESETS.map(preset => (
+                <button
+                  key={preset.name}
+                  className="text-left p-3 rounded-xl border border-border hover:border-primary/50 transition-all group"
+                  onClick={() => applyPreset(preset)}
+                >
+                  <div className="flex gap-1.5 mb-2">
+                    {[preset.colors.primary, preset.colors.background, preset.colors.accent, preset.colors.card].map((c, i) => (
+                      <div key={i} className="w-5 h-5 rounded-full border border-border/50" style={{ backgroundColor: hslToHex(c) }} />
+                    ))}
                   </div>
+                  <p className="text-sm font-medium group-hover:text-primary transition-colors">{preset.name}</p>
+                  <p className="text-[11px] text-muted-foreground">{preset.description}</p>
+                </button>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Colors - grouped */}
+          <TabsContent value="colors" className="mt-4 space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+            {COLOR_GROUPS.map(group => (
+              <div key={group.title}>
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 block">{group.title}</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {group.items.map(({ key, label }) => {
+                    const value = key.split('.').reduce((o: any, k) => o?.[k], config) || '0 0% 0%';
+                    return <ColorField key={key} label={label} value={value} onChange={v => update(key, v)} />;
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </TabsContent>
 
           {/* Fonts */}
@@ -238,32 +272,38 @@ export function ThemeEditor() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {FONT_OPTIONS.map(f => (
-                    <SelectItem key={f} value={f}>
-                      <span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span>
-                    </SelectItem>
+                    <SelectItem key={f} value={f}><span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span></SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-2xl font-bold mt-3" style={{ fontFamily: `'${config.fonts.heading}', sans-serif` }}>
-                Premium Beats for Your Next Hit
-              </p>
+              <p className="text-2xl font-bold mt-3" style={{ fontFamily: `'${config.fonts.heading}', sans-serif` }}>Premium Beats for Your Next Hit</p>
             </div>
-
             <div>
               <Label className="text-sm font-medium mb-2 block">Body Font</Label>
               <Select value={config.fonts.body} onValueChange={v => update('fonts.body', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {FONT_OPTIONS.map(f => (
-                    <SelectItem key={f} value={f}>
-                      <span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span>
-                    </SelectItem>
+                    <SelectItem key={f} value={f}><span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span></SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="mt-3" style={{ fontFamily: `'${config.fonts.body}', sans-serif` }}>
-                Discover studio-quality instrumentals with instant digital delivery. Choose your license, pay once, and start creating.
+                Discover studio-quality instrumentals with instant digital delivery.
               </p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Button Font Weight</Label>
+              <Select value={config.buttons?.primaryWeight || '600'} onValueChange={v => update('buttons.primaryWeight', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="400">Regular (400)</SelectItem>
+                  <SelectItem value="500">Medium (500)</SelectItem>
+                  <SelectItem value="600">Semibold (600)</SelectItem>
+                  <SelectItem value="700">Bold (700)</SelectItem>
+                  <SelectItem value="800">Extra Bold (800)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </TabsContent>
 
@@ -273,36 +313,22 @@ export function ThemeEditor() {
               <Label className="text-sm font-medium mb-2 block">Store Logo</Label>
               {config.logo.url ? (
                 <div className="rounded-lg border border-border p-4 flex flex-col items-center gap-4">
-                  <img
-                    src={config.logo.url}
-                    alt="Store logo"
-                    style={{ height: `${config.logo.height}px` }}
-                    className="object-contain"
-                  />
-                  <Button variant="outline" size="sm" onClick={() => update('logo.url', '')}>
-                    Remove
-                  </Button>
+                  <img src={config.logo.url} alt="Logo" style={{ height: `${config.logo.height}px` }} className="object-contain" />
+                  <Button variant="outline" size="sm" onClick={() => update('logo.url', '')}>Remove</Button>
                 </div>
               ) : (
                 <label className="flex flex-col items-center justify-center gap-2 p-8 rounded-lg border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors">
                   <Upload className="h-8 w-8 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Click to upload logo</span>
-                  <span className="text-xs text-muted-foreground">PNG, SVG, or JPG recommended</span>
+                  <span className="text-xs text-muted-foreground">PNG, SVG, or JPG</span>
                   <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
                   {uploading && <Loader2 className="h-5 w-5 animate-spin" />}
                 </label>
               )}
             </div>
-
             <div>
               <Label className="text-sm font-medium mb-2 block">Logo Height: {config.logo.height}px</Label>
-              <Slider
-                value={[config.logo.height]}
-                min={20}
-                max={80}
-                step={2}
-                onValueChange={([v]) => update('logo.height', v)}
-              />
+              <Slider value={[config.logo.height]} min={20} max={80} step={2} onValueChange={([v]) => update('logo.height', v)} />
             </div>
           </TabsContent>
 
@@ -320,7 +346,6 @@ export function ThemeEditor() {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label className="text-sm font-medium mb-2 block">Section Padding</Label>
               <Select value={config.spacing.sectionPadding} onValueChange={v => update('spacing.sectionPadding', v)}>
@@ -333,19 +358,36 @@ export function ThemeEditor() {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label className="text-sm font-medium mb-2 block">Border Radius: {config.spacing.borderRadius}</Label>
               <Slider
                 value={[parseFloat(config.spacing.borderRadius) * 16]}
-                min={0}
-                max={24}
-                step={2}
+                min={0} max={24} step={2}
                 onValueChange={([v]) => update('spacing.borderRadius', `${v / 16}rem`)}
               />
               <div className="flex gap-4 mt-3">
                 <div className="w-16 h-16 bg-primary/20 border border-primary/30" style={{ borderRadius: config.spacing.borderRadius }} />
                 <div className="flex-1 h-10 bg-primary/20 border border-primary/30" style={{ borderRadius: config.spacing.borderRadius }} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Button Radius: {config.buttons?.primaryRadius || config.spacing.borderRadius}</Label>
+              <Slider
+                value={[parseFloat(config.buttons?.primaryRadius || config.spacing.borderRadius) * 16]}
+                min={0} max={32} step={2}
+                onValueChange={([v]) => update('buttons.primaryRadius', `${v / 16}rem`)}
+              />
+              <div className="mt-3">
+                <div
+                  className="inline-block px-6 py-2.5 text-sm font-semibold text-white"
+                  style={{
+                    backgroundColor: hslToHex(config.colors.primary),
+                    borderRadius: config.buttons?.primaryRadius || config.spacing.borderRadius,
+                    fontWeight: config.buttons?.primaryWeight || '600',
+                  }}
+                >
+                  Preview Button
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -364,55 +406,51 @@ function ThemePreview({ config }: { config: ThemeConfig }) {
   const card = `hsl(${config.colors.card})`;
   const cardFg = `hsl(${config.colors.cardForeground})`;
   const muted = `hsl(${config.colors.mutedForeground})`;
+  const border = `hsl(${config.colors.border})`;
+  const secondary = `hsl(${config.colors.secondary})`;
+  const accent = `hsl(${config.colors.accent})`;
+  const btnRadius = config.buttons?.primaryRadius || config.spacing.borderRadius;
+  const btnWeight = config.buttons?.primaryWeight || '600';
 
   return (
     <div style={{ backgroundColor: bg, color: fg, fontFamily: `'${config.fonts.body}', sans-serif` }} className="min-h-[500px]">
-      {/* Fake Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: `hsl(${config.colors.muted} / 0.3)` }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: `${border}40` }}>
         {config.logo.url ? (
           <img src={config.logo.url} alt="Logo" style={{ height: `${config.logo.height}px` }} className="object-contain" />
         ) : (
-          <span className="font-bold text-lg" style={{ fontFamily: `'${config.fonts.heading}', sans-serif`, color: primary }}>
-            Sonex Beats
-          </span>
+          <span className="font-bold text-lg" style={{ fontFamily: `'${config.fonts.heading}', sans-serif`, color: primary }}>Sonex Beats</span>
         )}
         <div className="flex gap-4 text-sm" style={{ color: muted }}>
-          <span>Beats</span>
-          <span>Services</span>
-          <span>About</span>
+          <span>Beats</span><span>Services</span><span>About</span>
         </div>
       </div>
 
-      {/* Fake Hero */}
+      {/* Hero */}
       <div className="text-center px-6" style={{ padding: `${config.spacing.sectionPadding} 1.5rem` }}>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4" style={{ borderColor: `${border}60`, backgroundColor: `${secondary}30` }}>
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: primary }} />
+          <span className="text-xs" style={{ color: muted }}>New beats every week</span>
+        </div>
         <h1 className="text-3xl font-bold mb-3" style={{ fontFamily: `'${config.fonts.heading}', sans-serif` }}>
           Premium Beats for <span style={{ color: primary }}>Your Next Hit</span>
         </h1>
-        <p className="mb-6" style={{ color: muted }}>
-          Discover studio-quality instrumentals with instant delivery.
-        </p>
-        <button
-          className="px-6 py-2.5 text-sm font-semibold text-white"
-          style={{ backgroundColor: primary, borderRadius: config.spacing.borderRadius }}
-        >
-          Browse Beats
-        </button>
+        <p className="mb-6" style={{ color: muted }}>Discover studio-quality instrumentals with instant delivery.</p>
+        <div className="flex justify-center gap-3">
+          <button className="px-6 py-2.5 text-sm text-white" style={{ backgroundColor: primary, borderRadius: btnRadius, fontWeight: btnWeight }}>
+            Browse Beats
+          </button>
+          <button className="px-6 py-2.5 text-sm border" style={{ borderColor: border, borderRadius: btnRadius, fontWeight: btnWeight, color: fg }}>
+            View Licensing
+          </button>
+        </div>
       </div>
 
-      {/* Fake Beat Cards */}
+      {/* Cards */}
       <div className="px-6 pb-8 grid grid-cols-3 gap-3" style={{ maxWidth: config.spacing.containerMaxWidth, margin: '0 auto' }}>
         {['Night Vibes', 'Cloud Nine', 'Dark Flow'].map(title => (
-          <div
-            key={title}
-            className="p-4 border"
-            style={{
-              backgroundColor: card,
-              color: cardFg,
-              borderRadius: config.spacing.borderRadius,
-              borderColor: `hsl(${config.colors.muted} / 0.2)`,
-            }}
-          >
-            <div className="w-full aspect-square rounded mb-3" style={{ backgroundColor: `hsl(${config.colors.muted} / 0.15)`, borderRadius: `calc(${config.spacing.borderRadius} - 4px)` }} />
+          <div key={title} className="p-4 border" style={{ backgroundColor: card, color: cardFg, borderRadius: config.spacing.borderRadius, borderColor: `${border}40` }}>
+            <div className="w-full aspect-square rounded mb-3" style={{ backgroundColor: `${accent}30`, borderRadius: `calc(${config.spacing.borderRadius} - 4px)` }} />
             <p className="font-semibold text-sm" style={{ fontFamily: `'${config.fonts.heading}', sans-serif` }}>{title}</p>
             <p className="text-xs mt-1" style={{ color: muted }}>140 BPM · Trap</p>
             <p className="text-xs font-bold mt-2" style={{ color: primary }}>$29.99</p>
@@ -421,7 +459,7 @@ function ThemePreview({ config }: { config: ThemeConfig }) {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 text-center text-xs border-t" style={{ borderColor: `hsl(${config.colors.muted} / 0.2)`, color: muted }}>
+      <div className="px-6 py-4 text-center text-xs border-t" style={{ borderColor: `${border}30`, color: muted }}>
         Made by Sonex Studio
       </div>
     </div>

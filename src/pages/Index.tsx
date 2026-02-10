@@ -62,10 +62,10 @@ const Index = () => {
 
         {/* Latest Beats Section */}
         <section className="py-16 md:py-24">
-          <div className="container">
+          <div className="container text-secondary bg-sidebar">
             <div className="flex items-end justify-between gap-4 mb-8">
               <div>
-                <h2 className="font-display text-3xl md:text-4xl font-bold mb-2 text-secondary">
+                <h2 className="font-display text-3xl md:text-4xl font-bold mb-2 text-primary-foreground">
                   Latest Beats
                 </h2>
                 <p className="text-muted-foreground">
@@ -92,7 +92,7 @@ const Index = () => {
         </section>
 
         {/* Sound Kits Section */}
-        <section className="py-16 md:py-24 bg-muted/30">
+        <section className="py-16 md:py-24 bg-slate-100">
           <div className="container">
             <div className="flex items-end justify-between gap-4 mb-8">
               <div>
@@ -121,10 +121,10 @@ const Index = () => {
 
         {/* Services Summary Section */}
         <section className="py-16 md:py-24">
-          <div className="container">
+          <div className="container text-secondary bg-primary-foreground">
             <div className="flex items-end justify-between gap-4 mb-8">
               <div>
-                <h2 className="font-display text-3xl md:text-4xl font-bold mb-2 text-secondary">
+                <h2 className="font-display text-3xl md:text-4xl font-bold mb-2 text-secondary-foreground">
                   Studio Services
                 </h2>
                 <p className="text-muted-foreground">
@@ -141,12 +141,12 @@ const Index = () => {
             {servicesLoading ? <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div> : services.length === 0 ? <p className="text-center text-muted-foreground py-12">No services available yet.</p> : <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {services.map(service => <div key={service.id} className="rounded-xl bg-card border border-border p-6 flex flex-col hover:border-primary/30 transition-all duration-300">
+                {services.map(service => <div key={service.id} className="rounded-xl border border-border p-6 flex flex-col hover:border-primary/30 transition-all duration-300 bg-accent-foreground">
                     <div className="p-3 rounded-xl bg-primary/10 text-primary w-fit mb-4">
                       {typeIcons[service.type] || <Music className="h-6 w-6" />}
                     </div>
                     <h3 className="font-display text-lg font-bold mb-1">{service.title}</h3>
-                    <p className="text-xl font-bold mb-3 bg-secondary text-secondary-foreground">${service.price}</p>
+                    <p className="text-xl font-bold mb-3 text-secondary-foreground bg-accent-foreground">${service.price}</p>
                     <p className="text-muted-foreground text-sm line-clamp-2">
                       {service.description}
                     </p>

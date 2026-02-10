@@ -2,14 +2,14 @@ import { Link } from 'react-router-dom';
 import logo from '@/assets/logo-new.png';
 export function Footer() {
   return <footer className="border-t border-border/40 bg-card/50">
-      <div className="container py-12 text-secondary bg-primary-foreground">
+      <div className="container py-12 text-secondary bg-[sidebar-primary-foreground] bg-slate-200">
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-2 rounded-full opacity-75">
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img src={logo} alt="Sonex Beats Logo" className="h-9 w-auto" />
             </Link>
-            <div className="flex gap-4 text-sm mb-4">
+            <div className="flex gap-4 text-sm mb-4 text-primary-foreground">
               <a href="/terms">Terms</a>
               <a href="/privacy">Privacy</a>
               <a href="/refunds">Refund Policy</a>
@@ -23,7 +23,7 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-display font-semibold mb-4">Quick Links</h4>
+            <h4 className="font-display font-semibold mb-4 text-primary-foreground">Quick Links</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/" className="hover:text-foreground transition-colors">
@@ -45,7 +45,7 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h4 className="font-display font-semibold mb-4">Legal</h4>
+            <h4 className="font-display font-semibold mb-4 text-primary-foreground">Legal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/terms" className="hover:text-foreground transition-colors">

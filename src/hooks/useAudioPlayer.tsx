@@ -15,6 +15,7 @@ interface AudioPlayerContextType {
   skipBackward: (seconds?: number) => void;
   setPlaylist: (beats: Beat[]) => void;
   playNext: () => void;
+  playPrevious: () => void;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
@@ -109,9 +110,16 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     play(playlist[nextIndex]);
   };
 
+  const playPrevious = () => {
+    if (!currentBeat || playlist.length === 0) return;
+    const currentIndex = playlist.findIndex(b => b.id === currentBeat.id);
+    const prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+    play(playlist[prevIndex]);
+  };
+
   return (
     <AudioPlayerContext.Provider
-      value={{ currentBeat, isPlaying, progress, duration, playlist, play, pause, toggle, seek, skipForward, skipBackward, setPlaylist, playNext }}
+      value={{ currentBeat, isPlaying, progress, duration, playlist, play, pause, toggle, seek, skipForward, skipBackward, setPlaylist, playNext, playPrevious }}
     >
       {children}
     </AudioPlayerContext.Provider>

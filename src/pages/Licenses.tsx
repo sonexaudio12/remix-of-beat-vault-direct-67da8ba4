@@ -56,7 +56,7 @@ const Licenses = () => {
         <section className="py-16 md:py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(187_100%_42%_/_0.1)_0%,transparent_50%)]" />
           <div className="container relative">
-            <div className="max-w-2xl mx-auto text-center">
+            <div className="max-w-2xl mx-auto text-center bg-[sidebar-primary-foreground] bg-background">
               <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
                 Simple, Transparent Licensing
               </h1>
@@ -102,7 +102,7 @@ const Licenses = () => {
                       <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                         What's Included
                       </h4>
-                      <ul className="space-y-2.5 mb-6">
+                      <ul className="space-y-2.5 mb-6 bg-background">
                         {license.includes.map((item, i) => <li key={i} className="flex items-start gap-2 text-sm">
                             <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                             <span>{item}</span>

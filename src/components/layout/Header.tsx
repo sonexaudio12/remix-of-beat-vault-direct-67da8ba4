@@ -64,7 +64,7 @@ export function Header() {
           {user && isAdmin ? <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="hidden md:flex">
-                  <User className="h-5 w-5 text-primary bg-primary-foreground" />
+                  <User className="h-5 w-5 text-primary bg-primary-foreground border-primary-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">

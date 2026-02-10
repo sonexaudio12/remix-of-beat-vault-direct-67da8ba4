@@ -99,7 +99,7 @@ export function BeatCard({
               <h3 className="font-display font-semibold text-lg leading-tight truncate text-secondary">
                 {beat.title}
               </h3>
-              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 mt-1 text-sm text-white">
                 <span>{beat.bpm} BPM</span>
                 <span className="w-1 h-1 rounded-full bg-muted-foreground" />
                 <span>{beat.genre}</span>

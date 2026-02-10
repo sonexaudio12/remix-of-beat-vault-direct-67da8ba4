@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GripVertical, Eye, EyeOff, Save, Check, Loader2, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
+import { GripVertical, Eye, EyeOff, Save, Check, Loader2, RotateCcw, ChevronDown, ChevronRight, LayoutTemplate } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { SectionConfig, DEFAULT_SECTIONS } from '@/types/sectionConfig';
 import { useSectionsDraft, useSaveSectionsDraft, usePublishSections } from '@/hooks/useSectionConfig';
+import { SECTION_TEMPLATES } from '@/data/sectionTemplates';
 import { toast } from 'sonner';
 
 const SECTION_SETTING_LABELS: Record<string, Record<string, { label: string; type: 'text' | 'textarea' | 'number' }>> = {
@@ -50,6 +51,15 @@ export function SectionEditor() {
   const [sections, setSections] = useState<SectionConfig[]>(DEFAULT_SECTIONS);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const applyTemplate = useCallback((templateId: string) => {
+    const template = SECTION_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+    setSections(template.sections);
+    setShowTemplates(false);
+    toast.success(`"${template.name}" template applied — save to keep changes`);
+  }, []);
 
   useEffect(() => {
     if (draft?.sections) {
@@ -124,6 +134,9 @@ export function SectionEditor() {
           <Button variant="outline" size="sm" onClick={handleReset}>
             <RotateCcw className="h-4 w-4 mr-1" /> Reset
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowTemplates(!showTemplates)}>
+            <LayoutTemplate className="h-4 w-4 mr-1" /> Templates
+          </Button>
           <Button variant="outline" size="sm" onClick={handleSave} disabled={saveDraft.isPending}>
             {saveDraft.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
             Save Draft
@@ -136,6 +149,22 @@ export function SectionEditor() {
       </div>
 
       <p className="text-sm text-muted-foreground mb-4">Drag to reorder, toggle to enable/disable, and expand to customize each section.</p>
+
+      {showTemplates && (
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {SECTION_TEMPLATES.map(t => (
+            <button
+              key={t.id}
+              onClick={() => applyTemplate(t.id)}
+              className="text-left rounded-xl border border-border bg-card p-4 hover:border-primary hover:shadow-md transition-all"
+            >
+              <div className="text-2xl mb-2">{t.icon}</div>
+              <div className="font-semibold text-sm">{t.name}</div>
+              <div className="text-xs text-muted-foreground mt-1">{t.description}</div>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-2">
         {sections.map((section, idx) => {

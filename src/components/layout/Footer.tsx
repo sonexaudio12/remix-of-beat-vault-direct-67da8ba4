@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import logo from '@/assets/logo-new.png';
 export function Footer() {
-  return <footer className="border-t border-border/40 bg-card/50 w-full">
-      <div className="w-full max-w-7xl mx-auto px-6 py-12 text-secondary bg-background">
+  return <footer className="border-t border-border/40 bg-background">
+      <div className="container py-12 text-secondary bg-[sidebar-primary-foreground] bg-background">
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-2 rounded-full opacity-75">

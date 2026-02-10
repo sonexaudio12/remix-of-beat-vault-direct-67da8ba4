@@ -92,7 +92,7 @@ const Index = () => {
         </section>
 
         {/* Sound Kits Section */}
-        <section className="py-16 md:py-24 bg-slate-100">
+        <section className="py-16 md:py-24 bg-background">
           <div className="container">
             <div className="flex items-end justify-between gap-4 mb-8">
               <div>

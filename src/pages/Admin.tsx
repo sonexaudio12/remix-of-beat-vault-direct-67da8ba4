@@ -192,7 +192,7 @@ export default function Admin() {
           {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
           {activeTab === 'services-manage' && <ServicesManageContent isAdmin={isAdmin} />}
           {activeTab === 'service-orders' && <ServiceOrdersContent isAdmin={isAdmin} />}
-          {activeTab === 'section-editor' && isAdmin && <VisualPageBuilder />}
+          {activeTab === 'section-editor' && isAdmin && <VisualPageBuilder onClose={() => setActiveTab('dashboard')} />}
           {activeTab === 'theme-editor' && isAdmin && <ThemeEditor />}
           {activeTab === 'admins' && <AdminUsersContent isAdmin={isAdmin} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}

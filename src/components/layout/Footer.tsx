@@ -1,10 +1,8 @@
 import { Link } from 'react-router-dom';
 import logo from '@/assets/logo-new.png';
-
 export function Footer() {
-  return (
-    <footer className="border-t border-border/40 bg-card/50">
-      <div className="container py-12">
+  return <footer className="border-t border-border/40 bg-card/50">
+      <div className="container py-12 text-secondary bg-primary-foreground">
         <div className="grid gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="md:col-span-2">
@@ -72,6 +70,5 @@ export function Footer() {
           <p>© {new Date().getFullYear()} Sonex Beats. All rights reserved.</p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 }

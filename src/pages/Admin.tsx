@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList } from 'lucide-react';
+import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList, Paintbrush } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { BeatUploadForm } from '@/components/admin/BeatUploadForm';
@@ -18,6 +18,7 @@ import { DashboardAnalytics } from '@/components/admin/DashboardAnalytics';
 import { ExclusiveOffersManager } from '@/components/admin/ExclusiveOffersManager';
 import { ServicesManager } from '@/components/admin/ServicesManager';
 import { ServiceOrdersManager } from '@/components/admin/ServiceOrdersManager';
+import { ThemeEditor } from '@/components/admin/ThemeEditor';
 import { supabase } from '@/integrations/supabase/client';
 import logo from '@/assets/logo.png';
 
@@ -73,6 +74,10 @@ const navItems = [{
   id: 'service-orders',
   label: 'Service Orders',
   icon: ClipboardList
+}, {
+  id: 'theme-editor',
+  label: 'Theme Editor',
+  icon: Paintbrush
 }, {
   id: 'admins',
   label: 'Admin Users',
@@ -182,6 +187,7 @@ export default function Admin() {
           {activeTab === 'orders' && <OrdersContent isAdmin={isAdmin} />}
           {activeTab === 'services-manage' && <ServicesManageContent isAdmin={isAdmin} />}
           {activeTab === 'service-orders' && <ServiceOrdersContent isAdmin={isAdmin} />}
+          {activeTab === 'theme-editor' && isAdmin && <ThemeEditor />}
           {activeTab === 'admins' && <AdminUsersContent isAdmin={isAdmin} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>

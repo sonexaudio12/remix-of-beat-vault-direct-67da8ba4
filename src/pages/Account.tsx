@@ -278,9 +278,9 @@ const Account = () => {
             </TabsList>
 
             <TabsContent value="purchases">
-              <div className="rounded-xl bg-card border border-border">
-                <div className="p-6 border-b border-border bg-accent-foreground">
-                  <div className="flex items-center justify-between">
+              <div className="rounded-xl bg-secondary border border-border">
+                <div className="p-6 border-b border-border bg-secondary">
+                  <div className="flex items-center justify-between text-secondary-foreground">
                     <h2 className="font-display text-xl font-semibold">Order History</h2>
                     <Button variant="ghost" size="sm" onClick={fetchOrders}>
                       <RefreshCw className="h-4 w-4 mr-2" />
@@ -291,7 +291,7 @@ const Account = () => {
 
                 {isLoading ? <div className="p-12 text-center">
                     <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-                  </div> : orders.length === 0 ? <div className="p-12 text-center bg-accent-foreground">
+                  </div> : orders.length === 0 ? <div className="p-12 text-center bg-secondary">
                     <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="font-medium mb-2">No orders yet</h3>
                     <p className="text-muted-foreground text-sm mb-4">

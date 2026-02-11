@@ -384,9 +384,9 @@ const Account = () => {
             </TabsContent>
 
             <TabsContent value="services">
-              <div className="rounded-xl bg-card border border-border">
-                <div className="p-6 border-b border-border bg-accent-foreground">
-                  <h2 className="font-display text-xl font-semibold">Service Orders</h2>
+              <div className="rounded-xl bg-secondary border border-border">
+                <div className="p-6 border-b border-border bg-secondary">
+                  <h2 className="font-display text-xl font-semibold text-secondary-foreground">Service Orders</h2>
                 </div>
                 <ServiceOrdersSection />
               </div>

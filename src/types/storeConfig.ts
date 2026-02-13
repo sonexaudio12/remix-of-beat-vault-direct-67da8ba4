@@ -37,6 +37,7 @@ export interface ThemeConfig {
     primaryRadius: string;
     primaryWeight: string;
   };
+  searchPlaceholder?: string;
 }
 
 export const DEFAULT_THEME: ThemeConfig = {
@@ -72,6 +73,7 @@ export const DEFAULT_THEME: ThemeConfig = {
     primaryRadius: '0.5rem',
     primaryWeight: '600',
   },
+  searchPlaceholder: 'Search beats, sound kits...',
 };
 
 export const FONT_OPTIONS = [

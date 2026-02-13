@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   GripVertical, Eye, EyeOff, Save, Check, Loader2, RotateCcw,
   LayoutTemplate, ZoomIn, ZoomOut, Monitor, Tablet, Smartphone, X,
-  Palette, Type, Upload, Ruler, Layers, Sparkles, Image, FileText,
+  Upload, ChevronDown, ChevronRight, Pencil, Image as ImageIcon,
+  Type, Palette, Ruler, Search, Globe, Layers,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,7 @@ import { HomepageLivePreview } from './HomepageLivePreview';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-/* ---- Helpers ---- */
+/* ---- Color helpers ---- */
 function hslToHex(hsl: string): string {
   const parts = hsl.split(/\s+/);
   if (parts.length < 3) return '#6b21a8';
@@ -54,16 +55,15 @@ function hexToHsl(hex: string): string {
 
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3 py-1">
       <input
         type="color"
         value={hslToHex(value)}
         onChange={e => onChange(hexToHsl(e.target.value))}
-        className="w-8 h-8 rounded border border-border cursor-pointer flex-shrink-0"
+        className="w-7 h-7 rounded-full border border-border/50 cursor-pointer flex-shrink-0 bg-transparent"
       />
-      <div className="flex-1 min-w-0">
-        <span className="text-xs block">{label}</span>
-      </div>
+      <span className="text-xs text-foreground/80">{label}</span>
+      <span className="text-[10px] text-muted-foreground ml-auto font-mono">{hslToHex(value)}</span>
     </div>
   );
 }
@@ -105,7 +105,28 @@ const COLOR_GROUPS = [
   ]},
 ];
 
-type SidebarTab = 'sections' | 'pages' | 'presets' | 'colors' | 'fonts' | 'logo' | 'layout';
+/* ---- Accordion section component ---- */
+function AccordionSection({ icon, title, open, onToggle, children }: {
+  icon: React.ReactNode;
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-b border-border/40">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium hover:bg-muted/20 transition-colors"
+      >
+        <span className="text-muted-foreground">{icon}</span>
+        <span className="flex-1 text-left">{title}</span>
+        {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  );
+}
 
 export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
   /* ---- Sections state ---- */
@@ -126,9 +147,18 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [viewport, setViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [zoom, setZoom] = useState(0.55);
-  const [sidebarTab, setSidebarTab] = useState<SidebarTab>('sections');
   const [showTemplates, setShowTemplates] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [openPanels, setOpenPanels] = useState<Set<string>>(new Set(['sections']));
+
+  const togglePanel = (id: string) => {
+    setOpenPanels(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (sectionDraft?.sections) {
@@ -250,58 +280,54 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  /* ---- Sidebar tab icons ---- */
-  const tabs: { id: SidebarTab; icon: React.ReactNode; label: string }[] = [
-    { id: 'sections', icon: <Layers className="h-4 w-4" />, label: 'Sections' },
-    { id: 'pages', icon: <FileText className="h-4 w-4" />, label: 'Pages' },
-    { id: 'presets', icon: <Sparkles className="h-4 w-4" />, label: 'Presets' },
-    { id: 'colors', icon: <Palette className="h-4 w-4" />, label: 'Colors' },
-    { id: 'fonts', icon: <Type className="h-4 w-4" />, label: 'Fonts' },
-    { id: 'logo', icon: <Image className="h-4 w-4" />, label: 'Logo' },
-    { id: 'layout', icon: <Ruler className="h-4 w-4" />, label: 'Layout' },
-  ];
-
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* ---- Top Toolbar ---- */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border flex-shrink-0">
-        <h2 className="text-lg font-bold mr-auto">Page Builder</h2>
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50 flex-shrink-0 bg-card/80 backdrop-blur-sm">
+        <h2 className="text-sm font-bold tracking-wide mr-auto flex items-center gap-2">
+          <Pencil className="h-4 w-4 text-primary" />
+          Customize Pro Page
+        </h2>
 
-        <div className="flex items-center gap-1 border border-border rounded-lg p-0.5">
+        <div className="flex items-center gap-1 border border-border/50 rounded-lg p-0.5 bg-background/50">
           {(['desktop', 'tablet', 'mobile'] as const).map(v => (
             <Button key={v} size="sm" variant={viewport === v ? 'default' : 'ghost'} onClick={() => setViewport(v)} className="h-7 w-7 p-0">
-              {v === 'desktop' ? <Monitor className="h-4 w-4" /> : v === 'tablet' ? <Tablet className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+              {v === 'desktop' ? <Monitor className="h-3.5 w-3.5" /> : v === 'tablet' ? <Tablet className="h-3.5 w-3.5" /> : <Smartphone className="h-3.5 w-3.5" />}
             </Button>
           ))}
         </div>
 
-        <div className="flex items-center gap-1 border border-border rounded-lg p-0.5">
-          <Button size="sm" variant="ghost" onClick={() => setZoom(z => Math.max(0.25, z - 0.1))} className="h-7 w-7 p-0"><ZoomOut className="h-4 w-4" /></Button>
-          <span className="text-xs font-mono w-10 text-center">{Math.round(zoom * 100)}%</span>
-          <Button size="sm" variant="ghost" onClick={() => setZoom(z => Math.min(1, z + 0.1))} className="h-7 w-7 p-0"><ZoomIn className="h-4 w-4" /></Button>
+        <div className="flex items-center gap-1 border border-border/50 rounded-lg p-0.5 bg-background/50">
+          <Button size="sm" variant="ghost" onClick={() => setZoom(z => Math.max(0.25, z - 0.1))} className="h-7 w-7 p-0"><ZoomOut className="h-3.5 w-3.5" /></Button>
+          <span className="text-[10px] font-mono w-9 text-center text-muted-foreground">{Math.round(zoom * 100)}%</span>
+          <Button size="sm" variant="ghost" onClick={() => setZoom(z => Math.min(1, z + 0.1))} className="h-7 w-7 p-0"><ZoomIn className="h-3.5 w-3.5" /></Button>
         </div>
 
-        <Button variant="outline" size="sm" onClick={() => setShowTemplates(!showTemplates)}>
-          <LayoutTemplate className="h-4 w-4 mr-1" /> Templates
+        <Button variant="ghost" size="sm" onClick={() => setShowTemplates(!showTemplates)} className="h-8 text-xs gap-1.5">
+          <LayoutTemplate className="h-3.5 w-3.5" /> Templates
         </Button>
-        <Button variant="outline" size="sm" onClick={handleReset}><RotateCcw className="h-4 w-4 mr-1" /> Reset</Button>
-        <Button variant="outline" size="sm" onClick={handleSaveAll} disabled={isSaving}>
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />} Save All
+        <Button variant="ghost" size="sm" onClick={handleReset} className="h-8 text-xs gap-1.5">
+          <RotateCcw className="h-3.5 w-3.5" /> Reset
         </Button>
-        <Button size="sm" onClick={handlePublishAll} disabled={isPublishing}>
-          {isPublishing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />} Publish All
+
+        <div className="w-px h-5 bg-border/50 mx-1" />
+
+        <Button variant="outline" size="sm" onClick={handleSaveAll} disabled={isSaving} className="h-8 text-xs gap-1.5">
+          {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save Draft
         </Button>
-        {onClose && <>
-          <div className="w-px h-6 bg-border mx-1" />
-          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0"><X className="h-5 w-5" /></Button>
-        </>}
+        <Button size="sm" onClick={handlePublishAll} disabled={isPublishing} className="h-8 text-xs gap-1.5">
+          {isPublishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Publish
+        </Button>
+        {onClose && (
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0 ml-1"><X className="h-4 w-4" /></Button>
+        )}
       </div>
 
       {/* Templates panel */}
       {showTemplates && (
-        <div className="grid grid-cols-4 gap-3 px-4 py-3 border-b border-border">
+        <div className="grid grid-cols-4 gap-3 px-4 py-3 border-b border-border/50 bg-card/50">
           {SECTION_TEMPLATES.map(t => (
-            <button key={t.id} onClick={() => applyTemplate(t.id)} className="text-left rounded-xl border border-border bg-card p-3 hover:border-primary hover:shadow-md transition-all">
+            <button key={t.id} onClick={() => applyTemplate(t.id)} className="text-left rounded-xl border border-border/50 bg-card p-3 hover:border-primary/50 hover:shadow-md transition-all">
               <div className="text-xl mb-1">{t.icon}</div>
               <div className="font-semibold text-xs">{t.name}</div>
               <div className="text-[10px] text-muted-foreground">{t.description}</div>
@@ -312,38 +338,309 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
 
       {/* ---- Main body ---- */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Tab strip */}
-        <div className="w-14 flex-shrink-0 border-r border-border bg-card/50 flex flex-col items-center py-2 gap-1">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setSidebarTab(t.id)}
-              className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center gap-0.5 text-[9px] transition-colors ${
-                sidebarTab === t.id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/50'
-              }`}
-              title={t.label}
-            >
-              {t.icon}
-              <span>{t.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Single accordion sidebar */}
+        <div className="w-80 flex-shrink-0 border-r border-border/40 bg-card overflow-y-auto">
+          <div className="px-4 py-3 border-b border-border/40">
+            <div className="flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold">Customize Pro Page</span>
+            </div>
+          </div>
 
-        {/* Sidebar panel content */}
-        <div className="w-72 flex-shrink-0 border-r border-border bg-card overflow-y-auto">
-          {sidebarTab === 'sections' && <SectionsPanel sections={sections} selectedId={selectedId} selectedSection={selectedSection} settingsDef={settingsDef} onSelect={setSelectedId} onToggle={toggleEnabled} onUpdateSetting={updateSetting} onDragStart={handleDragStart} onDragOver={handleDragOver} onDrop={handleDrop} onDragEnd={handleDragEnd} />}
-          {sidebarTab === 'pages' && <PagesPanel />}
-          {sidebarTab === 'presets' && <PresetsPanel onApply={applyPreset} />}
-          {sidebarTab === 'colors' && <ColorsPanel theme={theme} onUpdate={updateTheme} />}
-          {sidebarTab === 'fonts' && <FontsPanel theme={theme} onUpdate={updateTheme} />}
-          {sidebarTab === 'logo' && <LogoPanel theme={theme} onUpdate={updateTheme} onUpload={handleLogoUpload} uploading={uploading} />}
-          {sidebarTab === 'layout' && <LayoutPanel theme={theme} onUpdate={updateTheme} />}
+          {/* ===== CUSTOMIZATION OPTIONS ===== */}
+          <AccordionSection
+            icon={<Palette className="h-4 w-4" />}
+            title="Customization Options"
+            open={openPanels.has('customization')}
+            onToggle={() => togglePanel('customization')}
+          >
+            <div className="space-y-4">
+              {/* Color Presets */}
+              <div>
+                <Label className="text-xs font-semibold mb-2 block text-muted-foreground uppercase tracking-wider">Color Presets</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {COLOR_PRESETS.map(preset => (
+                    <button key={preset.name} className="text-left p-2 rounded-lg border border-border/50 hover:border-primary/50 transition-all" onClick={() => applyPreset(preset)}>
+                      <div className="flex gap-1 mb-1">
+                        {[preset.colors.primary, preset.colors.background, preset.colors.accent, preset.colors.card].map((c, i) => (
+                          <div key={i} className="w-3.5 h-3.5 rounded-full border border-border/30" style={{ backgroundColor: hslToHex(c) }} />
+                        ))}
+                      </div>
+                      <p className="text-[10px] font-medium truncate">{preset.name}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Colors */}
+              {COLOR_GROUPS.map(group => (
+                <div key={group.title}>
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">{group.title}</Label>
+                  {group.items.map(({ key, label }) => (
+                    <ColorField key={key} label={label} value={(theme.colors as any)[key] || '0 0% 0%'} onChange={v => updateTheme(`colors.${key}`, v)} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </AccordionSection>
+
+          {/* ===== WEBSITE LOGO ===== */}
+          <AccordionSection
+            icon={<ImageIcon className="h-4 w-4" />}
+            title="Website Logo"
+            open={openPanels.has('logo')}
+            onToggle={() => togglePanel('logo')}
+          >
+            <div className="space-y-3">
+              {theme.logo.url ? (
+                <div className="rounded-lg border border-border/50 p-3 flex flex-col items-center gap-3 bg-background/30">
+                  <img src={theme.logo.url} alt="Logo" style={{ height: `${theme.logo.height}px` }} className="object-contain" />
+                  <Button variant="outline" size="sm" onClick={() => updateTheme('logo.url', '')} className="text-xs h-7">Remove Logo</Button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-dashed border-border/50 hover:border-primary/50 cursor-pointer transition-colors bg-background/20">
+                  <Upload className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Upload Logo</span>
+                  <span className="text-[10px] text-muted-foreground/60">PNG, SVG, JPG</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
+                  {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                </label>
+              )}
+              <div>
+                <Label className="text-xs mb-1 block">Logo Height: {theme.logo.height}px</Label>
+                <Slider value={[theme.logo.height]} min={20} max={80} step={2} onValueChange={([v]) => updateTheme('logo.height', v)} />
+              </div>
+            </div>
+          </AccordionSection>
+
+          {/* ===== HOMEPAGE SECTIONS ===== */}
+          <AccordionSection
+            icon={<Layers className="h-4 w-4" />}
+            title="Homepage Sections"
+            open={openPanels.has('sections')}
+            onToggle={() => togglePanel('sections')}
+          >
+            <div className="space-y-1 mb-3">
+              <p className="text-[10px] text-muted-foreground mb-2">Drag to reorder · Click to edit</p>
+              {[...sections].sort((a, b) => a.order - b.order).map(section => (
+                <div
+                  key={section.id}
+                  draggable
+                  onDragStart={() => handleDragStart(section.id)}
+                  onDragOver={(e) => handleDragOver(e, section.id)}
+                  onDrop={(e) => handleDrop(e, section.id)}
+                  onDragEnd={handleDragEnd}
+                  onClick={() => setSelectedId(selectedId === section.id ? null : section.id)}
+                  className={`flex items-center gap-2 px-2 py-2 rounded-lg text-sm cursor-pointer transition-all ${
+                    selectedId === section.id ? 'bg-primary/10 border border-primary/30 text-primary' : 'hover:bg-muted/20 border border-transparent'
+                  } ${!section.enabled ? 'opacity-40' : ''}`}
+                >
+                  <GripVertical className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 cursor-grab" />
+                  <span className="flex-1 truncate text-xs font-medium">{section.label}</span>
+                  <button onClick={(e) => { e.stopPropagation(); toggleEnabled(section.id); }} className="flex-shrink-0">
+                    {section.enabled ? <Eye className="h-3.5 w-3.5 text-primary" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Selected section editor */}
+            {selectedSection && Object.keys(settingsDef).length > 0 && (
+              <div className="border-t border-border/40 pt-3 mt-2 space-y-2">
+                <h4 className="text-xs font-semibold flex items-center gap-1.5">
+                  <Pencil className="h-3 w-3 text-primary" />
+                  Edit: <span className="text-primary">{selectedSection.label}</span>
+                </h4>
+                <div className="flex items-center gap-2 mb-2">
+                  <Switch checked={selectedSection.enabled} onCheckedChange={() => toggleEnabled(selectedSection.id)} />
+                  <Label className="text-[10px]">Visible</Label>
+                </div>
+                {Object.entries(settingsDef).map(([key, def]: [string, any]) => (
+                  <div key={key}>
+                    <Label className="text-[10px] mb-0.5 block text-muted-foreground">{def.label}</Label>
+                    {def.type === 'textarea' ? (
+                      <Textarea value={selectedSection.settings[key] || ''} onChange={(e) => updateSetting(selectedSection.id, key, e.target.value)} rows={2} className="text-xs bg-background/30" />
+                    ) : (
+                      <Input type={def.type === 'number' ? 'number' : 'text'} value={selectedSection.settings[key] || ''} onChange={(e) => updateSetting(selectedSection.id, key, e.target.value)} className="text-xs h-8 bg-background/30" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </AccordionSection>
+
+          {/* ===== HOMEPAGE MAIN TEXT & BUTTONS ===== */}
+          <AccordionSection
+            icon={<Pencil className="h-4 w-4" />}
+            title="Homepage Main Text & Buttons"
+            open={openPanels.has('hero-text')}
+            onToggle={() => togglePanel('hero-text')}
+          >
+            {(() => {
+              const heroSection = sections.find(s => s.id === 'hero');
+              if (!heroSection) return <p className="text-xs text-muted-foreground">No hero section found</p>;
+              const heroDef = SECTION_SETTING_LABELS.hero;
+              return (
+                <div className="space-y-3">
+                  {Object.entries(heroDef).map(([key, def]) => (
+                    <div key={key}>
+                      <Label className="text-[10px] mb-0.5 block text-muted-foreground">{def.label}</Label>
+                      {def.type === 'textarea' ? (
+                        <Textarea value={heroSection.settings[key] || ''} onChange={(e) => updateSetting('hero', key, e.target.value)} rows={2} className="text-xs bg-background/30" />
+                      ) : (
+                        <Input type="text" value={heroSection.settings[key] || ''} onChange={(e) => updateSetting('hero', key, e.target.value)} className="text-xs h-8 bg-background/30" />
+                      )}
+                    </div>
+                  ))}
+
+                  <div>
+                    <Label className="text-xs mb-1 block">Text Color</Label>
+                    <ColorField label="Foreground" value={theme.colors.foreground} onChange={v => updateTheme('colors.foreground', v)} />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <Switch checked={heroSection.enabled} onCheckedChange={() => toggleEnabled('hero')} />
+                    <Label className="text-xs">Show Hero Section</Label>
+                  </div>
+                </div>
+              );
+            })()}
+          </AccordionSection>
+
+          {/* ===== FONTS & TYPOGRAPHY ===== */}
+          <AccordionSection
+            icon={<Type className="h-4 w-4" />}
+            title="Fonts & Typography"
+            open={openPanels.has('fonts')}
+            onToggle={() => togglePanel('fonts')}
+          >
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs mb-1 block">Heading Font</Label>
+                <Select value={theme.fonts.heading} onValueChange={v => updateTheme('fonts.heading', v)}>
+                  <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                  <SelectContent>{FONT_OPTIONS.map(f => <SelectItem key={f} value={f}><span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span></SelectItem>)}</SelectContent>
+                </Select>
+                <p className="text-lg font-bold mt-2" style={{ fontFamily: `'${theme.fonts.heading}', sans-serif` }}>Preview Heading</p>
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Body Font</Label>
+                <Select value={theme.fonts.body} onValueChange={v => updateTheme('fonts.body', v)}>
+                  <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                  <SelectContent>{FONT_OPTIONS.map(f => <SelectItem key={f} value={f}><span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span></SelectItem>)}</SelectContent>
+                </Select>
+                <p className="text-sm mt-2" style={{ fontFamily: `'${theme.fonts.body}', sans-serif` }}>Preview body text paragraph.</p>
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Button Weight</Label>
+                <Select value={theme.buttons?.primaryWeight || '600'} onValueChange={v => updateTheme('buttons.primaryWeight', v)}>
+                  <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="400">Regular</SelectItem>
+                    <SelectItem value="500">Medium</SelectItem>
+                    <SelectItem value="600">Semibold</SelectItem>
+                    <SelectItem value="700">Bold</SelectItem>
+                    <SelectItem value="800">Extra Bold</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </AccordionSection>
+
+          {/* ===== SEARCH BAR ===== */}
+          <AccordionSection
+            icon={<Search className="h-4 w-4" />}
+            title="Search Bar"
+            open={openPanels.has('search')}
+            onToggle={() => togglePanel('search')}
+          >
+            <div className="space-y-3">
+              <div>
+                <Label className="text-[10px] mb-0.5 block text-muted-foreground">Search Placeholder Text</Label>
+                <Input
+                  value={theme.searchPlaceholder || 'Search beats, sound kits...'}
+                  onChange={(e) => updateTheme('searchPlaceholder', e.target.value)}
+                  className="text-xs h-8 bg-background/30"
+                  placeholder="What type of beat are you looking for?"
+                />
+              </div>
+              <div className="rounded-lg border border-border/50 p-2 bg-background/20">
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/20 border border-border/30">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{theme.searchPlaceholder || 'Search beats, sound kits...'}</span>
+                </div>
+                <p className="text-[9px] text-muted-foreground/60 mt-1.5 text-center">Preview</p>
+              </div>
+            </div>
+          </AccordionSection>
+
+          {/* ===== LAYOUT & SPACING ===== */}
+          <AccordionSection
+            icon={<Ruler className="h-4 w-4" />}
+            title="Layout & Spacing"
+            open={openPanels.has('layout')}
+            onToggle={() => togglePanel('layout')}
+          >
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs mb-1 block">Max Width</Label>
+                <Select value={theme.spacing.containerMaxWidth} onValueChange={v => updateTheme('spacing.containerMaxWidth', v)}>
+                  <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1200px">Narrow (1200px)</SelectItem>
+                    <SelectItem value="1400px">Default (1400px)</SelectItem>
+                    <SelectItem value="1600px">Wide (1600px)</SelectItem>
+                    <SelectItem value="100%">Full Width</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Section Padding</Label>
+                <Select value={theme.spacing.sectionPadding} onValueChange={v => updateTheme('spacing.sectionPadding', v)}>
+                  <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3rem">Compact</SelectItem>
+                    <SelectItem value="5rem">Default</SelectItem>
+                    <SelectItem value="7rem">Spacious</SelectItem>
+                    <SelectItem value="10rem">Extra</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Border Radius: {theme.spacing.borderRadius}</Label>
+                <Slider value={[parseFloat(theme.spacing.borderRadius) * 16]} min={0} max={24} step={2} onValueChange={([v]) => updateTheme('spacing.borderRadius', `${v / 16}rem`)} />
+                <div className="flex gap-3 mt-2">
+                  <div className="w-12 h-12 bg-primary/20 border border-primary/30" style={{ borderRadius: theme.spacing.borderRadius }} />
+                  <div className="flex-1 h-8 bg-primary/20 border border-primary/30" style={{ borderRadius: theme.spacing.borderRadius }} />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block">Button Radius: {theme.buttons?.primaryRadius || theme.spacing.borderRadius}</Label>
+                <Slider value={[parseFloat(theme.buttons?.primaryRadius || theme.spacing.borderRadius) * 16]} min={0} max={32} step={2} onValueChange={([v]) => updateTheme('buttons.primaryRadius', `${v / 16}rem`)} />
+                <div className="mt-2">
+                  <div className="inline-block px-5 py-2 text-xs font-semibold text-white" style={{ backgroundColor: hslToHex(theme.colors.primary), borderRadius: theme.buttons?.primaryRadius || theme.spacing.borderRadius, fontWeight: theme.buttons?.primaryWeight || '600' }}>
+                    Preview Button
+                  </div>
+                </div>
+              </div>
+            </div>
+          </AccordionSection>
+
+          {/* ===== PAGES ===== */}
+          <AccordionSection
+            icon={<Globe className="h-4 w-4" />}
+            title="Edit Pages"
+            open={openPanels.has('pages')}
+            onToggle={() => togglePanel('pages')}
+          >
+            <PagesContent />
+          </AccordionSection>
         </div>
 
         {/* Live Preview */}
-        <div className="flex-1 overflow-auto bg-muted/30 p-4">
+        <div className="flex-1 overflow-auto bg-muted/10 p-4">
           <div className="mx-auto transition-all duration-300 origin-top" style={{ width: viewportWidth, maxWidth: '100%', transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
-            <HomepageLivePreview sections={sections} dragOverId={dragOverId} selectedId={selectedId} onSectionClick={(id) => { setSelectedId(id); setSidebarTab('sections'); }} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={handleDrop} />
+            <HomepageLivePreview sections={sections} dragOverId={dragOverId} selectedId={selectedId} onSectionClick={(id) => { setSelectedId(id); if (!openPanels.has('sections')) togglePanel('sections'); }} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDrop={handleDrop} />
           </div>
         </div>
       </div>
@@ -351,60 +648,8 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
   );
 }
 
-/* ============================================================== */
-/* Sidebar sub-panels                                             */
-/* ============================================================== */
-
-function SectionsPanel({ sections, selectedId, selectedSection, settingsDef, onSelect, onToggle, onUpdateSetting, onDragStart, onDragOver, onDrop, onDragEnd }: any) {
-  return (
-    <div className="flex flex-col h-full">
-      <div className="p-3 border-b border-border">
-        <h3 className="text-sm font-semibold mb-1">Sections</h3>
-        <p className="text-[10px] text-muted-foreground">Drag to reorder · Click to edit</p>
-      </div>
-      <div className="p-2 space-y-1 border-b border-border">
-        {[...sections].sort((a: SectionConfig, b: SectionConfig) => a.order - b.order).map((section: SectionConfig) => (
-          <div key={section.id} draggable onDragStart={() => onDragStart(section.id)} onDragOver={(e: React.DragEvent) => onDragOver(e, section.id)} onDrop={(e: React.DragEvent) => onDrop(e, section.id)} onDragEnd={onDragEnd} onClick={() => onSelect(section.id)}
-            className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm cursor-pointer transition-all ${selectedId === section.id ? 'bg-primary/10 border border-primary/30 text-primary' : 'hover:bg-muted/50 border border-transparent'} ${!section.enabled ? 'opacity-50' : ''}`}
-          >
-            <GripVertical className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 cursor-grab" />
-            <span className="flex-1 truncate text-xs font-medium">{section.label}</span>
-            <button onClick={(e: React.MouseEvent) => { e.stopPropagation(); onToggle(section.id); }} className="flex-shrink-0">
-              {section.enabled ? <Eye className="h-3 w-3 text-primary" /> : <EyeOff className="h-3 w-3 text-muted-foreground" />}
-            </button>
-          </div>
-        ))}
-      </div>
-      {selectedSection && Object.keys(settingsDef).length > 0 ? (
-        <div className="p-3 flex-1 overflow-y-auto">
-          <h3 className="text-xs font-semibold mb-2">Edit: <span className="text-primary">{selectedSection.label}</span></h3>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <Switch checked={selectedSection.enabled} onCheckedChange={() => onToggle(selectedSection.id)} />
-              <Label className="text-[10px]">Visible</Label>
-            </div>
-            {Object.entries(settingsDef).map(([key, def]: [string, any]) => (
-              <div key={key}>
-                <Label className="text-[10px] mb-0.5 block">{def.label}</Label>
-                {def.type === 'textarea' ? (
-                  <Textarea value={selectedSection.settings[key] || ''} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onUpdateSetting(selectedSection.id, key, e.target.value)} rows={2} className="text-xs" />
-                ) : (
-                  <Input type={def.type === 'number' ? 'number' : 'text'} value={selectedSection.settings[key] || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUpdateSetting(selectedSection.id, key, e.target.value)} className="text-xs h-8" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="p-4 flex-1 flex items-center justify-center">
-          <p className="text-xs text-muted-foreground text-center">Click a section to edit</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PagesPanel() {
+/* ---- Pages sub-content ---- */
+function PagesContent() {
   const [aboutContent, setAboutContent] = useState({
     title: 'About Sonex Beats',
     intro: 'Sonex Beats is a modern beat marketplace and creative platform developed by Hit Chasers Collective — a group of producers with placements alongside major artists and experience working within the professional music industry.',
@@ -418,207 +663,34 @@ function PagesPanel() {
   const [expandedPage, setExpandedPage] = useState<'about' | 'licensing' | null>('about');
 
   return (
-    <div className="p-3 space-y-2">
-      <h3 className="text-sm font-semibold mb-2">Edit Pages</h3>
-      <p className="text-[10px] text-muted-foreground mb-3">Edit content for your About and Licensing pages.</p>
+    <div className="space-y-2">
+      <p className="text-[10px] text-muted-foreground mb-2">Edit content for your About and Licensing pages.</p>
 
-      {/* About Page */}
-      <button onClick={() => setExpandedPage(expandedPage === 'about' ? null : 'about')} className="w-full flex items-center justify-between p-2 rounded-lg border border-border hover:bg-muted/50 text-sm font-medium">
+      <button onClick={() => setExpandedPage(expandedPage === 'about' ? null : 'about')} className="w-full flex items-center justify-between p-2 rounded-lg border border-border/50 hover:bg-muted/20 text-xs font-medium">
         About Page
-        <span className="text-xs text-muted-foreground">{expandedPage === 'about' ? '▼' : '▶'}</span>
+        {expandedPage === 'about' ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
       </button>
       {expandedPage === 'about' && (
         <div className="space-y-2 pl-1">
-          <div>
-            <Label className="text-[10px] mb-0.5 block">Page Title</Label>
-            <Input value={aboutContent.title} onChange={e => setAboutContent(p => ({ ...p, title: e.target.value }))} className="text-xs h-8" />
-          </div>
-          <div>
-            <Label className="text-[10px] mb-0.5 block">Introduction</Label>
-            <Textarea value={aboutContent.intro} onChange={e => setAboutContent(p => ({ ...p, intro: e.target.value }))} rows={3} className="text-xs" />
-          </div>
-          <div>
-            <Label className="text-[10px] mb-0.5 block">Body Text</Label>
-            <Textarea value={aboutContent.body} onChange={e => setAboutContent(p => ({ ...p, body: e.target.value }))} rows={3} className="text-xs" />
-          </div>
-          <div>
-            <Label className="text-[10px] mb-0.5 block">Vision Statement</Label>
-            <Textarea value={aboutContent.vision} onChange={e => setAboutContent(p => ({ ...p, vision: e.target.value }))} rows={3} className="text-xs" />
-          </div>
-          <p className="text-[9px] text-muted-foreground italic">Page content editing will be saved with the store config in a future update.</p>
+          <div><Label className="text-[10px] mb-0.5 block">Page Title</Label><Input value={aboutContent.title} onChange={e => setAboutContent(p => ({ ...p, title: e.target.value }))} className="text-xs h-8 bg-background/30" /></div>
+          <div><Label className="text-[10px] mb-0.5 block">Introduction</Label><Textarea value={aboutContent.intro} onChange={e => setAboutContent(p => ({ ...p, intro: e.target.value }))} rows={3} className="text-xs bg-background/30" /></div>
+          <div><Label className="text-[10px] mb-0.5 block">Body Text</Label><Textarea value={aboutContent.body} onChange={e => setAboutContent(p => ({ ...p, body: e.target.value }))} rows={3} className="text-xs bg-background/30" /></div>
+          <div><Label className="text-[10px] mb-0.5 block">Vision Statement</Label><Textarea value={aboutContent.vision} onChange={e => setAboutContent(p => ({ ...p, vision: e.target.value }))} rows={3} className="text-xs bg-background/30" /></div>
+          <p className="text-[9px] text-muted-foreground/60 italic">Page content editing will be saved with the store config in a future update.</p>
         </div>
       )}
 
-      {/* Licensing Page */}
-      <button onClick={() => setExpandedPage(expandedPage === 'licensing' ? null : 'licensing')} className="w-full flex items-center justify-between p-2 rounded-lg border border-border hover:bg-muted/50 text-sm font-medium">
+      <button onClick={() => setExpandedPage(expandedPage === 'licensing' ? null : 'licensing')} className="w-full flex items-center justify-between p-2 rounded-lg border border-border/50 hover:bg-muted/20 text-xs font-medium">
         Licensing Page
-        <span className="text-xs text-muted-foreground">{expandedPage === 'licensing' ? '▼' : '▶'}</span>
+        {expandedPage === 'licensing' ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
       </button>
       {expandedPage === 'licensing' && (
         <div className="space-y-2 pl-1">
-          <div>
-            <Label className="text-[10px] mb-0.5 block">Hero Title</Label>
-            <Input value={licensingContent.heroTitle} onChange={e => setLicensingContent(p => ({ ...p, heroTitle: e.target.value }))} className="text-xs h-8" />
-          </div>
-          <div>
-            <Label className="text-[10px] mb-0.5 block">Hero Subtitle</Label>
-            <Textarea value={licensingContent.heroSubtitle} onChange={e => setLicensingContent(p => ({ ...p, heroSubtitle: e.target.value }))} rows={2} className="text-xs" />
-          </div>
-          <p className="text-[9px] text-muted-foreground italic">License tiers are managed in the License Templates tab. Page content editing will be saved with the store config in a future update.</p>
+          <div><Label className="text-[10px] mb-0.5 block">Hero Title</Label><Input value={licensingContent.heroTitle} onChange={e => setLicensingContent(p => ({ ...p, heroTitle: e.target.value }))} className="text-xs h-8 bg-background/30" /></div>
+          <div><Label className="text-[10px] mb-0.5 block">Hero Subtitle</Label><Textarea value={licensingContent.heroSubtitle} onChange={e => setLicensingContent(p => ({ ...p, heroSubtitle: e.target.value }))} rows={2} className="text-xs bg-background/30" /></div>
+          <p className="text-[9px] text-muted-foreground/60 italic">License tiers are managed in the License Templates tab.</p>
         </div>
       )}
-    </div>
-  );
-}
-
-function PresetsPanel({ onApply }: { onApply: (preset: typeof COLOR_PRESETS[number]) => void }) {
-  return (
-    <div className="p-3">
-      <h3 className="text-sm font-semibold mb-2">Color Presets</h3>
-      <p className="text-[10px] text-muted-foreground mb-3">Pick a theme, then fine-tune in Colors tab.</p>
-      <div className="grid grid-cols-1 gap-2">
-        {COLOR_PRESETS.map(preset => (
-          <button key={preset.name} className="text-left p-2.5 rounded-lg border border-border hover:border-primary/50 transition-all group" onClick={() => onApply(preset)}>
-            <div className="flex gap-1 mb-1.5">
-              {[preset.colors.primary, preset.colors.background, preset.colors.accent, preset.colors.card].map((c, i) => (
-                <div key={i} className="w-4 h-4 rounded-full border border-border/50" style={{ backgroundColor: hslToHex(c) }} />
-              ))}
-            </div>
-            <p className="text-xs font-medium group-hover:text-primary transition-colors">{preset.name}</p>
-            <p className="text-[10px] text-muted-foreground">{preset.description}</p>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ColorsPanel({ theme, onUpdate }: { theme: ThemeConfig; onUpdate: (path: string, value: any) => void }) {
-  return (
-    <div className="p-3 space-y-4">
-      <h3 className="text-sm font-semibold">Colors</h3>
-      {COLOR_GROUPS.map(group => (
-        <div key={group.title}>
-          <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{group.title}</Label>
-          <div className="space-y-1.5">
-            {group.items.map(({ key, label }) => (
-              <ColorField key={key} label={label} value={(theme.colors as any)[key] || '0 0% 0%'} onChange={v => onUpdate(`colors.${key}`, v)} />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FontsPanel({ theme, onUpdate }: { theme: ThemeConfig; onUpdate: (path: string, value: any) => void }) {
-  return (
-    <div className="p-3 space-y-4">
-      <h3 className="text-sm font-semibold">Fonts</h3>
-      <div>
-        <Label className="text-xs mb-1 block">Heading Font</Label>
-        <Select value={theme.fonts.heading} onValueChange={v => onUpdate('fonts.heading', v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>{FONT_OPTIONS.map(f => <SelectItem key={f} value={f}><span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span></SelectItem>)}</SelectContent>
-        </Select>
-        <p className="text-lg font-bold mt-2" style={{ fontFamily: `'${theme.fonts.heading}', sans-serif` }}>Preview Heading</p>
-      </div>
-      <div>
-        <Label className="text-xs mb-1 block">Body Font</Label>
-        <Select value={theme.fonts.body} onValueChange={v => onUpdate('fonts.body', v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>{FONT_OPTIONS.map(f => <SelectItem key={f} value={f}><span style={{ fontFamily: `'${f}', sans-serif` }}>{f}</span></SelectItem>)}</SelectContent>
-        </Select>
-        <p className="text-sm mt-2" style={{ fontFamily: `'${theme.fonts.body}', sans-serif` }}>Preview body text paragraph.</p>
-      </div>
-      <div>
-        <Label className="text-xs mb-1 block">Button Weight</Label>
-        <Select value={theme.buttons?.primaryWeight || '600'} onValueChange={v => onUpdate('buttons.primaryWeight', v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="400">Regular</SelectItem>
-            <SelectItem value="500">Medium</SelectItem>
-            <SelectItem value="600">Semibold</SelectItem>
-            <SelectItem value="700">Bold</SelectItem>
-            <SelectItem value="800">Extra Bold</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  );
-}
-
-function LogoPanel({ theme, onUpdate, onUpload, uploading }: { theme: ThemeConfig; onUpdate: (path: string, value: any) => void; onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; uploading: boolean }) {
-  return (
-    <div className="p-3 space-y-4">
-      <h3 className="text-sm font-semibold">Logo</h3>
-      {theme.logo.url ? (
-        <div className="rounded-lg border border-border p-3 flex flex-col items-center gap-3">
-          <img src={theme.logo.url} alt="Logo" style={{ height: `${theme.logo.height}px` }} className="object-contain" />
-          <Button variant="outline" size="sm" onClick={() => onUpdate('logo.url', '')} className="text-xs">Remove</Button>
-        </div>
-      ) : (
-        <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-lg border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors">
-          <Upload className="h-6 w-6 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Click to upload</span>
-          <span className="text-[10px] text-muted-foreground">PNG, SVG, JPG</span>
-          <input type="file" accept="image/*" className="hidden" onChange={onUpload} disabled={uploading} />
-          {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
-        </label>
-      )}
-      <div>
-        <Label className="text-xs mb-1 block">Logo Height: {theme.logo.height}px</Label>
-        <Slider value={[theme.logo.height]} min={20} max={80} step={2} onValueChange={([v]) => onUpdate('logo.height', v)} />
-      </div>
-    </div>
-  );
-}
-
-function LayoutPanel({ theme, onUpdate }: { theme: ThemeConfig; onUpdate: (path: string, value: any) => void }) {
-  return (
-    <div className="p-3 space-y-4">
-      <h3 className="text-sm font-semibold">Layout</h3>
-      <div>
-        <Label className="text-xs mb-1 block">Max Width</Label>
-        <Select value={theme.spacing.containerMaxWidth} onValueChange={v => onUpdate('spacing.containerMaxWidth', v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1200px">Narrow (1200px)</SelectItem>
-            <SelectItem value="1400px">Default (1400px)</SelectItem>
-            <SelectItem value="1600px">Wide (1600px)</SelectItem>
-            <SelectItem value="100%">Full Width</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label className="text-xs mb-1 block">Section Padding</Label>
-        <Select value={theme.spacing.sectionPadding} onValueChange={v => onUpdate('spacing.sectionPadding', v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="3rem">Compact</SelectItem>
-            <SelectItem value="5rem">Default</SelectItem>
-            <SelectItem value="7rem">Spacious</SelectItem>
-            <SelectItem value="10rem">Extra</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label className="text-xs mb-1 block">Border Radius: {theme.spacing.borderRadius}</Label>
-        <Slider value={[parseFloat(theme.spacing.borderRadius) * 16]} min={0} max={24} step={2} onValueChange={([v]) => onUpdate('spacing.borderRadius', `${v / 16}rem`)} />
-        <div className="flex gap-3 mt-2">
-          <div className="w-12 h-12 bg-primary/20 border border-primary/30" style={{ borderRadius: theme.spacing.borderRadius }} />
-          <div className="flex-1 h-8 bg-primary/20 border border-primary/30" style={{ borderRadius: theme.spacing.borderRadius }} />
-        </div>
-      </div>
-      <div>
-        <Label className="text-xs mb-1 block">Button Radius: {theme.buttons?.primaryRadius || theme.spacing.borderRadius}</Label>
-        <Slider value={[parseFloat(theme.buttons?.primaryRadius || theme.spacing.borderRadius) * 16]} min={0} max={32} step={2} onValueChange={([v]) => onUpdate('buttons.primaryRadius', `${v / 16}rem`)} />
-        <div className="mt-2">
-          <div className="inline-block px-5 py-2 text-xs font-semibold text-white" style={{ backgroundColor: hslToHex(theme.colors.primary), borderRadius: theme.buttons?.primaryRadius || theme.spacing.borderRadius, fontWeight: theme.buttons?.primaryWeight || '600' }}>
-            Preview Button
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

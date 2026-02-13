@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Loader2, ExternalLink, Package, DollarSign, Clock } from 'lucide-react';
+import { Loader2, ExternalLink, Package, DollarSign, Clock, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 interface OrderItem {
@@ -26,32 +28,16 @@ interface Order {
 export function OrdersManager() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('orders').select(`
-          id,
-          customer_email,
-          customer_name,
-          status,
-          total,
-          paypal_order_id,
-          paypal_transaction_id,
-          created_at,
-          download_expires_at,
-          order_items (
-            id,
-            beat_title,
-            license_name,
-            price,
-            download_count
-          )
-        `).order('created_at', {
-        ascending: false
-      });
+      const { data, error } = await supabase.from('orders').select(`
+          id, customer_email, customer_name, status, total,
+          paypal_order_id, paypal_transaction_id, created_at, download_expires_at,
+          order_items (id, beat_title, license_name, price, download_count)
+        `).order('created_at', { ascending: false });
       if (error) throw error;
       setOrders(data || []);
     } catch (error: any) {
@@ -61,6 +47,34 @@ export function OrdersManager() {
       setIsLoading(false);
     }
   };
+
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+      if (error) throw error;
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      setEditingOrderId(null);
+      toast.success(`Order status updated to ${newStatus}`);
+    } catch (error: any) {
+      console.error('Error updating order:', error);
+      toast.error('Failed to update order status');
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    try {
+      const { error: itemsError } = await supabase.from('order_items').delete().eq('order_id', orderId);
+      if (itemsError) throw itemsError;
+      const { error } = await supabase.from('orders').delete().eq('id', orderId);
+      if (error) throw error;
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      toast.success('Order deleted');
+    } catch (error: any) {
+      console.error('Error deleting order:', error);
+      toast.error('Failed to delete order');
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -141,16 +155,57 @@ export function OrdersManager() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-mono text-sm">{order.id.slice(0, 8)}...</span>
-                  <Badge className={getStatusColor(order.status)}>
-                    {order.status}
-                  </Badge>
+                  {editingOrderId === order.id ? (
+                    <Select defaultValue={order.status} onValueChange={(val) => updateOrderStatus(order.id, val)}>
+                      <SelectTrigger className="w-[140px] h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                        <SelectItem value="refunded">Refunded</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingOrderId(editingOrderId === order.id ? null : order.id)}>
+                    <Pencil className="h-3 w-3" />
+                  </Button>
                 </div>
                 <p className="font-medium">{order.customer_email}</p>
                 {order.customer_name && <p className="text-sm text-muted-foreground">{order.customer_name}</p>}
               </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-primary">${Number(order.total).toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">{formatDate(order.created_at)}</p>
+              <div className="text-right flex items-start gap-2">
+                <div>
+                  <p className="text-lg font-bold text-primary">${Number(order.total).toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(order.created_at)}</p>
+                </div>
+                {(order.status === 'cancelled' || order.status === 'pending' || order.status === 'failed') && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Order</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete this order and all its items. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteOrder(order.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </div>
 
@@ -162,9 +217,7 @@ export function OrdersManager() {
                     <span className="text-muted-foreground"> - {item.license_name}</span>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-xs text-muted-foreground">
-                      {item.download_count} downloads
-                    </span>
+                    <span className="text-xs text-muted-foreground">{item.download_count} downloads</span>
                     <span>${Number(item.price).toFixed(2)}</span>
                   </div>
                 </div>)}

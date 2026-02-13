@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Loader2, ExternalLink, Package, DollarSign, Clock, Trash2, Pencil } from 'lucide-react';
+import { Loader2, ExternalLink, Package, DollarSign, Clock, Trash2, Pencil, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,6 +30,8 @@ export function OrdersManager() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -113,6 +116,16 @@ export function OrdersManager() {
   }
   const totalRevenue = orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + Number(o.total), 0);
   const completedOrders = orders.filter(o => o.status === 'completed').length;
+
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = searchQuery === '' || 
+      order.customer_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (order.customer_name && order.customer_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      order.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return <div className="space-y-6">
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3 bg-popover">
@@ -130,7 +143,7 @@ export function OrdersManager() {
           </div>
           <p className="text-2xl font-bold">{completedOrders}</p>
         </div>
-        <div className="p-4 rounded-xl border border-border bg-[sidebar-accent-foreground] bg-sidebar-border">
+        <div className="p-4 rounded-xl border border-border bg-sidebar-border">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <Clock className="h-4 w-4" />
             <span className="text-sm">Pending Orders</span>
@@ -139,18 +152,42 @@ export function OrdersManager() {
         </div>
       </div>
 
-      {/* Orders List */}
-      <div className="flex items-center justify-between text-secondary-foreground bg-popover">
-        <p className="text-sm text-muted-foreground">
-          {orders.length} order{orders.length !== 1 ? 's' : ''} total
-        </p>
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by email, name, or order ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="Filter status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="refunded">Refunded</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
         <Button variant="outline" size="sm" onClick={fetchOrders}>
           Refresh
         </Button>
       </div>
 
+      {/* Orders Count */}
+      <p className="text-sm text-muted-foreground">
+        {filteredOrders.length} of {orders.length} order{orders.length !== 1 ? 's' : ''}
+      </p>
+
       <div className="space-y-4">
-        {orders.map(order => <div key={order.id} className="rounded-xl border border-border p-4 text-secondary-foreground bg-popover">
+        {filteredOrders.map(order => <div key={order.id} className="rounded-xl border border-border p-4 text-secondary-foreground bg-popover">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">

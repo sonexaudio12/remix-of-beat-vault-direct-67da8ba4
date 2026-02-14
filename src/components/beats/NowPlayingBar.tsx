@@ -55,7 +55,7 @@ export function NowPlayingBar() {
   const lowestPrice = Math.min(...currentBeat.licenses.map((l) => l.price));
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border shadow-2xl">
+    <div className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t border-border shadow-2xl bg-background">
       {/* Progress Bar */}
       <div
         ref={progressBarRef}

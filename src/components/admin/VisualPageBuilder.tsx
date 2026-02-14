@@ -3,7 +3,7 @@ import {
   GripVertical, Eye, EyeOff, Save, Check, Loader2, RotateCcw,
   LayoutTemplate, ZoomIn, ZoomOut, Monitor, Tablet, Smartphone, X,
   Upload, ChevronDown, ChevronRight, Pencil, Image as ImageIcon,
-  Type, Palette, Ruler, Search, Globe, Layers,
+  Type, Palette, Ruler, Search, Globe, Layers, Music,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SectionConfig, DEFAULT_SECTIONS } from '@/types/sectionConfig';
-import { ThemeConfig, DEFAULT_THEME, FONT_OPTIONS, COLOR_PRESETS, DEFAULT_LICENSING, LicensingConfig, LicenseTierConfig } from '@/types/storeConfig';
+import { ThemeConfig, DEFAULT_THEME, FONT_OPTIONS, COLOR_PRESETS, DEFAULT_LICENSING, LicensingConfig, LicenseTierConfig, BeatPlayerConfig, DEFAULT_BEAT_PLAYER } from '@/types/storeConfig';
 import { useSectionsDraft, useSaveSectionsDraft, usePublishSections } from '@/hooks/useSectionConfig';
 import { useThemeDraft, useSaveThemeDraft, usePublishTheme } from '@/hooks/useStoreConfig';
 import { SECTION_TEMPLATES } from '@/data/sectionTemplates';
@@ -624,6 +624,50 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
                 </div>
               </div>
             </div>
+          </AccordionSection>
+
+          {/* ===== BEAT PLAYER ===== */}
+          <AccordionSection
+            icon={<Music className="h-4 w-4" />}
+            title="Beat Player"
+            open={openPanels.has('beat-player')}
+            onToggle={() => togglePanel('beat-player')}
+          >
+            {(() => {
+              const bp = theme.beatPlayer || DEFAULT_BEAT_PLAYER;
+              return (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs mb-1 block">Default Layout</Label>
+                    <Select value={bp.layout} onValueChange={v => updateTheme('beatPlayer.layout', v)}>
+                      <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="list">List (BeatStars style)</SelectItem>
+                        <SelectItem value="grid">Grid (Card style)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1 block">Row Density</Label>
+                    <Select value={bp.rowStyle} onValueChange={v => updateTheme('beatPlayer.rowStyle', v)}>
+                      <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compact">Compact</SelectItem>
+                        <SelectItem value="comfortable">Comfortable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block pt-2">Show / Hide Elements</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2"><Switch checked={bp.showCover} onCheckedChange={v => updateTheme('beatPlayer.showCover', v)} /><Label className="text-xs">Cover Art</Label></div>
+                    <div className="flex items-center gap-2"><Switch checked={bp.showBpm} onCheckedChange={v => updateTheme('beatPlayer.showBpm', v)} /><Label className="text-xs">BPM Badge</Label></div>
+                    <div className="flex items-center gap-2"><Switch checked={bp.showTags} onCheckedChange={v => updateTheme('beatPlayer.showTags', v)} /><Label className="text-xs">Genre & Mood Tags</Label></div>
+                    <div className="flex items-center gap-2"><Switch checked={bp.showWaveform} onCheckedChange={v => updateTheme('beatPlayer.showWaveform', v)} /><Label className="text-xs">Waveform Preview</Label></div>
+                    <div className="flex items-center gap-2"><Switch checked={bp.showShareButton} onCheckedChange={v => updateTheme('beatPlayer.showShareButton', v)} /><Label className="text-xs">Share Button</Label></div>
+                  </div>
+                </div>
+              );
+            })()}
           </AccordionSection>
 
           {/* ===== PAGES ===== */}

@@ -291,10 +291,13 @@ function BeatPlayerPreview({ settings, beats }: { settings: Record<string, strin
           <h2 className="font-display text-3xl md:text-4xl font-bold mb-2">{settings.title || 'Listen & Explore'}</h2>
           <p className="text-muted-foreground">{settings.subtitle || 'Preview our beats with the built-in player'}</p>
         </div>
-        <div className="space-y-2 max-w-4xl mx-auto">
+        <div className="space-y-1 max-w-4xl mx-auto">
           {display.map((beat, i) => (
-            <div key={i} className="flex items-center gap-4 p-3 rounded-lg border border-border bg-background hover:bg-muted/30 transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+            <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent hover:bg-card/80 hover:border-border/50 transition-all">
+              <div className="w-8 flex-shrink-0 flex items-center justify-center">
+                <span className="text-sm text-muted-foreground font-mono">{i + 1}</span>
+              </div>
+              <div className="w-10 h-10 rounded-md bg-muted overflow-hidden flex-shrink-0">
                 {beat.cover_url && <img src={beat.cover_url} alt={beat.title} className="w-full h-full object-cover" />}
               </div>
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -302,12 +305,23 @@ function BeatPlayerPreview({ settings, beats }: { settings: Record<string, strin
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm truncate">{beat.title}</p>
-                <p className="text-xs text-muted-foreground">{beat.bpm} BPM · {beat.genre}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-muted-foreground">{beat.genre}</span>
+                  <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                  <span className="text-xs text-muted-foreground">{beat.mood}</span>
+                </div>
               </div>
-              <div className="flex-shrink-0 h-1 w-32 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary/40 rounded-full" style={{ width: `${30 + Math.random() * 50}%` }} />
+              <span className="text-xs font-medium text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded hidden md:inline">
+                {beat.bpm} BPM
+              </span>
+              <div className="hidden lg:flex items-end gap-px h-6 w-28 flex-shrink-0">
+                {Array.from({ length: 32 }).map((_, j) => (
+                  <div key={j} className="flex-1 bg-muted-foreground/15 rounded-sm" style={{ height: `${20 + Math.sin(j * 0.5 + i) * 40 + Math.random() * 30}%` }} />
+                ))}
               </div>
-              <span className="text-xs text-muted-foreground flex-shrink-0">3:24</span>
+              <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium flex-shrink-0">
+                <span>$24.99</span>
+              </button>
             </div>
           ))}
         </div>

@@ -3,9 +3,11 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { NowPlayingBar } from '@/components/beats/NowPlayingBar';
 import { BeatGrid } from '@/components/beats/BeatGrid';
+import { BeatList } from '@/components/beats/BeatList';
 import { useBeats } from '@/hooks/useBeats';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
-import { Search, Music, SlidersHorizontal } from 'lucide-react';
+import { useThemeConfig } from '@/hooks/useStoreConfig';
+import { Search, Music, SlidersHorizontal, LayoutGrid, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -21,6 +23,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function Beats() {
   const { data: beats = [], isLoading } = useBeats();
   const { currentBeat } = useAudioPlayer();
+  const { data: themeConfig } = useThemeConfig();
+  const defaultLayout = themeConfig?.beatPlayer?.layout || 'list';
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,6 +32,7 @@ export default function Beats() {
   const [moodFilter, setMoodFilter] = useState('all');
   const [bpmRange, setBpmRange] = useState<[number, number]>([60, 200]);
   const [showFilters, setShowFilters] = useState(true);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(defaultLayout);
 
   // Extract unique genres and moods from beats
   const { genres, moods, bpmMin, bpmMax } = useMemo(() => {
@@ -45,20 +50,10 @@ export default function Beats() {
   // Filter beats based on all criteria
   const filteredBeats = useMemo(() => {
     return beats.filter((beat) => {
-      // Search by name
-      const matchesSearch = beat.title
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-
-      // Filter by genre
+      const matchesSearch = beat.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesGenre = genreFilter === 'all' || beat.genre === genreFilter;
-
-      // Filter by mood/vibe
       const matchesMood = moodFilter === 'all' || beat.mood === moodFilter;
-
-      // Filter by tempo/BPM range
       const matchesBpm = beat.bpm >= bpmRange[0] && beat.bpm <= bpmRange[1];
-
       return matchesSearch && matchesGenre && matchesMood && matchesBpm;
     });
   }, [beats, searchQuery, genreFilter, moodFilter, bpmRange]);
@@ -123,24 +118,43 @@ export default function Beats() {
                   </Button>
                 )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-2"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                {showFilters ? 'Hide' : 'Show'} Filters
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* View mode toggle */}
+                <div className="flex items-center border border-border rounded-lg p-0.5 bg-background/50">
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('list')}
+                    className="h-7 w-7 p-0"
+                  >
+                    <List className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('grid')}
+                    className="h-7 w-7 p-0"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="gap-2"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  {showFilters ? 'Hide' : 'Show'} Filters
+                </Button>
+              </div>
             </div>
 
             {showFilters && (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {/* Search by Name */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Search
-                  </label>
+                  <label className="text-sm font-medium text-muted-foreground">Search</label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -154,9 +168,7 @@ export default function Beats() {
 
                 {/* Genre Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Genre
-                  </label>
+                  <label className="text-sm font-medium text-muted-foreground">Genre</label>
                   <Select value={genreFilter} onValueChange={setGenreFilter}>
                     <SelectTrigger className="bg-background border-border">
                       <SelectValue placeholder="All Genres" />
@@ -164,9 +176,7 @@ export default function Beats() {
                     <SelectContent>
                       <SelectItem value="all">All Genres</SelectItem>
                       {genres.map((genre) => (
-                        <SelectItem key={genre} value={genre}>
-                          {genre}
-                        </SelectItem>
+                        <SelectItem key={genre} value={genre}>{genre}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -174,9 +184,7 @@ export default function Beats() {
 
                 {/* Mood/Vibe Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Vibe
-                  </label>
+                  <label className="text-sm font-medium text-muted-foreground">Vibe</label>
                   <Select value={moodFilter} onValueChange={setMoodFilter}>
                     <SelectTrigger className="bg-background border-border">
                       <SelectValue placeholder="All Vibes" />
@@ -184,9 +192,7 @@ export default function Beats() {
                     <SelectContent>
                       <SelectItem value="all">All Vibes</SelectItem>
                       {moods.map((mood) => (
-                        <SelectItem key={mood} value={mood}>
-                          {mood}
-                        </SelectItem>
+                        <SelectItem key={mood} value={mood}>{mood}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -217,19 +223,17 @@ export default function Beats() {
           </div>
         </section>
 
-        {/* Beats Grid */}
+        {/* Beats */}
         <section className="py-12">
           <div className="container">
             {isLoading ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="space-y-3">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="space-y-3">
-                    <Skeleton className="aspect-square rounded-lg" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
+                  <Skeleton key={i} className="h-14 rounded-lg" />
                 ))}
               </div>
+            ) : viewMode === 'list' ? (
+              <BeatList beats={filteredBeats} />
             ) : (
               <BeatGrid beats={filteredBeats} />
             )}

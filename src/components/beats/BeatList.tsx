@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Beat } from '@/types/beat';
 import { BeatListRow } from './BeatListRow';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { useThemeConfig } from '@/hooks/useStoreConfig';
+import { BeatPlayerConfig, DEFAULT_BEAT_PLAYER } from '@/types/storeConfig';
 
 interface BeatListProps {
   beats: Beat[];
@@ -9,6 +11,8 @@ interface BeatListProps {
 
 export function BeatList({ beats }: BeatListProps) {
   const { setPlaylist } = useAudioPlayer();
+  const { data: themeConfig } = useThemeConfig();
+  const playerConfig: BeatPlayerConfig = { ...DEFAULT_BEAT_PLAYER, ...themeConfig?.beatPlayer };
 
   useEffect(() => {
     if (beats.length > 0) {
@@ -27,7 +31,7 @@ export function BeatList({ beats }: BeatListProps) {
   return (
     <div className="space-y-1">
       {beats.map((beat, index) => (
-        <BeatListRow key={beat.id} beat={beat} index={index} />
+        <BeatListRow key={beat.id} beat={beat} index={index} config={playerConfig} />
       ))}
     </div>
   );

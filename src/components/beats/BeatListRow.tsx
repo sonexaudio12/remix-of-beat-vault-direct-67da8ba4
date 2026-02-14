@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Play, Pause, ShoppingCart, Share2, Download, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Beat } from '@/types/beat';
+import { BeatPlayerConfig } from '@/types/storeConfig';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { LicenseModal } from './LicenseModal';
 import { MakeOfferModal } from './MakeOfferModal';
@@ -12,9 +13,10 @@ import { toast } from 'sonner';
 interface BeatListRowProps {
   beat: Beat & { isFree?: boolean };
   index: number;
+  config: BeatPlayerConfig;
 }
 
-export function BeatListRow({ beat, index }: BeatListRowProps) {
+export function BeatListRow({ beat, index, config }: BeatListRowProps) {
   const { currentBeat, isPlaying, toggle, progress, duration } = useAudioPlayer();
   const [showLicenseModal, setShowLicenseModal] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -25,6 +27,13 @@ export function BeatListRow({ beat, index }: BeatListRowProps) {
   const isCurrent = currentBeat?.id === beat.id;
   const lowestPrice = Math.min(...beat.licenses.map(l => l.price));
   const progressPercent = isCurrent && duration > 0 ? (progress / duration) * 100 : 0;
+
+  // Generate stable waveform heights
+  const waveformBars = useMemo(() => {
+    return Array.from({ length: 40 }, (_, i) => 
+      20 + Math.sin(i * 0.5 + index) * 40 + ((i * 7 + index * 13) % 30)
+    );
+  }, [index]);
 
   const handlePlay = () => {
     if (!isCurrentlyPlaying) trackPlay(beat.id);
@@ -90,13 +99,15 @@ export function BeatListRow({ beat, index }: BeatListRowProps) {
         </div>
 
         {/* Cover art */}
-        <div className="w-10 h-10 md:w-11 md:h-11 rounded-md overflow-hidden flex-shrink-0 bg-muted">
-          <img
-            src={beat.coverUrl}
-            alt={beat.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
+        {config.showCover && (
+          <div className="w-10 h-10 md:w-11 md:h-11 rounded-md overflow-hidden flex-shrink-0 bg-muted">
+            <img
+              src={beat.coverUrl}
+              alt={beat.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
 
         {/* Title + Tags */}
         <div className="flex-1 min-w-0">
@@ -116,53 +127,71 @@ export function BeatListRow({ beat, index }: BeatListRowProps) {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-muted-foreground">{beat.genre}</span>
-            <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-            <span className="text-xs text-muted-foreground">{beat.mood}</span>
-          </div>
+          {config.showTags && (
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-muted-foreground">{beat.genre}</span>
+              <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+              <span className="text-xs text-muted-foreground">{beat.mood}</span>
+            </div>
+          )}
         </div>
 
         {/* BPM */}
-        <div className="hidden md:flex items-center gap-1 flex-shrink-0">
-          <span className="text-xs font-medium text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
-            {beat.bpm} BPM
-          </span>
-        </div>
-
-        {/* Waveform / Progress */}
-        {isCurrent ? (
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0 w-32">
-            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-100"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="hidden lg:flex items-center flex-shrink-0 w-32">
-            <div className="flex items-end gap-px h-6 w-full">
-              {Array.from({ length: 40 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-muted-foreground/15 rounded-sm"
-                  style={{
-                    height: `${20 + Math.sin(i * 0.5 + index) * 40 + Math.random() * 30}%`,
-                  }}
-                />
-              ))}
-            </div>
+        {config.showBpm && (
+          <div className="hidden md:flex items-center gap-1 flex-shrink-0">
+            <span className="text-xs font-medium text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
+              {beat.bpm} BPM
+            </span>
           </div>
         )}
 
+        {/* Waveform / Progress */}
+        {config.showWaveform && (
+          isCurrent ? (
+            <div className="hidden lg:flex items-center flex-shrink-0 w-32">
+              <div className="flex items-end gap-px h-6 w-full">
+                {waveformBars.map((h, i) => {
+                  const barProgress = (i / waveformBars.length) * 100;
+                  const isPlayed = barProgress <= progressPercent;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex-1 rounded-sm transition-all duration-150 ${
+                        isPlayed ? 'bg-primary' : 'bg-muted-foreground/20'
+                      } ${isCurrentlyPlaying && isPlayed ? 'animate-waveform' : ''}`}
+                      style={{
+                        height: `${h}%`,
+                        animationDelay: isCurrentlyPlaying && isPlayed ? `${(i % 5) * 0.1}s` : undefined,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="hidden lg:flex items-center flex-shrink-0 w-32">
+              <div className="flex items-end gap-px h-6 w-full">
+                {waveformBars.map((h, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 bg-muted-foreground/15 rounded-sm"
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        )}
+
         {/* Share button */}
-        <button
-          onClick={handleShare}
-          className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
-        >
-          <Share2 className="h-3.5 w-3.5" />
-        </button>
+        {config.showShareButton && (
+          <button
+            onClick={handleShare}
+            className="hidden sm:flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+          </button>
+        )}
 
         {/* Offer button */}
         {beat.isExclusiveAvailable && (

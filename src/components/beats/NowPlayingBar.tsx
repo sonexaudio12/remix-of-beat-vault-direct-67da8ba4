@@ -17,7 +17,7 @@ export function NowPlayingBar() {
     pause,
     playNext,
     playPrevious,
-    playlist,
+    playlist
   } = useAudioPlayer();
   const progressBarRef = useRef<HTMLDivElement>(null);
   const [showLicenseModal, setShowLicenseModal] = useState(false);
@@ -51,8 +51,8 @@ export function NowPlayingBar() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
-  const lowestPrice = Math.min(...currentBeat.licenses.map(l => l.price));
+  const progressPercent = duration > 0 ? progress / duration * 100 : 0;
+  const lowestPrice = Math.min(...currentBeat.licenses.map((l) => l.price));
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border shadow-2xl">
@@ -60,28 +60,28 @@ export function NowPlayingBar() {
       <div
         ref={progressBarRef}
         className="h-1 w-full bg-muted/50 cursor-pointer group hover:h-1.5 transition-all relative"
-        onClick={handleProgressClick}
-      >
+        onClick={handleProgressClick}>
+
         <div
           className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-100 relative"
-          style={{ width: `${progressPercent}%` }}
-        >
+          style={{ width: `${progressPercent}%` }}>
+
           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-primary/30" />
         </div>
       </div>
 
-      <div className="container flex h-[72px] items-center gap-3 md:gap-4">
+      <div className="container flex h-[72px] items-center gap-3 md:gap-4 bg-background">
         {/* Beat Info - Left */}
         <div className="flex items-center gap-3 min-w-0 w-[30%]">
           <div className="relative flex-shrink-0">
             <img
               src={currentBeat.coverUrl}
               alt={currentBeat.title}
-              className={`h-12 w-12 rounded-lg object-cover shadow-md ${isPlaying ? 'ring-2 ring-primary/30' : ''}`}
-            />
-            {isPlaying && (
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-card animate-pulse" />
-            )}
+              className={`h-12 w-12 rounded-lg object-cover shadow-md ${isPlaying ? 'ring-2 ring-primary/30' : ''}`} />
+
+            {isPlaying &&
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-card animate-pulse" />
+            }
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-sm truncate">{currentBeat.title}</p>
@@ -99,8 +99,8 @@ export function NowPlayingBar() {
               size="iconSm"
               onClick={playPrevious}
               className="text-muted-foreground hover:text-foreground h-8 w-8"
-              disabled={playlist.length === 0}
-            >
+              disabled={playlist.length === 0}>
+
               <SkipBack className="h-4 w-4" />
             </Button>
 
@@ -108,8 +108,8 @@ export function NowPlayingBar() {
               variant="player"
               size="icon"
               onClick={() => toggle(currentBeat)}
-              className="h-10 w-10 rounded-full"
-            >
+              className="h-10 w-10 rounded-full">
+
               {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
             </Button>
 
@@ -118,8 +118,8 @@ export function NowPlayingBar() {
               size="iconSm"
               onClick={playNext}
               className="text-muted-foreground hover:text-foreground h-8 w-8"
-              disabled={playlist.length === 0}
-            >
+              disabled={playlist.length === 0}>
+
               <SkipForward className="h-4 w-4" />
             </Button>
           </div>
@@ -146,8 +146,8 @@ export function NowPlayingBar() {
             variant="default"
             size="sm"
             onClick={() => setShowLicenseModal(true)}
-            className="gap-1.5 h-8 text-xs"
-          >
+            className="gap-1.5 h-8 text-xs">
+
             <ShoppingCart className="h-3.5 w-3.5" />
             <span className="hidden sm:inline font-bold">${lowestPrice.toFixed(2)}</span>
           </Button>
@@ -157,8 +157,8 @@ export function NowPlayingBar() {
             variant="ghost"
             size="iconSm"
             onClick={handleShare}
-            className="hidden md:inline-flex text-muted-foreground hover:text-foreground h-8 w-8"
-          >
+            className="hidden md:inline-flex text-muted-foreground hover:text-foreground h-8 w-8">
+
             <Share2 className="h-3.5 w-3.5" />
           </Button>
 
@@ -166,21 +166,21 @@ export function NowPlayingBar() {
           <div className="hidden lg:flex items-center gap-2">
             <button
               onClick={() => setMuted(!muted)}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {muted || volume === 0 ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
+              className="text-muted-foreground hover:text-foreground transition-colors">
+
+              {muted || volume === 0 ?
+              <VolumeX className="h-4 w-4" /> :
+
+              <Volume2 className="h-4 w-4" />
+              }
             </button>
             <Slider
               value={[muted ? 0 : volume]}
               max={100}
               step={1}
-              onValueChange={([v]) => { setVolume(v); setMuted(v === 0); }}
-              className="w-20"
-            />
+              onValueChange={([v]) => {setVolume(v);setMuted(v === 0);}}
+              className="w-20" />
+
           </div>
 
           {/* Close */}
@@ -188,14 +188,14 @@ export function NowPlayingBar() {
             variant="ghost"
             size="iconSm"
             onClick={pause}
-            className="text-muted-foreground hover:text-foreground h-8 w-8"
-          >
+            className="text-muted-foreground hover:text-foreground h-8 w-8">
+
             <X className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
       <LicenseModal beat={currentBeat} open={showLicenseModal} onOpenChange={setShowLicenseModal} />
-    </div>
-  );
+    </div>);
+
 }

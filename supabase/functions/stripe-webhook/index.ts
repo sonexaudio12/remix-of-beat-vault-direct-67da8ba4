@@ -170,7 +170,7 @@ serve(async (req) => {
                 price: item.price,
               })),
               total: order.total,
-              downloadUrl: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/order-confirmation?orderId=${order.id}&email=${encodeURIComponent(order.customer_email)}`,
+              downloadUrl: `${Deno.env.get("SITE_URL") || "https://sonex.shop"}/order-confirmation?orderId=${order.id}&email=${encodeURIComponent(order.customer_email)}`,
               expiresAt: order.download_expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
               generatedLicensePaths,
             },

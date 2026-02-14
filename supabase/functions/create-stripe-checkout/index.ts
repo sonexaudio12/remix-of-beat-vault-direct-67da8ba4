@@ -48,6 +48,7 @@ interface CheckoutRequest {
   customerName: string;
   discountCode?: string | null;
   discountAmount?: number;
+  userId?: string | null;
 }
 
 serve(async (req) => {
@@ -58,7 +59,7 @@ serve(async (req) => {
   try {
     const stripeKey = await getStripeSecretKey();
 
-    const { items, customerEmail, customerName, discountCode, discountAmount }: CheckoutRequest = await req.json();
+    const { items, customerEmail, customerName, discountCode, discountAmount, userId }: CheckoutRequest = await req.json();
 
     if (!items || items.length === 0) {
       throw new Error("No items provided");
@@ -112,6 +113,7 @@ serve(async (req) => {
         discount_code: discountCode || null,
         discount_amount: validDiscount,
         download_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        user_id: userId || null,
       })
       .select()
       .single();

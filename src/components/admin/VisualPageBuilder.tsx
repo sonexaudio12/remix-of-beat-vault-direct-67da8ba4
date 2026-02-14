@@ -703,6 +703,43 @@ function PagesContent({ theme, updateTheme }: { theme: ThemeConfig; updateTheme:
     updateTheme('licensing', updated);
   };
 
+  const addUseCase = (tierIdx: number) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.tiers[tierIdx].useCases.push({ icon: 'Music', label: 'New Use' });
+    updateTheme('licensing', updated);
+  };
+
+  const removeUseCase = (tierIdx: number, ucIdx: number) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.tiers[tierIdx].useCases.splice(ucIdx, 1);
+    updateTheme('licensing', updated);
+  };
+
+  const addTier = () => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.tiers.push({
+      id: `tier-${Date.now()}`,
+      name: 'New License',
+      price: '$0.00',
+      priceNote: 'starting at',
+      color: 'primary',
+      icon: 'Music',
+      description: 'Describe this license tier',
+      includes: ['Feature 1'],
+      useCases: [{ icon: 'Music', label: 'Use Case' }],
+      popular: false,
+    });
+    updateTheme('licensing', updated);
+    setExpandedTier(updated.tiers.length - 1);
+  };
+
+  const removeTier = (tierIdx: number) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.tiers.splice(tierIdx, 1);
+    updateTheme('licensing', updated);
+    setExpandedTier(null);
+  };
+
   const updateFaq = (faqIdx: number, field: 'q' | 'a', value: string) => {
     const updated = JSON.parse(JSON.stringify(licensing));
     updated.faq[faqIdx][field] = value;
@@ -809,13 +846,25 @@ function PagesContent({ theme, updateTheme }: { theme: ThemeConfig; updateTheme:
                       {tier.useCases.map((uc, ucIdx) => (
                         <div key={ucIdx} className="flex items-center gap-1 mb-1">
                           <Input value={uc.label} onChange={e => updateUseCase(tierIdx, ucIdx, 'label', e.target.value)} className="text-xs h-7 bg-background/30 flex-1" placeholder="Label" />
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive" onClick={() => removeUseCase(tierIdx, ucIdx)}>
+                            <X className="h-3 w-3" />
+                          </Button>
                         </div>
                       ))}
+                      <Button variant="outline" size="sm" className="text-[10px] h-6 mt-1" onClick={() => addUseCase(tierIdx)}>+ Add Use Case</Button>
+                    </div>
+
+                    {/* Remove Tier */}
+                    <div className="pt-2 border-t border-border/30">
+                      <Button variant="outline" size="sm" className="text-[10px] h-7 text-destructive border-destructive/30 hover:bg-destructive/10 w-full" onClick={() => removeTier(tierIdx)}>
+                        Remove This Tier
+                      </Button>
                     </div>
                   </div>
                 )}
               </div>
             ))}
+            <Button variant="outline" size="sm" className="text-[10px] h-7 w-full mt-2" onClick={addTier}>+ Add License Tier</Button>
           </div>
 
           {/* FAQ */}

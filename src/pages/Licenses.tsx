@@ -5,7 +5,7 @@ import { useThemeConfig } from "@/hooks/useStoreConfig";
 import { DEFAULT_LICENSING, LicenseTierConfig } from "@/types/storeConfig";
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
-  Music, FileAudio, Archive, Mic, Users, Globe, Radio,
+  Music, FileAudio, Archive, Mic, Users, Globe, Radio
 };
 
 const Licenses = () => {
@@ -34,21 +34,21 @@ const Licenses = () => {
               {licensing.tiers.map((license) => {
                 const Icon = ICON_MAP[license.icon] || Music;
                 const colorClass =
-                  license.color === "primary"
-                    ? "border-primary/30 hover:border-primary"
-                    : `border-${license.color}/30 hover:border-${license.color}`;
+                license.color === "primary" ?
+                "border-primary/30 hover:border-primary" :
+                `border-${license.color}/30 hover:border-${license.color}`;
                 return (
                   <div
                     key={license.id}
                     className={`relative flex flex-col rounded-2xl border-2 p-6 md:p-8 transition-all bg-background ${colorClass} ${
-                      license.popular ? "md:-mt-4 md:mb-4 shadow-glow" : ""
-                    }`}
-                  >
-                    {license.popular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-tier-premium text-xs font-bold uppercase tracking-wider text-primary-foreground">
+                    license.popular ? "md:-mt-4 md:mb-4 shadow-glow" : ""}`
+                    }>
+
+                    {license.popular &&
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-tier-premium text-xs font-bold uppercase tracking-wider text-primary-foreground">
                         Most Popular
                       </div>
-                    )}
+                    }
 
                     {/* Header */}
                     <div className="flex items-center gap-3 mb-4">
@@ -73,12 +73,12 @@ const Licenses = () => {
                         What's Included
                       </h4>
                       <ul className="space-y-2.5 mb-6 bg-background">
-                        {license.includes.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
+                        {license.includes.map((item, i) =>
+                        <li key={i} className="flex items-start gap-2 text-sm">
                             <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                             <span>{item}</span>
                           </li>
-                        ))}
+                        )}
                       </ul>
                     </div>
 
@@ -94,13 +94,13 @@ const Licenses = () => {
                             <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-sm">
                               <UseIcon className="h-3.5 w-3.5" />
                               {use.label}
-                            </div>
-                          );
+                            </div>);
+
                         })}
                       </div>
                     </div>
-                  </div>
-                );
+                  </div>);
+
               })}
             </div>
           </div>
@@ -111,19 +111,19 @@ const Licenses = () => {
           <div className="container">
             <h2 className="font-display text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
             <div className="max-w-3xl mx-auto space-y-6">
-              {licensing.faq.map((faq, i) => (
-                <div key={i} className="p-6 rounded-xl border border-border bg-card">
+              {licensing.faq.map((faq, i) =>
+              <div key={i} className="p-6 rounded-xl border border-border bg-sidebar-border">
                   <h3 className="font-semibold mb-2">{faq.q}</h3>
                   <p className="text-muted-foreground">{faq.a}</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </section>
       </main>
       <Footer />
-    </div>
-  );
+    </div>);
+
 };
 
 export default Licenses;

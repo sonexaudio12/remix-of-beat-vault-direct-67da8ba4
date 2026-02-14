@@ -91,6 +91,26 @@ const OrderConfirmation = () => {
     }
   };
 
+  const downloadFile = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download error:', err);
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
   const downloadAllFiles = async () => {
     const allFiles = downloads.flatMap(item => item.files);
     
@@ -101,26 +121,14 @@ const OrderConfirmation = () => {
 
     toast.info(`Starting download of ${allFiles.length} files...`);
 
-    // Download files with a small delay between each to prevent browser blocking
     for (let i = 0; i < allFiles.length; i++) {
-      const file = allFiles[i];
-      
-      // Create a temporary link and trigger download
-      const link = document.createElement('a');
-      link.href = file.url;
-      link.download = file.name;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Small delay between downloads to prevent browser from blocking
+      await downloadFile(allFiles[i].url, allFiles[i].name);
       if (i < allFiles.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
     }
 
-    toast.success('All downloads started!');
+    toast.success('All downloads completed!');
   };
 
   const getTotalFileCount = () => {
@@ -342,11 +350,10 @@ default:
                     {/* Files List */}
                     <div className="p-4 space-y-2">
                       {item.files.map((file, fileIndex) => (
-                        <a
+                        <button
                           key={fileIndex}
-                          href={file.url}
-                          download={file.name}
-                          className="flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors group"
+                          onClick={() => downloadFile(file.url, file.name)}
+                          className="w-full flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors group text-left"
                         >
                           <div className="flex items-center gap-3">
                             <span className={getFileColor(file.type)}>
@@ -359,15 +366,11 @@ default:
                               </p>
                             </div>
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                          >
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                             <DownloadIcon className="h-4 w-4 mr-2" />
                             Download
-                          </Button>
-                        </a>
+                          </span>
+                        </button>
                       ))}
                     </div>
                   </div>

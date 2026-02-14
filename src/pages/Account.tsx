@@ -91,20 +91,50 @@ const Account = () => {
       setOrders(data || []);
 
       // Fetch generated license PDFs for each order
+      // First try generated licenses, then fall back to template licenses
       const licensesMap: Record<string, {
         name: string;
         path: string;
       }[]> = {};
       for (const order of data || []) {
         try {
+          // Check for generated licenses first
           const {
-            data: files
+            data: genFiles
           } = await supabase.storage.from('licenses').list(`generated/${order.id}`);
-          if (files && files.length > 0) {
-            licensesMap[order.id] = files.map(f => ({
+          if (genFiles && genFiles.length > 0) {
+            licensesMap[order.id] = genFiles.map(f => ({
               name: f.name,
               path: `generated/${order.id}/${f.name}`
             }));
+          } else {
+            // Fall back: build template license paths from order items' license tiers
+            const tierIds = order.order_items
+              .filter((item: OrderItem) => item.license_tier_id)
+              .map((item: OrderItem) => item.license_tier_id);
+            
+            if (tierIds.length > 0) {
+              const { data: tiers } = await supabase
+                .from('license_tiers')
+                .select('id, type')
+                .in('id', tierIds);
+              
+              if (tiers && tiers.length > 0) {
+                const uniqueTypes = [...new Set(tiers.map(t => t.type))];
+                const { data: templates } = await supabase
+                  .from('license_templates')
+                  .select('type, name, file_path')
+                  .in('type', uniqueTypes)
+                  .not('file_path', 'is', null);
+                
+                if (templates && templates.length > 0) {
+                  licensesMap[order.id] = templates.map(t => ({
+                    name: `${t.name}.pdf`,
+                    path: t.file_path!
+                  }));
+                }
+              }
+            }
           }
         } catch {
           // Ignore storage errors for individual orders
@@ -169,19 +199,32 @@ const Account = () => {
       });
       if (error) throw error;
       if (data?.downloads && data.downloads.length > 0) {
-        for (const download of data.downloads) {
-          if (download.url) {
+        const allFiles = data.downloads.flatMap((dl: any) => dl.files || []);
+        if (allFiles.length === 0) {
+          toast.error('No files available for download');
+          return;
+        }
+        toast.info(`Downloading ${allFiles.length} files...`);
+        for (const file of allFiles) {
+          try {
+            const response = await fetch(file.url);
+            if (!response.ok) throw new Error('Fetch failed');
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = download.url;
-            link.download = download.fileName || 'download';
+            link.href = blobUrl;
+            link.download = file.name || 'download';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            await new Promise(resolve => setTimeout(resolve, 500));
+            URL.revokeObjectURL(blobUrl);
+          } catch {
+            window.open(file.url, '_blank');
           }
+          await new Promise(resolve => setTimeout(resolve, 800));
         }
-        toast.success('Downloads started!');
-        fetchOrders(); // Refresh to update download counts
+        toast.success('Downloads completed!');
+        fetchOrders();
       } else {
         toast.error('No files available for download');
       }

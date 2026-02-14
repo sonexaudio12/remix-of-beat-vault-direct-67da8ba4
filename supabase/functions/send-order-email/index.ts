@@ -269,15 +269,43 @@ serve(async (req: Request) => {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
-    const data: SendOrderEmailRequest = await req.json();
-    
-    console.log("Sending order confirmation email to:", data.customerEmail);
-
-    // Initialize Supabase client to fetch license PDFs
+    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    let data: SendOrderEmailRequest = await req.json();
+
+    // If only orderId was provided, fetch the full order data from DB
+    if (data.orderId && (!data.customerEmail || !data.orderItems)) {
+      console.log("Fetching order data from DB for orderId:", data.orderId);
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .select(`*, order_items (*)`)
+        .eq("id", data.orderId)
+        .single();
+
+      if (orderError || !order) {
+        throw new Error(`Failed to fetch order ${data.orderId}: ${orderError?.message}`);
+      }
+
+      data = {
+        ...data,
+        customerEmail: data.customerEmail || order.customer_email,
+        customerName: data.customerName || order.customer_name || undefined,
+        orderItems: data.orderItems || (order.order_items || []).map((item: any) => ({
+          beat_title: item.item_title || item.beat_title,
+          license_name: item.license_name,
+          price: item.price,
+        })),
+        total: data.total ?? order.total,
+        downloadUrl: data.downloadUrl || `${Deno.env.get("SITE_URL") || "https://sonex.shop"}/order-confirmation?orderId=${order.id}&email=${encodeURIComponent(order.customer_email)}`,
+        expiresAt: data.expiresAt || order.download_expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+    }
+    
+    console.log("Sending order confirmation email to:", data.customerEmail);
 
     let attachments: Attachment[] = [];
     
@@ -288,7 +316,7 @@ serve(async (req: Request) => {
     }
     
     // Fallback to template PDFs if no generated ones available
-    if (attachments.length === 0) {
+    if (attachments.length === 0 && data.orderItems) {
       console.log("No generated licenses found, falling back to templates");
       attachments = await fetchTemplateLicensePdfs(supabase, data.orderItems);
     }

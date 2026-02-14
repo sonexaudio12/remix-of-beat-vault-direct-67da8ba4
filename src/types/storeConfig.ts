@@ -39,6 +39,18 @@ export interface ThemeConfig {
   };
   searchPlaceholder?: string;
   licensing?: LicensingConfig;
+  beatPlayer?: BeatPlayerConfig;
+}
+
+export interface BeatPlayerConfig {
+  layout: 'list' | 'grid';
+  showCover: boolean;
+  showBpm: boolean;
+  showTags: boolean;
+  showWaveform: boolean;
+  showShareButton: boolean;
+  rowStyle: 'compact' | 'comfortable';
+  accentColor: string;
 }
 
 export interface LicenseTierConfig {
@@ -142,6 +154,27 @@ export const DEFAULT_THEME: ThemeConfig = {
     primaryWeight: '600',
   },
   searchPlaceholder: 'Search beats, sound kits...',
+  beatPlayer: {
+    layout: 'list',
+    showCover: true,
+    showBpm: true,
+    showTags: true,
+    showWaveform: true,
+    showShareButton: false,
+    rowStyle: 'comfortable',
+    accentColor: 'primary',
+  },
+};
+
+export const DEFAULT_BEAT_PLAYER: BeatPlayerConfig = {
+  layout: 'list',
+  showCover: true,
+  showBpm: true,
+  showTags: true,
+  showWaveform: true,
+  showShareButton: false,
+  rowStyle: 'comfortable',
+  accentColor: 'primary',
 };
 
 export const FONT_OPTIONS = [

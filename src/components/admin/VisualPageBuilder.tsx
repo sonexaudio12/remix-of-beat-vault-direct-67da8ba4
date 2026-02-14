@@ -760,6 +760,26 @@ function PagesContent({ theme, updateTheme }: { theme: ThemeConfig; updateTheme:
 
   const [expandedPage, setExpandedPage] = useState<'about' | 'licensing' | null>('about');
   const [expandedTier, setExpandedTier] = useState<number | null>(null);
+  const [dragTierId, setDragTierId] = useState<string | null>(null);
+  const [dragOverTierId, setDragOverTierId] = useState<string | null>(null);
+
+  const handleTierDragStart = (id: string) => setDragTierId(id);
+  const handleTierDragOver = (e: React.DragEvent, id: string) => { e.preventDefault(); if (dragTierId && dragTierId !== id) setDragOverTierId(id); };
+  const handleTierDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!dragTierId || dragTierId === targetId) return;
+    const updated = JSON.parse(JSON.stringify(licensing));
+    const fromIdx = updated.tiers.findIndex((t: any) => t.id === dragTierId);
+    const toIdx = updated.tiers.findIndex((t: any) => t.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = updated.tiers.splice(fromIdx, 1);
+    updated.tiers.splice(toIdx, 0, moved);
+    updateTheme('licensing', updated);
+    setDragTierId(null);
+    setDragOverTierId(null);
+    setExpandedTier(null);
+  };
+  const handleTierDragEnd = () => { setDragTierId(null); setDragOverTierId(null); };
 
   return (
     <div className="space-y-2">
@@ -799,14 +819,23 @@ function PagesContent({ theme, updateTheme }: { theme: ThemeConfig; updateTheme:
           <div className="pt-2 border-t border-border/30">
             <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">License Tiers</Label>
             {licensing.tiers.map((tier, tierIdx) => (
-              <div key={tier.id} className="mb-2">
+              <div
+                key={tier.id}
+                draggable
+                onDragStart={() => handleTierDragStart(tier.id)}
+                onDragOver={(e) => handleTierDragOver(e, tier.id)}
+                onDrop={(e) => handleTierDrop(e, tier.id)}
+                onDragEnd={handleTierDragEnd}
+                className={`mb-2 ${dragOverTierId === tier.id ? 'border-t-2 border-primary' : ''}`}
+              >
                 <button
                   onClick={() => setExpandedTier(expandedTier === tierIdx ? null : tierIdx)}
-                  className={`w-full flex items-center justify-between p-2 rounded-lg border text-xs font-medium transition-colors ${
+                  className={`w-full flex items-center gap-2 p-2 rounded-lg border text-xs font-medium transition-colors ${
                     expandedTier === tierIdx ? 'border-primary/50 bg-primary/5' : 'border-border/50 hover:bg-muted/20'
                   }`}
                 >
-                  <span className="flex items-center gap-2">
+                  <GripVertical className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 cursor-grab" />
+                  <span className="flex items-center gap-2 flex-1">
                     <span className="text-primary font-bold">{tier.price}</span>
                     <span>{tier.name}</span>
                     {tier.popular && <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">Popular</span>}

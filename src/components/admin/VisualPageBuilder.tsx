@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SectionConfig, DEFAULT_SECTIONS } from '@/types/sectionConfig';
-import { ThemeConfig, DEFAULT_THEME, FONT_OPTIONS, COLOR_PRESETS } from '@/types/storeConfig';
+import { ThemeConfig, DEFAULT_THEME, FONT_OPTIONS, COLOR_PRESETS, DEFAULT_LICENSING, LicensingConfig, LicenseTierConfig } from '@/types/storeConfig';
 import { useSectionsDraft, useSaveSectionsDraft, usePublishSections } from '@/hooks/useSectionConfig';
 import { useThemeDraft, useSaveThemeDraft, usePublishTheme } from '@/hooks/useStoreConfig';
 import { SECTION_TEMPLATES } from '@/data/sectionTemplates';
@@ -633,7 +633,7 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
             open={openPanels.has('pages')}
             onToggle={() => togglePanel('pages')}
           >
-            <PagesContent />
+            <PagesContent theme={theme} updateTheme={updateTheme} />
           </AccordionSection>
         </div>
 
@@ -649,18 +649,80 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
 }
 
 /* ---- Pages sub-content ---- */
-function PagesContent() {
+function PagesContent({ theme, updateTheme }: { theme: ThemeConfig; updateTheme: (path: string, value: any) => void }) {
   const [aboutContent, setAboutContent] = useState({
     title: 'About Sonex Beats',
     intro: 'Sonex Beats is a modern beat marketplace and creative platform developed by Hit Chasers Collective — a group of producers with placements alongside major artists and experience working within the professional music industry.',
     body: 'Built by producers, for producers and artists, Sonex Beats was created to simplify how beats are sold, licensed, and discovered — while encouraging real collaboration instead of one-off transactions.',
     vision: 'Sonex Beats aims to become more than a marketplace. Our vision is to grow a trusted, community-driven platform where talented producers and serious artists can connect, collaborate, and create records that move culture forward.',
   });
-  const [licensingContent, setLicensingContent] = useState({
-    heroTitle: 'Simple, Transparent Licensing',
-    heroSubtitle: 'Choose the license that fits your project. All licenses include instant digital delivery and a PDF with your usage rights.',
-  });
+
+  const licensing: LicensingConfig = theme.licensing || DEFAULT_LICENSING;
+
+  const updateLicensing = (path: string, value: any) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    const keys = path.split('.');
+    let obj = updated;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (keys[i].match(/^\d+$/)) obj = obj[parseInt(keys[i])];
+      else obj = obj[keys[i]];
+    }
+    const lastKey = keys[keys.length - 1];
+    if (lastKey.match(/^\d+$/)) obj[parseInt(lastKey)] = value;
+    else obj[lastKey] = value;
+    updateTheme('licensing', updated);
+  };
+
+  const updateTier = (tierIdx: number, field: string, value: any) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.tiers[tierIdx][field] = value;
+    updateTheme('licensing', updated);
+  };
+
+  const updateTierInclude = (tierIdx: number, includeIdx: number, value: string) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.tiers[tierIdx].includes[includeIdx] = value;
+    updateTheme('licensing', updated);
+  };
+
+  const addTierInclude = (tierIdx: number) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.tiers[tierIdx].includes.push('New feature');
+    updateTheme('licensing', updated);
+  };
+
+  const removeTierInclude = (tierIdx: number, includeIdx: number) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.tiers[tierIdx].includes.splice(includeIdx, 1);
+    updateTheme('licensing', updated);
+  };
+
+  const updateUseCase = (tierIdx: number, ucIdx: number, field: string, value: string) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.tiers[tierIdx].useCases[ucIdx][field] = value;
+    updateTheme('licensing', updated);
+  };
+
+  const updateFaq = (faqIdx: number, field: 'q' | 'a', value: string) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.faq[faqIdx][field] = value;
+    updateTheme('licensing', updated);
+  };
+
+  const addFaq = () => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.faq.push({ q: 'New question?', a: 'Answer here.' });
+    updateTheme('licensing', updated);
+  };
+
+  const removeFaq = (idx: number) => {
+    const updated = JSON.parse(JSON.stringify(licensing));
+    updated.faq.splice(idx, 1);
+    updateTheme('licensing', updated);
+  };
+
   const [expandedPage, setExpandedPage] = useState<'about' | 'licensing' | null>('about');
+  const [expandedTier, setExpandedTier] = useState<number | null>(null);
 
   return (
     <div className="space-y-2">
@@ -685,10 +747,95 @@ function PagesContent() {
         {expandedPage === 'licensing' ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
       </button>
       {expandedPage === 'licensing' && (
-        <div className="space-y-2 pl-1">
-          <div><Label className="text-[10px] mb-0.5 block">Hero Title</Label><Input value={licensingContent.heroTitle} onChange={e => setLicensingContent(p => ({ ...p, heroTitle: e.target.value }))} className="text-xs h-8 bg-background/30" /></div>
-          <div><Label className="text-[10px] mb-0.5 block">Hero Subtitle</Label><Textarea value={licensingContent.heroSubtitle} onChange={e => setLicensingContent(p => ({ ...p, heroSubtitle: e.target.value }))} rows={2} className="text-xs bg-background/30" /></div>
-          <p className="text-[9px] text-muted-foreground/60 italic">License tiers are managed in the License Templates tab.</p>
+        <div className="space-y-3 pl-1">
+          {/* Hero text */}
+          <div>
+            <Label className="text-[10px] mb-0.5 block text-muted-foreground">Hero Title</Label>
+            <Input value={licensing.heroTitle} onChange={e => updateLicensing('heroTitle', e.target.value)} className="text-xs h-8 bg-background/30" />
+          </div>
+          <div>
+            <Label className="text-[10px] mb-0.5 block text-muted-foreground">Hero Subtitle</Label>
+            <Textarea value={licensing.heroSubtitle} onChange={e => updateLicensing('heroSubtitle', e.target.value)} rows={2} className="text-xs bg-background/30" />
+          </div>
+
+          {/* License Tiers */}
+          <div className="pt-2 border-t border-border/30">
+            <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">License Tiers</Label>
+            {licensing.tiers.map((tier, tierIdx) => (
+              <div key={tier.id} className="mb-2">
+                <button
+                  onClick={() => setExpandedTier(expandedTier === tierIdx ? null : tierIdx)}
+                  className={`w-full flex items-center justify-between p-2 rounded-lg border text-xs font-medium transition-colors ${
+                    expandedTier === tierIdx ? 'border-primary/50 bg-primary/5' : 'border-border/50 hover:bg-muted/20'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-primary font-bold">{tier.price}</span>
+                    <span>{tier.name}</span>
+                    {tier.popular && <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">Popular</span>}
+                  </span>
+                  {expandedTier === tierIdx ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                </button>
+
+                {expandedTier === tierIdx && (
+                  <div className="space-y-2 mt-2 pl-2 border-l-2 border-primary/20 ml-2">
+                    <div><Label className="text-[10px] mb-0.5 block">Name</Label><Input value={tier.name} onChange={e => updateTier(tierIdx, 'name', e.target.value)} className="text-xs h-8 bg-background/30" /></div>
+                    <div><Label className="text-[10px] mb-0.5 block">Price</Label><Input value={tier.price} onChange={e => updateTier(tierIdx, 'price', e.target.value)} className="text-xs h-8 bg-background/30" /></div>
+                    <div><Label className="text-[10px] mb-0.5 block">Price Note</Label><Input value={tier.priceNote} onChange={e => updateTier(tierIdx, 'priceNote', e.target.value)} className="text-xs h-8 bg-background/30" /></div>
+                    <div><Label className="text-[10px] mb-0.5 block">Description</Label><Input value={tier.description} onChange={e => updateTier(tierIdx, 'description', e.target.value)} className="text-xs h-8 bg-background/30" /></div>
+
+                    <div className="flex items-center gap-2">
+                      <Switch checked={!!tier.popular} onCheckedChange={v => updateTier(tierIdx, 'popular', v)} />
+                      <Label className="text-[10px]">Mark as Popular</Label>
+                    </div>
+
+                    {/* Includes */}
+                    <div>
+                      <Label className="text-[10px] font-semibold mb-1 block text-muted-foreground">What's Included</Label>
+                      {tier.includes.map((inc, incIdx) => (
+                        <div key={incIdx} className="flex items-center gap-1 mb-1">
+                          <Input value={inc} onChange={e => updateTierInclude(tierIdx, incIdx, e.target.value)} className="text-xs h-7 bg-background/30 flex-1" />
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive" onClick={() => removeTierInclude(tierIdx, incIdx)}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" className="text-[10px] h-6 mt-1" onClick={() => addTierInclude(tierIdx)}>+ Add Item</Button>
+                    </div>
+
+                    {/* Use Cases */}
+                    <div>
+                      <Label className="text-[10px] font-semibold mb-1 block text-muted-foreground">Ideal For</Label>
+                      {tier.useCases.map((uc, ucIdx) => (
+                        <div key={ucIdx} className="flex items-center gap-1 mb-1">
+                          <Input value={uc.label} onChange={e => updateUseCase(tierIdx, ucIdx, 'label', e.target.value)} className="text-xs h-7 bg-background/30 flex-1" placeholder="Label" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* FAQ */}
+          <div className="pt-2 border-t border-border/30">
+            <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">FAQ Section</Label>
+            {licensing.faq.map((faq, faqIdx) => (
+              <div key={faqIdx} className="mb-2 p-2 rounded-lg border border-border/30 bg-background/20">
+                <div className="flex items-start gap-1">
+                  <div className="flex-1 space-y-1">
+                    <Input value={faq.q} onChange={e => updateFaq(faqIdx, 'q', e.target.value)} className="text-xs h-7 bg-background/30" placeholder="Question" />
+                    <Textarea value={faq.a} onChange={e => updateFaq(faqIdx, 'a', e.target.value)} rows={2} className="text-xs bg-background/30" placeholder="Answer" />
+                  </div>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive flex-shrink-0" onClick={() => removeFaq(faqIdx)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" className="text-[10px] h-6" onClick={addFaq}>+ Add FAQ</Button>
+          </div>
         </div>
       )}
     </div>

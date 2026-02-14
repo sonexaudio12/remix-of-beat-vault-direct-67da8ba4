@@ -38,7 +38,75 @@ export interface ThemeConfig {
     primaryWeight: string;
   };
   searchPlaceholder?: string;
+  licensing?: LicensingConfig;
 }
+
+export interface LicenseTierConfig {
+  id: string;
+  name: string;
+  price: string;
+  priceNote: string;
+  color: string;
+  icon: string;
+  description: string;
+  includes: string[];
+  useCases: { icon: string; label: string }[];
+  popular?: boolean;
+}
+
+export interface LicensingConfig {
+  heroTitle: string;
+  heroSubtitle: string;
+  tiers: LicenseTierConfig[];
+  faq: { q: string; a: string }[];
+}
+
+export const DEFAULT_LICENSING: LicensingConfig = {
+  heroTitle: 'Simple, Transparent Licensing',
+  heroSubtitle: 'Choose the license that fits your project. All licenses include instant digital delivery and a PDF with your usage rights.',
+  tiers: [
+    {
+      id: 'mp3',
+      name: 'MP3 Lease',
+      price: '$24.99',
+      priceNote: 'starting at',
+      color: 'primary',
+      icon: 'Music',
+      description: 'Perfect for demos and online distribution',
+      includes: ['High-quality MP3 file (320kbps)', 'License PDF with terms', 'Unlimited personal use', 'Up to 5,000 streams', 'Non-exclusive rights'],
+      useCases: [{ icon: 'Mic', label: 'Demos & Mixtapes' }, { icon: 'Globe', label: 'Social Media' }],
+    },
+    {
+      id: 'wav',
+      name: 'WAV Lease',
+      price: '$49.99',
+      priceNote: 'starting at',
+      color: 'tier-premium',
+      icon: 'FileAudio',
+      description: 'Studio-quality for professional releases',
+      includes: ['Uncompressed WAV file', 'High-quality MP3 file', 'License PDF with terms', 'Up to 50,000 streams', 'Radio broadcasting rights', 'Music video rights'],
+      useCases: [{ icon: 'Radio', label: 'Radio Play' }, { icon: 'Users', label: 'Live Performances' }],
+      popular: true,
+    },
+    {
+      id: 'stems',
+      name: 'Trackout (Stems)',
+      price: '$99.99',
+      priceNote: 'starting at',
+      color: 'tier-exclusive',
+      icon: 'Archive',
+      description: 'Full creative control with individual tracks',
+      includes: ['Individual stem files (ZIP)', 'Uncompressed WAV file', 'High-quality MP3 file', 'License PDF with terms', 'Up to 500,000 streams', 'Full commercial rights', 'Keep beat after exclusive sold'],
+      useCases: [{ icon: 'Mic', label: 'Major Releases' }, { icon: 'Globe', label: 'Commercial Use' }],
+    },
+  ],
+  faq: [
+    { q: 'Can I upgrade my license later?', a: 'Yes! You can upgrade to a higher license tier at any time. Just contact us and we\'ll arrange the upgrade.' },
+    { q: 'What happens when a beat sells exclusively?', a: 'If you purchased a lease before the exclusive sale, you keep your rights. New leases won\'t be available after an exclusive sale.' },
+    { q: 'Do I need to credit the producer?', a: 'Yes, all leases require producer credit (prod. by SonexLite). Exclusive licenses have flexible credit terms.' },
+    { q: 'Are the licenses royalty-free?', a: 'Our licenses grant you usage rights within the specified terms. Royalties may apply for commercial streaming beyond your tier\'s limits.' },
+  ],
+};
 
 export const DEFAULT_THEME: ThemeConfig = {
   logo: { url: '', height: 36 },

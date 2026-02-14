@@ -231,7 +231,7 @@ async function fetchTemplateLicensePdfs(supabase: any, orderItems: OrderItem[]):
 
 async function sendEmail(to: string, subject: string, html: string, attachments: Attachment[] = []) {
   const emailPayload: any = {
-    from: "Sonex Beats <onboarding@resend.dev>",
+    from: "Sonex Studio <no-reply@sonexbeats.shop>",
     to: [to],
     subject,
     html,

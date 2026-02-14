@@ -187,7 +187,8 @@ const Checkout = () => {
           customerEmail: email,
           customerName: name,
           discountCode: appliedDiscount?.code || null,
-          discountAmount: discountAmount
+          discountAmount: discountAmount,
+          userId: user?.id || null,
         }
       });
       if (invokeError || data?.error) {

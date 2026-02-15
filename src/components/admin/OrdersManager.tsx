@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, ExternalLink, Package, DollarSign, Clock, Trash2, Pencil, Search } from 'lucide-react';
+import { Loader2, ExternalLink, Package, DollarSign, Clock, Trash2, Pencil, Search, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,11 @@ interface OrderItem {
   license_name: string;
   price: number;
   download_count: number;
+  item_type: string;
+  item_title: string | null;
+  license_tier_id: string | null;
+  beat_id: string | null;
+  sound_kit_id: string | null;
 }
 interface Order {
   id: string;
@@ -32,6 +37,7 @@ export function OrdersManager() {
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [regeneratingOrderId, setRegeneratingOrderId] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -39,7 +45,7 @@ export function OrdersManager() {
       const { data, error } = await supabase.from('orders').select(`
           id, customer_email, customer_name, status, total,
           paypal_order_id, paypal_transaction_id, created_at, download_expires_at,
-          order_items (id, beat_title, license_name, price, download_count)
+          order_items (id, beat_title, license_name, price, download_count, item_type, item_title, license_tier_id, beat_id, sound_kit_id)
         `).order('created_at', { ascending: false });
       if (error) throw error;
       setOrders(data || []);
@@ -75,6 +81,76 @@ export function OrdersManager() {
     } catch (error: any) {
       console.error('Error deleting order:', error);
       toast.error('Failed to delete order');
+    }
+  };
+
+  const regenerateLicenses = async (order: Order) => {
+    setRegeneratingOrderId(order.id);
+    try {
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const item of order.order_items) {
+        let licenseType = 'mp3';
+        let bpm: number | undefined;
+        let genre: string | undefined;
+        const itemType = item.item_type || 'beat';
+
+        if (itemType === 'sound_kit') {
+          licenseType = 'sound_kit';
+        } else if (item.license_tier_id) {
+          const { data: tier } = await supabase
+            .from('license_tiers')
+            .select('type')
+            .eq('id', item.license_tier_id)
+            .single();
+          if (tier) licenseType = tier.type;
+
+          if (item.beat_id) {
+            const { data: beat } = await supabase
+              .from('beats')
+              .select('bpm, genre')
+              .eq('id', item.beat_id)
+              .single();
+            if (beat) { bpm = beat.bpm; genre = beat.genre; }
+          }
+        }
+
+        const { error } = await supabase.functions.invoke('generate-license-pdf', {
+          body: {
+            orderId: order.id,
+            orderItemId: item.id,
+            itemType,
+            itemTitle: item.item_title || item.beat_title,
+            licenseName: item.license_name,
+            licenseType,
+            customerName: order.customer_name || '',
+            customerEmail: order.customer_email,
+            purchaseDate: order.created_at,
+            price: item.price,
+            bpm,
+            genre,
+          },
+        });
+
+        if (error) {
+          console.error(`License generation failed for ${item.beat_title}:`, error);
+          failCount++;
+        } else {
+          successCount++;
+        }
+      }
+
+      if (failCount === 0) {
+        toast.success(`Generated ${successCount} license PDF(s) for this order`);
+      } else {
+        toast.warning(`Generated ${successCount}, failed ${failCount} license(s)`);
+      }
+    } catch (error: any) {
+      console.error('Error regenerating licenses:', error);
+      toast.error('Failed to regenerate licenses');
+    } finally {
+      setRegeneratingOrderId(null);
     }
   };
 
@@ -261,12 +337,30 @@ export function OrdersManager() {
             </div>
 
             {/* PayPal Info */}
-            {order.paypal_transaction_id && <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {order.paypal_transaction_id && <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                 <span>PayPal Transaction: {order.paypal_transaction_id}</span>
                 <a href={`https://www.paypal.com/activity/payment/${order.paypal_transaction_id}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
                   View <ExternalLink className="h-3 w-3" />
                 </a>
               </div>}
+
+            {/* Regenerate Licenses */}
+            {order.status === 'completed' && order.order_items.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => regenerateLicenses(order)}
+                disabled={regeneratingOrderId === order.id}
+                className="text-xs"
+              >
+                {regeneratingOrderId === order.id ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <FileText className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                {regeneratingOrderId === order.id ? 'Generating...' : 'Generate Licenses'}
+              </Button>
+            )}
           </div>)}
       </div>
     </div>;

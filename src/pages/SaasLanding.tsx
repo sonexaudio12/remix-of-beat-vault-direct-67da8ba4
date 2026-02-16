@@ -48,22 +48,55 @@ const coreFeatures = [
 const plans = [
   {
     name: 'Launch',
-    price: 99,
-    desc: 'Start selling from your own private beat store.',
-    features: ['Single store', 'Stripe checkout', 'Core store customization', 'License automation'],
+    price: 199,
+    desc: 'Your independent beat store starts here. Everything you need to sell beats without relying on marketplaces.',
+    features: [
+      'Fully hosted Sonex store (we manage the tech)',
+      'Subdomain (yourname.sonexstudio.com)',
+      'Connect your own Stripe account',
+      'MP3 / WAV / Unlimited license selling',
+      'Automatic license PDF generation',
+      'Visual storefront builder',
+      'Customer accounts & order tracking',
+      '1 year hosting included',
+      '6 months feature updates',
+      '3 months support',
+    ],
+    cta: 'Launch My Store',
   },
   {
     name: 'Pro',
-    price: 249,
+    price: 499,
     popular: true,
-    desc: 'For producers growing volume and recurring buyers.',
-    features: ['Everything in Launch', 'Advanced branding', 'Email capture flows', 'Enhanced analytics'],
+    desc: 'Build a real brand. Full control. Custom domain.',
+    features: [
+      'Everything in Launch, plus:',
+      'Custom domain support (yourdomain.com)',
+      'Remove Sonex footer branding',
+      'Advanced store customization',
+      'Discount codes & promotions',
+      'Email capture system',
+      '2 years feature updates',
+      '1 year priority support',
+      '1 year hosting included',
+    ],
+    cta: 'Go Pro',
   },
   {
     name: 'Studio',
-    price: 499,
-    desc: 'For teams and high-volume catalogs that need full control.',
-    features: ['Everything in Pro', 'Priority support', 'Expanded automation', 'Team-oriented setup'],
+    price: 999,
+    desc: 'For labels, collectives, and high-volume producers.',
+    features: [
+      'Everything in Pro, plus:',
+      'Multiple producers (Label Mode)',
+      'Team access roles',
+      'Advanced revenue & conversion analytics',
+      'Early feature access',
+      'Lifetime updates',
+      '2 years priority support',
+      '1 year hosting included',
+    ],
+    cta: 'Start Studio Plan',
   },
 ];
 
@@ -255,7 +288,7 @@ export default function SaasLanding() {
                   ))}
                 </ul>
                 <Button className="w-full" variant={plan.popular ? 'default' : 'outline'}>
-                  Choose {plan.name}
+                  {plan.cta}
                 </Button>
               </div>
             ))}
@@ -263,7 +296,28 @@ export default function SaasLanding() {
         </div>
       </section>
 
-      {/* Comparison */}
+      {/* Hosting Renewal */}
+      <section className="py-20 bg-secondary/20">
+        <div className="container max-w-2xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">🔁 Hosting After Year One</h2>
+          <p className="text-muted-foreground mb-8">Your first year of hosting is included.</p>
+          <div className="rounded-xl border border-border bg-card p-8 space-y-4">
+            <p className="text-lg font-semibold">After year one:</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-2xl font-bold">
+              <span>$99/year</span>
+              <span className="text-muted-foreground text-base font-normal">or</span>
+              <span>$12/month</span>
+            </div>
+            <div className="pt-4 space-y-1 text-sm text-muted-foreground">
+              <p>No surprise charges.</p>
+              <p>No revenue percentage.</p>
+              <p>No platform fees.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
       <section className="py-20 bg-secondary/20">
         <div className="container max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Sonex vs Marketplaces</h2>

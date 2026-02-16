@@ -55,6 +55,7 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/account" element={<Account />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<SaasLanding />} />

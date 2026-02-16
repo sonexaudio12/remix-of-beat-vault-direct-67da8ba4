@@ -1,16 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SoundKit } from '@/types/soundKit';
+import { useTenant } from '@/hooks/useTenant';
 
 export function useSoundKits() {
+  const { tenant } = useTenant();
   return useQuery({
-    queryKey: ['sound-kits'],
+    queryKey: ['sound-kits', tenant?.id],
     queryFn: async (): Promise<SoundKit[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('sound_kits')
         .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .eq('is_active', true);
+
+      if (tenant?.id) {
+        query = query.eq('tenant_id', tenant.id);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching sound kits:', error);

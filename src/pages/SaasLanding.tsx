@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button';
 import {
   FileText, Globe, Mail, BarChart3, Zap, Tag,
   Smartphone, DollarSign, ArrowRight, Check, X,
-  ChevronDown,
+  ChevronDown, Loader2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const painPoints = [
   'Monthly subscriptions eat margin before you sell.',
@@ -149,6 +151,27 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function SaasLanding() {
+  const { toast } = useToast();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleCheckout = async (planKey: string) => {
+    setLoadingPlan(planKey);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-saas-checkout', {
+        body: { planKey },
+      });
+      if (error || !data?.url) {
+        toast({ title: 'Error', description: data?.error || 'Could not start checkout', variant: 'destructive' });
+        return;
+      }
+      window.location.href = data.url;
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
@@ -287,7 +310,13 @@ export default function SaasLanding() {
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full" variant={plan.popular ? 'default' : 'outline'}>
+                <Button
+                  className="w-full"
+                  variant={plan.popular ? 'default' : 'outline'}
+                  disabled={loadingPlan === plan.name.toLowerCase()}
+                  onClick={() => handleCheckout(plan.name.toLowerCase())}
+                >
+                  {loadingPlan === plan.name.toLowerCase() && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   {plan.cta}
                 </Button>
               </div>

@@ -27,5 +27,11 @@ verify_jwt = false
 [functions.send-password-reset]
 verify_jwt = false
 
+[functions.create-saas-checkout]
+verify_jwt = false
+
+[functions.verify-saas-payment]
+verify_jwt = false
+
 [functions.send-service-order-update]
 verify_jwt = false

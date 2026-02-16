@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Beat, License } from '@/types/beat';
+import { useTenant } from '@/hooks/useTenant';
 
 interface DbBeat {
   id: string;
@@ -59,32 +60,24 @@ const transformBeat = (dbBeat: DbBeat): Beat & { isFree?: boolean } => ({
 });
 
 export function useBeats() {
+  const { tenant } = useTenant();
   return useQuery({
-    queryKey: ['beats'],
+    queryKey: ['beats', tenant?.id],
     queryFn: async (): Promise<Beat[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('beats')
         .select(`
-          id,
-          title,
-          bpm,
-          genre,
-          mood,
-          cover_url,
-          preview_url,
-          is_exclusive_available,
-          is_free,
-          created_at,
-          license_tiers (
-            id,
-            type,
-            name,
-            price,
-            includes
-          )
+          id, title, bpm, genre, mood, cover_url, preview_url,
+          is_exclusive_available, is_free, created_at,
+          license_tiers ( id, type, name, price, includes )
         `)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .eq('is_active', true);
+
+      if (tenant?.id) {
+        query = query.eq('tenant_id', tenant.id);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching beats:', error);

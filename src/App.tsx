@@ -32,6 +32,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Services from "./pages/Services";
 import ServiceOrder from "./pages/ServiceOrder";
 import SaasLanding from "./pages/SaasLanding";
+import Onboarding from "./pages/Onboarding";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,7 @@ function AppRoutes() {
         <Route path="/" element={<SaasLanding />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<SaasLanding />} />

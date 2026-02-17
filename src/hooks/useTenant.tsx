@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Tenant {
   id: string;
@@ -35,12 +36,10 @@ const SAAS_ROOT_DOMAINS = [
 ];
 
 function isPreviewDomain(hostname: string): boolean {
-  // Lovable preview domains
   return hostname.includes('lovable.app') || hostname.includes('lovableproject.com');
 }
 
 function extractSubdomain(hostname: string): string | null {
-  // e.g. "mybeats.sonexbeats.shop" -> "mybeats"
   const parts = hostname.split('.');
   if (parts.length >= 3 && hostname.endsWith('sonexbeats.shop')) {
     const sub = parts.slice(0, parts.length - 2).join('.');
@@ -54,27 +53,36 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaasLanding, setIsSaasLanding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
+    // Wait for auth to finish loading before resolving tenant
+    if (authLoading) return;
+
     const resolve = async () => {
       try {
         const hostname = window.location.hostname;
 
-        // Preview/dev environments → show SaaS landing (or store if you have a default tenant)
+        // Preview/dev/root domain environments
         if (isPreviewDomain(hostname) || SAAS_ROOT_DOMAINS.includes(hostname)) {
-          // Check if there's a default tenant for backwards compatibility
-          const { data: defaultTenant } = await supabase
-            .from('tenants')
-            .select('*')
-            .eq('status', 'active')
-            .limit(1)
-            .maybeSingle();
+          // If user is logged in, check if they own a tenant
+          if (user) {
+            const { data: ownedTenant } = await supabase
+              .from('tenants')
+              .select('*')
+              .eq('owner_user_id', user.id)
+              .eq('status', 'active')
+              .maybeSingle();
 
-          if (defaultTenant) {
-            setTenant(defaultTenant as Tenant);
-          } else {
-            setIsSaasLanding(true);
+            if (ownedTenant) {
+              setTenant(ownedTenant as Tenant);
+              setIsLoading(false);
+              return;
+            }
           }
+
+          // No owned tenant → show SaaS landing
+          setIsSaasLanding(true);
           setIsLoading(false);
           return;
         }
@@ -132,7 +140,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     };
 
     resolve();
-  }, []);
+  }, [user, authLoading]);
 
   return (
     <TenantContext.Provider value={{ tenant, isLoading, isSaasLanding, error }}>

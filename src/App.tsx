@@ -33,6 +33,7 @@ import Services from "./pages/Services";
 import ServiceOrder from "./pages/ServiceOrder";
 import SaasLanding from "./pages/SaasLanding";
 import Onboarding from "./pages/Onboarding";
+import SuperAdmin from "./pages/SuperAdmin";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,8 @@ function AppRoutes() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -86,6 +89,7 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/services" element={<Services />} />
       <Route path="/service-order/:serviceId" element={<ServiceOrder />} />
+      <Route path="/super-admin" element={<SuperAdmin />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>

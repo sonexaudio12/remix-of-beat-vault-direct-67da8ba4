@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 
 interface Offer {
@@ -29,6 +30,7 @@ interface Offer {
 }
 
 export function ExclusiveOffersManager() {
+  const { tenant } = useTenant();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
@@ -39,13 +41,15 @@ export function ExclusiveOffersManager() {
   const fetchOffers = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('exclusive_offers')
         .select(`
           *,
           beat:beats(title, cover_url)
         `)
         .order('created_at', { ascending: false });
+      if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+      const { data, error } = await query;
 
       if (error) throw error;
       setOffers((data as Offer[]) || []);

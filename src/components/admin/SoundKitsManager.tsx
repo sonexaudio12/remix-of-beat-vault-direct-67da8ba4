@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Archive, Edit, Trash2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -29,17 +30,20 @@ interface SoundKit {
 }
 
 export function SoundKitsManager() {
+  const { tenant } = useTenant();
   const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingKit, setEditingKit] = useState<SoundKit | null>(null);
 
   const { data: soundKits, isLoading, error } = useQuery({
-    queryKey: ['admin-sound-kits'],
+    queryKey: ['admin-sound-kits', tenant?.id],
     queryFn: async (): Promise<SoundKit[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('sound_kits')
         .select('*')
         .order('created_at', { ascending: false });
+      if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+      const { data, error } = await query;
 
       if (error) throw error;
       return data || [];

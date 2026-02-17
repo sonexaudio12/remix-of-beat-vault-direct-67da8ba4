@@ -22,6 +22,7 @@ import { ServiceOrdersManager } from '@/components/admin/ServiceOrdersManager';
 import { VisualPageBuilder } from '@/components/admin/VisualPageBuilder';
 import { DiscountCodesManager } from '@/components/admin/DiscountCodesManager';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import logo from '@/assets/logo.png';
 
 /* -------------------------------------------------------------------------- */
@@ -213,6 +214,7 @@ function DashboardContent({
   isAdmin: boolean;
   setActiveTab: (tab: string) => void;
 }) {
+  const { tenant } = useTenant();
   const [stats, setStats] = useState({
     revenue: 0,
     beatsSold: 0,
@@ -222,24 +224,20 @@ function DashboardContent({
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const loadStats = async () => {
-      const {
-        data: orders
-      } = await supabase.from('orders').select('total,status');
+      let ordersQ = supabase.from('orders').select('total,status');
+      let beatsQ = supabase.from('beats').select('id', { count: 'exact', head: true });
+      let itemsQ = supabase.from('order_items').select('id', { count: 'exact', head: true });
+      if (tenant?.id) {
+        ordersQ = ordersQ.eq('tenant_id', tenant.id);
+        beatsQ = beatsQ.eq('tenant_id', tenant.id);
+        itemsQ = itemsQ.eq('tenant_id', tenant.id);
+      }
+      const { data: orders } = await ordersQ;
       const completed = orders?.filter(o => o.status === 'completed') ?? [];
       const pending = orders?.filter(o => o.status === 'pending').length ?? 0;
       const revenue = completed.reduce((sum, o) => sum + Number(o.total), 0);
-      const {
-        count: totalBeats
-      } = await supabase.from('beats').select('id', {
-        count: 'exact',
-        head: true
-      });
-      const {
-        count: beatsSold
-      } = await supabase.from('order_items').select('id', {
-        count: 'exact',
-        head: true
-      });
+      const { count: totalBeats } = await beatsQ;
+      const { count: beatsSold } = await itemsQ;
       setStats({
         revenue,
         beatsSold: beatsSold ?? 0,
@@ -249,7 +247,7 @@ function DashboardContent({
       setLoading(false);
     };
     if (isAdmin) loadStats();else setLoading(false);
-  }, [isAdmin]);
+  }, [isAdmin, tenant?.id]);
   const cards = [{
     label: 'Revenue',
     value: `$${stats.revenue.toFixed(2)}`,

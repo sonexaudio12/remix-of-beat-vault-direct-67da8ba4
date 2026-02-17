@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 interface GeneratedLicense {
@@ -28,6 +29,7 @@ interface OrderWithLicenses {
   }[];
 }
 export function GeneratedLicensesManager() {
+  const { tenant } = useTenant();
   const [orders, setOrders] = useState<OrderWithLicenses[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,10 +43,7 @@ export function GeneratedLicensesManager() {
     setIsLoading(true);
     try {
       // Fetch completed orders with their items
-      const {
-        data: ordersData,
-        error: ordersError
-      } = await supabase.from('orders').select(`
+      let ordersQuery = supabase.from('orders').select(`
           id,
           customer_email,
           customer_name,
@@ -62,6 +61,8 @@ export function GeneratedLicensesManager() {
         `).eq('status', 'completed').order('created_at', {
         ascending: false
       });
+      if (tenant?.id) ordersQuery = ordersQuery.eq('tenant_id', tenant.id);
+      const { data: ordersData, error: ordersError } = await ordersQuery;
       if (ordersError) throw ordersError;
 
       // For each order, check for generated licenses in storage

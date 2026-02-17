@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 interface LicenseTemplate {
   id: string;
@@ -71,6 +72,7 @@ const PLACEHOLDERS = [{
   desc: 'Governing law (from Settings)'
 }];
 export function LicenseTemplatesManager() {
+  const { tenant } = useTenant();
   const [templates, setTemplates] = useState<LicenseTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
@@ -84,10 +86,9 @@ export function LicenseTemplatesManager() {
   }, []);
   const fetchTemplates = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('license_templates').select('*').order('type');
+      let query = supabase.from('license_templates').select('*').order('type');
+      if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+      const { data, error } = await query;
       if (error) throw error;
       setTemplates(data || []);
     } catch (error) {

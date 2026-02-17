@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 const categories = ['Drum Kit', 'Loop Kit', 'Sample Pack', 'One Shot Kit', 'Preset Pack', 'MIDI Kit', 'Vocal Kit'];
 interface FileUpload {
@@ -20,6 +21,7 @@ export function SoundKitUploadForm({
 }: {
   onSuccess?: () => void;
 }) {
+  const { tenant } = useTenant();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('29.99');
@@ -146,7 +148,8 @@ export function SoundKitUploadForm({
         file_path: filePath,
         price: parseFloat(price),
         category,
-        is_active: true
+        is_active: true,
+        tenant_id: tenant?.id || null,
       });
       if (kitError) {
         throw kitError;

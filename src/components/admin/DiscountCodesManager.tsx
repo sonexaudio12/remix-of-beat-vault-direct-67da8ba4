@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +26,7 @@ interface DiscountCode {
 }
 
 export function DiscountCodesManager() {
+  const { tenant } = useTenant();
   const [codes, setCodes] = useState<DiscountCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,10 +44,12 @@ export function DiscountCodesManager() {
   useEffect(() => { loadCodes(); }, []);
 
   const loadCodes = async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from('discount_codes')
       .select('*')
       .order('created_at', { ascending: false });
+    if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+    const { data, error } = await query;
     if (error) {
       toast.error('Failed to load discount codes');
       console.error(error);
@@ -75,6 +79,7 @@ export function DiscountCodesManager() {
       min_order_amount: form.min_order_amount || 0,
       max_uses: form.max_uses ? parseInt(form.max_uses) : null,
       expires_at: form.expires_at || null,
+      tenant_id: tenant?.id || null,
     });
 
     if (error) {

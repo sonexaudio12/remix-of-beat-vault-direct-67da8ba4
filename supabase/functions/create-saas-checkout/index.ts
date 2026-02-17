@@ -66,6 +66,7 @@ serve(async (req) => {
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "payment",
+      allow_promotion_codes: true,
       success_url: `${origin}/onboarding?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
       cancel_url: `${origin}/#pricing`,
       metadata: {

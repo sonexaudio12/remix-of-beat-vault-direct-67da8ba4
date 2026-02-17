@@ -84,7 +84,7 @@ const Account = () => {
             sound_kit_id,
             license_tier_id
           )
-        `).eq('status', 'completed').order('created_at', {
+        `).eq('user_id', user.id).eq('status', 'completed').order('created_at', {
         ascending: false
       });
       if (error) throw error;

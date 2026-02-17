@@ -13,7 +13,7 @@ import { SoundKitsManager } from '@/components/admin/SoundKitsManager';
 import { PaymentSettingsManager } from '@/components/admin/PaymentSettingsManager';
 import { ContactSettingsManager } from '@/components/admin/ContactSettingsManager';
 import { StripeSettingsPanel } from '@/components/admin/StripeSettingsPanel';
-import { AdminUsersManager } from '@/components/admin/AdminUsersManager';
+
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { DashboardAnalytics } from '@/components/admin/DashboardAnalytics';
 import { ExclusiveOffersManager } from '@/components/admin/ExclusiveOffersManager';
@@ -85,10 +85,6 @@ const navItems = [{
   id: 'page-builder',
   label: 'Page Builder',
   icon: Paintbrush
-}, {
-  id: 'admins',
-  label: 'Admin Users',
-  icon: Users
 }, {
   id: 'settings',
   label: 'Settings',
@@ -196,7 +192,6 @@ export default function Admin() {
           {activeTab === 'services-manage' && <ServicesManageContent isAdmin={isAdmin} />}
           {activeTab === 'service-orders' && <ServiceOrdersContent isAdmin={isAdmin} />}
 {activeTab === 'page-builder' && isAdmin && <VisualPageBuilder onClose={() => setActiveTab('dashboard')} />}
-          {activeTab === 'admins' && <AdminUsersContent isAdmin={isAdmin} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>
       </main>
@@ -358,11 +353,6 @@ function ServiceOrdersContent({
   isAdmin
 }: any) {
   return isAdmin ? <ServiceOrdersManager /> : <Guard isAdmin={false} message="Admin access required." />;
-}
-function AdminUsersContent({
-  isAdmin
-}: any) {
-  return isAdmin ? <AdminUsersManager /> : <Guard isAdmin={false} message="Admin access required." />;
 }
 function SettingsContent({
   isAdmin

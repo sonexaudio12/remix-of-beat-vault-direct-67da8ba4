@@ -140,6 +140,8 @@ export default function Onboarding() {
         return;
       }
 
+      // Force auth to re-fetch admin status after trigger assigns role
+      await supabase.auth.refreshSession();
       setStep('done');
     } catch (e: any) {
       toast({ title: 'Error', description: e.message, variant: 'destructive' });
@@ -291,10 +293,10 @@ export default function Onboarding() {
               </p>
             </div>
             <div className="space-y-3">
-              <Button onClick={() => navigate('/admin')} className="w-full">
+              <Button onClick={() => window.location.href = '/admin'} className="w-full">
                 Go to Admin Dashboard
               </Button>
-              <Button variant="outline" onClick={() => navigate('/')} className="w-full">
+              <Button variant="outline" onClick={() => window.location.href = '/'} className="w-full">
                 View Your Store
               </Button>
             </div>

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 const genres = ['Hip Hop', 'Trap', 'R&B', 'Pop', 'Drill', 'Lo-Fi', 'Afrobeats', 'Reggaeton', 'Soul', 'Jazz'];
 const moods = ['Energetic', 'Dark', 'Chill', 'Aggressive', 'Dreamy', 'Uplifting', 'Melancholic', 'Romantic', 'Bouncy', 'Ethereal'];
@@ -44,6 +45,7 @@ export function BeatUploadForm({
 }: {
   onSuccess?: () => void;
 }) {
+  const { tenant } = useTenant();
   const [title, setTitle] = useState('');
   const [bpm, setBpm] = useState('120');
   const [genre, setGenre] = useState('Hip Hop');
@@ -220,7 +222,8 @@ export function BeatUploadForm({
         wav_file_path: wavPath,
         stems_file_path: stemsPath,
         is_exclusive_available: isExclusiveAvailable,
-        is_active: true
+        is_active: true,
+        tenant_id: tenant?.id || null,
       }).select().single();
       if (beatError) {
         throw beatError;
@@ -233,7 +236,8 @@ export function BeatUploadForm({
         name: type === 'mp3' ? 'MP3 Lease' : type === 'wav' ? 'WAV Lease' : 'Trackout',
         price: parseFloat(tier.price),
         includes: tier.includes,
-        is_active: true
+        is_active: true,
+        tenant_id: tenant?.id || null,
       }));
       const {
         error: tiersError

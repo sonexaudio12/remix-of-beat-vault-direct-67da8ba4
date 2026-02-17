@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { toast } from 'sonner';
@@ -161,6 +162,7 @@ const generatePDF = async (data: AnalyticsData, dateRange: DateRange) => {
   }, 250);
 };
 export function AnalyticsDashboard() {
+  const { tenant } = useTenant();
   const [dateRange, setDateRange] = useState<DateRange>({
     from: subDays(new Date(), 30),
     to: new Date()
@@ -174,24 +176,19 @@ export function AnalyticsDashboard() {
       const toDate = endOfDay(dateRange.to).toISOString();
 
       // Fetch plays
-      const {
-        data: plays,
-        error: playsError
-      } = await supabase.from('beat_plays').select('played_at, beat_id').gte('played_at', fromDate).lte('played_at', toDate);
+      let playsQ = supabase.from('beat_plays').select('played_at, beat_id').gte('played_at', fromDate).lte('played_at', toDate);
+      if (tenant?.id) playsQ = playsQ.eq('tenant_id', tenant.id);
+      const { data: plays, error: playsError } = await playsQ;
       if (playsError) throw playsError;
 
       // Fetch site views
-      const {
-        data: views,
-        error: viewsError
-      } = await supabase.from('site_views').select('viewed_at, page_path').gte('viewed_at', fromDate).lte('viewed_at', toDate);
+      let viewsQ = supabase.from('site_views').select('viewed_at, page_path').gte('viewed_at', fromDate).lte('viewed_at', toDate);
+      if (tenant?.id) viewsQ = viewsQ.eq('tenant_id', tenant.id);
+      const { data: views, error: viewsError } = await viewsQ;
       if (viewsError) throw viewsError;
 
       // Fetch orders with items
-      const {
-        data: orders,
-        error: ordersError
-      } = await supabase.from('orders').select(`
+      let ordersQ = supabase.from('orders').select(`
           id,
           customer_name,
           customer_email,
@@ -202,15 +199,17 @@ export function AnalyticsDashboard() {
             beat_title,
             price
           )
-        `).eq('status', 'completed').gte('created_at', fromDate).lte('created_at', toDate).order('created_at', {
+         `).eq('status', 'completed').gte('created_at', fromDate).lte('created_at', toDate).order('created_at', {
         ascending: false
       });
+      if (tenant?.id) ordersQ = ordersQ.eq('tenant_id', tenant.id);
+      const { data: orders, error: ordersError } = await ordersQ;
       if (ordersError) throw ordersError;
 
       // Fetch beats for top plays
-      const {
-        data: beats
-      } = await supabase.from('beats').select('id, title');
+      let beatsQ = supabase.from('beats').select('id, title');
+      if (tenant?.id) beatsQ = beatsQ.eq('tenant_id', tenant.id);
+      const { data: beats } = await beatsQ;
       const beatMap = new Map(beats?.map(b => [b.id, b.title]) || []);
 
       // Process plays by date

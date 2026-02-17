@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 interface ServiceOrder {
@@ -41,16 +42,16 @@ const statusColors: Record<string, string> = {
   completed: 'bg-green-500/10 text-green-400'
 };
 export function ServiceOrdersManager() {
+  const { tenant } = useTenant();
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchOrders = async () => {
     setLoading(true);
-    const {
-      data,
-      error
-    } = await supabase.from('service_orders').select('*, services(title, type)').order('created_at', {
+    let query = supabase.from('service_orders').select('*, services(title, type)').order('created_at', {
       ascending: false
     });
+    if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+    const { data, error } = await query;
     if (error) {
       toast.error('Failed to load service orders');
     } else {

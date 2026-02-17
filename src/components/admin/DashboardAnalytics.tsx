@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { Play, Eye, ShoppingCart, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import {
   LineChart,
   Line,
@@ -31,6 +32,7 @@ interface ChartData {
 }
 
 export function DashboardAnalytics() {
+  const { tenant } = useTenant();
   const [stats, setStats] = useState<QuickStats | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,53 +47,30 @@ export function DashboardAnalytics() {
       const last7Days = subDays(now, 7);
       const last14Days = subDays(now, 14);
 
-      // Current period (last 7 days)
       const currentFrom = startOfDay(last7Days).toISOString();
       const currentTo = endOfDay(now).toISOString();
-
-      // Previous period (7-14 days ago)
       const prevFrom = startOfDay(last14Days).toISOString();
       const prevTo = endOfDay(last7Days).toISOString();
 
-      // Fetch current period data
-      const [playsRes, viewsRes, ordersRes] = await Promise.all([
-        supabase
-          .from('beat_plays')
-          .select('played_at')
-          .gte('played_at', currentFrom)
-          .lte('played_at', currentTo),
-        supabase
-          .from('site_views')
-          .select('viewed_at')
-          .gte('viewed_at', currentFrom)
-          .lte('viewed_at', currentTo),
-        supabase
-          .from('orders')
-          .select('total, created_at')
-          .eq('status', 'completed')
-          .gte('created_at', currentFrom)
-          .lte('created_at', currentTo),
-      ]);
+      // Build queries with tenant filter
+      let playsQ = supabase.from('beat_plays').select('played_at').gte('played_at', currentFrom).lte('played_at', currentTo);
+      let viewsQ = supabase.from('site_views').select('viewed_at').gte('viewed_at', currentFrom).lte('viewed_at', currentTo);
+      let ordersQ = supabase.from('orders').select('total, created_at').eq('status', 'completed').gte('created_at', currentFrom).lte('created_at', currentTo);
+      let prevPlaysQ = supabase.from('beat_plays').select('played_at').gte('played_at', prevFrom).lte('played_at', prevTo);
+      let prevViewsQ = supabase.from('site_views').select('viewed_at').gte('viewed_at', prevFrom).lte('viewed_at', prevTo);
+      let prevOrdersQ = supabase.from('orders').select('total').eq('status', 'completed').gte('created_at', prevFrom).lte('created_at', prevTo);
 
-      // Fetch previous period data
-      const [prevPlaysRes, prevViewsRes, prevOrdersRes] = await Promise.all([
-        supabase
-          .from('beat_plays')
-          .select('played_at')
-          .gte('played_at', prevFrom)
-          .lte('played_at', prevTo),
-        supabase
-          .from('site_views')
-          .select('viewed_at')
-          .gte('viewed_at', prevFrom)
-          .lte('viewed_at', prevTo),
-        supabase
-          .from('orders')
-          .select('total')
-          .eq('status', 'completed')
-          .gte('created_at', prevFrom)
-          .lte('created_at', prevTo),
-      ]);
+      if (tenant?.id) {
+        playsQ = playsQ.eq('tenant_id', tenant.id);
+        viewsQ = viewsQ.eq('tenant_id', tenant.id);
+        ordersQ = ordersQ.eq('tenant_id', tenant.id);
+        prevPlaysQ = prevPlaysQ.eq('tenant_id', tenant.id);
+        prevViewsQ = prevViewsQ.eq('tenant_id', tenant.id);
+        prevOrdersQ = prevOrdersQ.eq('tenant_id', tenant.id);
+      }
+
+      const [playsRes, viewsRes, ordersRes] = await Promise.all([playsQ, viewsQ, ordersQ]);
+      const [prevPlaysRes, prevViewsRes, prevOrdersRes] = await Promise.all([prevPlaysQ, prevViewsQ, prevOrdersQ]);
 
       const currentPlays = playsRes.data?.length || 0;
       const currentViews = viewsRes.data?.length || 0;

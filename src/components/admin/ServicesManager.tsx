@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 interface Service {
   id: string;
@@ -18,6 +19,7 @@ interface Service {
   sort_order: number;
 }
 export function ServicesManager() {
+  const { tenant } = useTenant();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Service | null>(null);
@@ -32,9 +34,9 @@ export function ServicesManager() {
   const [saving, setSaving] = useState(false);
   const fetchServices = async () => {
     setLoading(true);
-    const {
-      data
-    } = await supabase.from('services').select('*').order('sort_order');
+    let query = supabase.from('services').select('*').order('sort_order');
+    if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+    const { data } = await query;
     setServices(data as Service[] || []);
     setLoading(false);
   };
@@ -50,7 +52,8 @@ export function ServicesManager() {
       type: form.type,
       description: form.description || null,
       price: parseFloat(form.price),
-      sort_order: parseInt(form.sort_order)
+      sort_order: parseInt(form.sort_order),
+      tenant_id: tenant?.id || null,
     });
     if (error) toast.error('Failed to create service');else {
       toast.success('Service created');

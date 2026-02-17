@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 interface OrderItem {
   id: string;
@@ -32,6 +33,7 @@ interface Order {
   order_items: OrderItem[];
 }
 export function OrdersManager() {
+  const { tenant } = useTenant();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
@@ -42,11 +44,13 @@ export function OrdersManager() {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.from('orders').select(`
+      let query = supabase.from('orders').select(`
           id, customer_email, customer_name, status, total,
           paypal_order_id, paypal_transaction_id, created_at, download_expires_at,
           order_items (id, beat_title, license_name, price, download_count, item_type, item_title, license_tier_id, beat_id, sound_kit_id)
         `).order('created_at', { ascending: false });
+      if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+      const { data, error } = await query;
       if (error) throw error;
       setOrders(data || []);
     } catch (error: any) {

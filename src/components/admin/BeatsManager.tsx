@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, Trash2, Eye, EyeOff, Edit2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { BeatEditModal } from './BeatEditModal';
@@ -24,16 +25,14 @@ interface Beat {
   }[];
 }
 export function BeatsManager() {
+  const { tenant } = useTenant();
   const [beats, setBeats] = useState<Beat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingBeat, setEditingBeat] = useState<Beat | null>(null);
   const fetchBeats = async () => {
     setIsLoading(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('beats').select(`
+      let query = supabase.from('beats').select(`
           id,
           title,
           bpm,
@@ -53,6 +52,8 @@ export function BeatsManager() {
         `).order('created_at', {
         ascending: false
       });
+      if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+      const { data, error } = await query;
       if (error) throw error;
       setBeats(data || []);
     } catch (error: any) {

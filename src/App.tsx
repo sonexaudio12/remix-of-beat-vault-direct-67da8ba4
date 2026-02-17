@@ -70,6 +70,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/landing" element={<SaasLanding />} />
+      <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/beats" element={<Beats />} />
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
@@ -165,7 +166,7 @@ export function DomainSettingsManager() {
               Upgrade to <strong>Pro</strong> or <strong>Studio</strong> to connect your own domain.
             </p>
             <Button asChild size="sm" variant="default">
-              <a href="/landing#pricing">Upgrade Plan</a>
+              <Link to="/upgrade">Upgrade Plan</Link>
             </Button>
           </div>
         )}

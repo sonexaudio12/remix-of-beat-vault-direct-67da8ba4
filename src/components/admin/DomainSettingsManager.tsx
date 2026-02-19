@@ -160,9 +160,14 @@ export function DomainSettingsManager() {
             </Button>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Upgrade to <strong>Pro</strong> or <strong>Studio</strong> to connect your own domain.
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Upgrade to <strong>Pro</strong> or <strong>Studio</strong> to connect your own domain.
+            </p>
+            <Button asChild size="sm" variant="default">
+              <a href="/saas#pricing">Upgrade Plan</a>
+            </Button>
+          </div>
         )}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +22,7 @@ interface PaymentSetting {
 }
 
 export function PaymentSettingsManager() {
+  const { tenant } = useTenant();
   const [settings, setSettings] = useState<Record<string, string>>({
     paypal_client_id: '',
     paypal_client_secret: '',
@@ -32,13 +34,15 @@ export function PaymentSettingsManager() {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [tenant]);
 
   const loadSettings = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('payment_settings')
         .select('*');
+      if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -64,12 +68,12 @@ export function PaymentSettingsManager() {
     try {
       // Update each setting
       for (const [key, value] of Object.entries(settings)) {
-        const { error } = await supabase
+        let query = supabase
           .from('payment_settings')
           .update({ setting_value: value })
           .eq('setting_key', key);
-
-        if (error) throw error;
+        if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+        const { error } = await query;
       }
 
       toast.success('Payment settings saved successfully');

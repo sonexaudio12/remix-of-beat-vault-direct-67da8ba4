@@ -165,7 +165,7 @@ export function DomainSettingsManager() {
               Upgrade to <strong>Pro</strong> or <strong>Studio</strong> to connect your own domain.
             </p>
             <Button asChild size="sm" variant="default">
-              <a href="/saas#pricing">Upgrade Plan</a>
+              <a href="/landing#pricing">Upgrade Plan</a>
             </Button>
           </div>
         )}

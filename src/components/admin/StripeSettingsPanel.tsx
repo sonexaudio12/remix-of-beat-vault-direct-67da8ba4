@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +10,7 @@ import { Loader2, Save, Eye, EyeOff, CreditCard, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function StripeSettingsPanel() {
+  const { tenant } = useTenant();
   const [settings, setSettings] = useState({
     stripe_secret_key: '',
     stripe_mode: 'test',
@@ -19,13 +21,15 @@ export function StripeSettingsPanel() {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [tenant]);
 
   const loadSettings = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('payment_settings')
         .select('*');
+      if (tenant?.id) query = query.eq('tenant_id', tenant.id);
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -45,22 +49,25 @@ export function StripeSettingsPanel() {
     try {
       for (const [key, value] of Object.entries(settings)) {
         // Upsert: try update first, insert if not exists
-        const { data: existing } = await supabase
+        let existQuery = supabase
           .from('payment_settings')
           .select('id')
-          .eq('setting_key', key)
-          .maybeSingle();
+          .eq('setting_key', key);
+        if (tenant?.id) existQuery = existQuery.eq('tenant_id', tenant.id);
+        const { data: existing } = await existQuery.maybeSingle();
 
         if (existing) {
-          const { error } = await supabase
+          let updateQuery = supabase
             .from('payment_settings')
             .update({ setting_value: value })
             .eq('setting_key', key);
+          if (tenant?.id) updateQuery = updateQuery.eq('tenant_id', tenant.id);
+          const { error } = await updateQuery;
           if (error) throw error;
         } else {
           const { error } = await supabase
             .from('payment_settings')
-            .insert({ setting_key: key, setting_value: value });
+            .insert({ setting_key: key, setting_value: value, tenant_id: tenant?.id || null });
           if (error) throw error;
         }
       }

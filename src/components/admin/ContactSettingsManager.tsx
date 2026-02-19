@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Save, Mail, User, Phone, Scale, Mic } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTenant } from '@/hooks/useTenant';
 
 interface AdminSetting {
   id: string;
@@ -14,6 +15,7 @@ interface AdminSetting {
 }
 
 export function ContactSettingsManager() {
+  const { tenant } = useTenant();
   const [settings, setSettings] = useState({
     contact_email: '',
     contact_name: '',
@@ -27,13 +29,19 @@ export function ContactSettingsManager() {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [tenant]);
 
   const loadSettings = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('admin_settings')
         .select('*');
+      
+      if (tenant?.id) {
+        query = query.eq('tenant_id', tenant.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -58,12 +66,16 @@ export function ContactSettingsManager() {
     setSaving(true);
     try {
       for (const [key, value] of Object.entries(settings)) {
-        const { error } = await supabase
+        let query = supabase
           .from('admin_settings')
           .update({ setting_value: value })
           .eq('setting_key', key);
+        
+        if (tenant?.id) {
+          query = query.eq('tenant_id', tenant.id);
+        }
 
-        if (error) throw error;
+        const { error } = await query;
       }
 
       toast.success('Contact settings saved successfully');

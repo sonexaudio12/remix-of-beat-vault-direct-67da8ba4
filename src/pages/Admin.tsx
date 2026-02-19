@@ -21,6 +21,7 @@ import { ServicesManager } from '@/components/admin/ServicesManager';
 import { ServiceOrdersManager } from '@/components/admin/ServiceOrdersManager';
 import { VisualPageBuilder } from '@/components/admin/VisualPageBuilder';
 import { DiscountCodesManager } from '@/components/admin/DiscountCodesManager';
+import { DomainSettingsManager } from '@/components/admin/DomainSettingsManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import logo from '@/assets/logo.png';
@@ -363,6 +364,15 @@ function SettingsContent({
   }
   const toggle = (id: string) => setOpenSection(prev => prev === id ? null : id);
   return <div className="space-y-4 max-w-3xl">
+      {/* Domain Settings */}
+      <div className="rounded-xl border border-border overflow-hidden">
+        <button onClick={() => toggle('domain')} className="w-full flex items-center justify-between px-6 py-4 bg-card hover:bg-muted/30 transition-colors">
+          <span className="font-semibold">Domain Settings</span>
+          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'domain' ? 'rotate-180' : ''}`} />
+        </button>
+        {openSection === 'domain' && <div className="px-2 pb-2"><DomainSettingsManager /></div>}
+      </div>
+
       {/* Contact Information */}
       <div className="rounded-xl border border-border overflow-hidden">
         <button onClick={() => toggle('contact')} className="w-full flex items-center justify-between px-6 py-4 bg-card hover:bg-muted/30 transition-colors">

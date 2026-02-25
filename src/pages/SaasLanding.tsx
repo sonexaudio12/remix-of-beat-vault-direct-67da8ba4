@@ -281,7 +281,7 @@ export default function SaasLanding() {
         <div className="container max-w-5xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">Pricing</h2>
           <p className="text-center text-muted-foreground mb-12">Pick the package that matches your stage.</p>
-          <div className="grid gap-8 md:grid-cols-3 bg-background">
+          <div className="grid gap-8 md:grid-cols-3">
             {plans.map((plan) =>
             <div
               key={plan.name}

@@ -221,7 +221,7 @@ export default function SaasLanding() {
           <p className="text-muted-foreground mb-10">You cannot build durable income on borrowed platforms.</p>
           <div className="grid gap-4 md:grid-cols-3">
             {painPoints.map((p) =>
-            <div key={p} className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground text-left">
+            <div key={p} className="rounded-xl border border-border p-6 text-sm text-muted-foreground text-left bg-background">
                 {p}
               </div>
             )}
@@ -267,7 +267,7 @@ export default function SaasLanding() {
           <h2 className="text-3xl md:text-4xl font-bold mb-12">Core Features</h2>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
             {coreFeatures.map((f) =>
-            <div key={f.label} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+            <div key={f.label} className="flex items-center gap-3 rounded-xl border border-border p-4 bg-background">
                 <f.icon className="h-5 w-5 text-primary shrink-0" />
                 <span className="text-sm font-medium">{f.label}</span>
               </div>

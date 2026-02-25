@@ -281,7 +281,7 @@ export default function SaasLanding() {
         <div className="container max-w-5xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">Pricing</h2>
           <p className="text-center text-muted-foreground mb-12">Pick the package that matches your stage.</p>
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-3 bg-background">
             {plans.map((plan) =>
             <div
               key={plan.name}
@@ -330,7 +330,7 @@ export default function SaasLanding() {
         <div className="container max-w-2xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-3">🔁 Hosting After Year One</h2>
           <p className="text-muted-foreground mb-8">Your first year of hosting is included.</p>
-          <div className="rounded-xl border border-border bg-card p-8 space-y-4">
+          <div className="rounded-xl border border-border p-8 space-y-4 bg-background">
             <p className="text-lg font-semibold">After year one:</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-2xl font-bold">
               <span>$99/year</span>
@@ -362,7 +362,7 @@ export default function SaasLanding() {
                 )}
               </ul>
             </div>
-            <div className="rounded-xl border border-border bg-card p-8">
+            <div className="rounded-xl border border-border p-8 bg-background">
               <h3 className="text-xl font-bold mb-6 text-muted-foreground">Typical Marketplaces</h3>
               <ul className="space-y-4">
                 {sonexVsMarketplace.marketplace.map((s) =>

@@ -85,8 +85,8 @@ export default function Upgrade() {
               key={plan.name}
               className={`rounded-xl border p-8 flex flex-col ${
                 plan.popular
-                  ? 'border-primary ring-2 ring-primary/20 bg-card'
-                  : 'border-border bg-card'
+                  ? 'border-primary ring-2 ring-primary/20 bg-background'
+                  : 'border-border bg-background'
               }`}
             >
               {plan.popular && (

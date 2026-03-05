@@ -79,7 +79,8 @@ export function DomainSettingsManager() {
 
       if (error) throw error;
 
-      // Upsert into tenant_domains
+      // Upsert into tenant_domains with verification token
+      const token = `sonex_verify_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
       const { data: existingDomain } = await supabase
         .from('tenant_domains')
         .select('id')
@@ -89,13 +90,14 @@ export function DomainSettingsManager() {
       if (existingDomain) {
         await supabase
           .from('tenant_domains')
-          .update({ domain, status: 'pending' })
+          .update({ domain, status: 'pending', verification_token: token })
           .eq('id', existingDomain.id);
       } else {
         await supabase
           .from('tenant_domains')
-          .insert({ tenant_id: tenant.id, domain, status: 'pending' });
+          .insert({ tenant_id: tenant.id, domain, status: 'pending', verification_token: token });
       }
+      setVerificationToken(token);
 
       toast.success('Custom domain saved! DNS configuration is required to activate it.');
     } catch (e: any) {

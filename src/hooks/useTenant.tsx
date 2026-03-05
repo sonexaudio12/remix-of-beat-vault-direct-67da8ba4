@@ -29,8 +29,8 @@ const TenantContext = createContext<TenantContextType>({
 
 // Hostnames that should show the SaaS landing page instead of a store
 const SAAS_ROOT_DOMAINS = [
-  'sonexbeats.shop',
-  'www.sonexbeats.shop',
+  'sonexstudio.shop',
+  'www.sonexstudio.shop',
   'localhost',
   '127.0.0.1',
 ];
@@ -41,7 +41,7 @@ function isPreviewDomain(hostname: string): boolean {
 
 function extractSubdomain(hostname: string): string | null {
   const parts = hostname.split('.');
-  if (parts.length >= 3 && hostname.endsWith('sonexbeats.shop')) {
+  if (parts.length >= 3 && hostname.endsWith('sonexstudio.shop')) {
     const sub = parts.slice(0, parts.length - 2).join('.');
     if (sub !== 'www') return sub;
   }
@@ -87,7 +87,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Try subdomain match first (e.g. mybeats.sonexbeats.shop)
+        // Try subdomain match first (e.g. mybeats.sonexstudio.shop)
         const subdomain = extractSubdomain(hostname);
         if (subdomain) {
           const { data, error: err } = await supabase

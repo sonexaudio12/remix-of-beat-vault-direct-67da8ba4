@@ -53,7 +53,7 @@ export function DomainSettingsManager() {
 
       if (error) throw error;
       setSlug(cleaned);
-      toast.success('Subdomain updated! Your store is now at ' + cleaned + '.sonexbeats.shop');
+      toast.success('Subdomain updated! Your store is now at ' + cleaned + '.sonexstudio.shop');
     } catch (e: any) {
       toast.error(e.message || 'Failed to update subdomain');
     } finally {
@@ -126,7 +126,7 @@ export function DomainSettingsManager() {
             placeholder="yourname"
             className="max-w-xs"
           />
-          <span className="text-sm text-muted-foreground whitespace-nowrap">.sonexbeats.shop</span>
+          <span className="text-sm text-muted-foreground whitespace-nowrap">.sonexstudio.shop</span>
         </div>
         <Button onClick={handleSaveSlug} disabled={saving || slug === tenant.slug} size="sm">
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

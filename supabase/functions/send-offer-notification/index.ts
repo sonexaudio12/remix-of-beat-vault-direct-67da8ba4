@@ -118,10 +118,10 @@ serve(async (req) => {
     console.log("Sending offer notification for:", beatTitle);
 
     // Get admin email from payment settings or use a default
-    const adminEmail = Deno.env.get("ADMIN_EMAIL") || "admin@sonexbeats.shop";
+    const adminEmail = Deno.env.get("ADMIN_EMAIL") || "admin@sonexstudio.shop";
 
     const emailResponse = await resend.emails.send({
-      from: "Sonex Beats <noreply@sonexbeats.shop>",
+      from: "Sonex Studio <noreply@sonexstudio.shop>",
       to: [adminEmail],
       subject: `New Exclusive Rights Offer: ${beatTitle}`,
       html: `
@@ -151,7 +151,7 @@ serve(async (req) => {
             Log in to your admin dashboard to accept, reject, or counter this offer.
           </p>
           
-          <a href="https://www.sonexbeats.shop/admin" 
+          <a href="https://www.sonexstudio.shop/admin" 
              style="display: inline-block; background: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
             View in Dashboard
           </a>

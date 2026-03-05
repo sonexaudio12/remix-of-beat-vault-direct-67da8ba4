@@ -24,10 +24,10 @@ serve(async (req) => {
       );
     }
 
-    const siteUrl = "https://www.sonexbeats.shop";
+    const siteUrl = "https://www.sonexstudio.shop";
 
     const emailResponse = await resend.emails.send({
-      from: "Sonex Studio <no-reply@sonexbeats.shop>",
+      from: "Sonex Studio <no-reply@sonexstudio.shop>",
       to: [email],
       subject: "Welcome to Sonex Beats!",
       html: `

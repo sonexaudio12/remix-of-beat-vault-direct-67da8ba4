@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
@@ -14,6 +14,19 @@ export function DomainSettingsManager() {
   const [slug, setSlug] = useState(tenant?.slug ?? '');
   const [customDomain, setCustomDomain] = useState(tenant?.custom_domain ?? '');
   const [saving, setSaving] = useState(false);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+
+  // Load existing verification token on mount
+  const loadToken = async () => {
+    if (!tenant) return;
+    const { data } = await supabase
+      .from('tenant_domains')
+      .select('verification_token, domain')
+      .eq('tenant_id', tenant.id)
+      .maybeSingle();
+    if (data?.verification_token) setVerificationToken(data.verification_token);
+  };
+  useEffect(() => { loadToken(); }, [tenant?.id]);
 
   if (!tenant) return null;
 
@@ -79,7 +92,8 @@ export function DomainSettingsManager() {
 
       if (error) throw error;
 
-      // Upsert into tenant_domains
+      // Upsert into tenant_domains with verification token
+      const token = `sonex_verify_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
       const { data: existingDomain } = await supabase
         .from('tenant_domains')
         .select('id')
@@ -89,13 +103,14 @@ export function DomainSettingsManager() {
       if (existingDomain) {
         await supabase
           .from('tenant_domains')
-          .update({ domain, status: 'pending' })
+          .update({ domain, status: 'pending', verification_token: token })
           .eq('id', existingDomain.id);
       } else {
         await supabase
           .from('tenant_domains')
-          .insert({ tenant_id: tenant.id, domain, status: 'pending' });
+          .insert({ tenant_id: tenant.id, domain, status: 'pending', verification_token: token });
       }
+      setVerificationToken(token);
 
       toast.success('Custom domain saved! DNS configuration is required to activate it.');
     } catch (e: any) {
@@ -152,9 +167,27 @@ export function DomainSettingsManager() {
               placeholder="www.yourdomain.com"
               className="max-w-md"
             />
-            <p className="text-xs text-muted-foreground">
-              Point your domain's A record to <code className="bg-muted px-1 rounded">185.158.133.1</code> and add a TXT record for verification.
-            </p>
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <p><strong>DNS Setup:</strong></p>
+              <p>1. Add an <strong>A record</strong> pointing to <code className="bg-muted px-1 rounded">185.158.133.1</code></p>
+              <p>2. Add a <strong>TXT record</strong> with:</p>
+              {verificationToken ? (
+                <div className="flex items-center gap-2">
+                  <code className="bg-muted px-2 py-1 rounded text-xs break-all select-all">{verificationToken}</code>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => { navigator.clipboard.writeText(verificationToken); toast.success('Copied!'); }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              ) : (
+                <p className="italic">Save your domain first to generate a verification token.</p>
+              )}
+            </div>
             <Button onClick={handleSaveCustomDomain} disabled={saving || customDomain === (tenant.custom_domain ?? '')} size="sm">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Update Custom Domain

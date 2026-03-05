@@ -202,7 +202,7 @@ export function DomainSettingsManager() {
               <div className="space-y-1">
                 <p>
                   <strong>TXT Host/Name:</strong>{' '}
-                  <code className="bg-muted px-1 rounded">_lovable</code>
+                  <code className="bg-muted px-1 rounded">_sonexstudio</code>
                 </p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span><strong>TXT Value:</strong></span>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
@@ -7,14 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Globe, Link2, Loader2 } from 'lucide-react';
+import { Globe, Link2, Loader2, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+
+type DomainStatus = 'pending' | 'verifying' | 'active' | 'failed';
 
 export function DomainSettingsManager() {
   const { tenant } = useTenant();
   const [slug, setSlug] = useState(tenant?.slug ?? '');
   const [customDomain, setCustomDomain] = useState(tenant?.custom_domain ?? '');
   const [saving, setSaving] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const [domainStatus, setDomainStatus] = useState<DomainStatus>('pending');
 
   const generateVerificationToken = () =>
     `sonex_verify_${Math.random().toString(36).slice(2, 18)}`;
@@ -28,42 +32,33 @@ export function DomainSettingsManager() {
       .replace(/:\d+$/, '')
       .replace(/\.$/, '');
 
-  useEffect(() => {
-    let mounted = true;
+  const loadDomainRecord = useCallback(async () => {
+    if (!tenant) return;
 
-    const loadOrCreateToken = async () => {
-      if (!tenant) return;
+    const { data } = await supabase
+      .from('tenant_domains')
+      .select('id, domain, verification_token, status')
+      .eq('tenant_id', tenant.id)
+      .maybeSingle();
 
-      const { data } = await supabase
-        .from('tenant_domains')
-        .select('id, domain, verification_token')
-        .eq('tenant_id', tenant.id)
-        .maybeSingle();
+    if (data) {
+      if (data.verification_token) setVerificationToken(data.verification_token);
+      setDomainStatus((data.status as DomainStatus) || 'pending');
 
-      if (!mounted) return;
-
-      if (data?.verification_token) {
-        setVerificationToken(data.verification_token);
-        return;
-      }
-
-      if (data?.id && data.domain) {
+      if (!data.verification_token && data.id && data.domain) {
         const nextToken = generateVerificationToken();
         const { error } = await supabase
           .from('tenant_domains')
           .update({ verification_token: nextToken })
           .eq('id', data.id);
-
-        if (!error && mounted) setVerificationToken(nextToken);
+        if (!error) setVerificationToken(nextToken);
       }
-    };
-
-    void loadOrCreateToken();
-
-    return () => {
-      mounted = false;
-    };
+    }
   }, [tenant?.id]);
+
+  useEffect(() => {
+    loadDomainRecord();
+  }, [loadDomainRecord]);
 
   if (!tenant) return null;
 
@@ -83,7 +78,6 @@ export function DomainSettingsManager() {
 
     setSaving(true);
     try {
-      // Check uniqueness
       const { data: existing } = await supabase
         .from('tenants')
         .select('id')
@@ -149,7 +143,6 @@ export function DomainSettingsManager() {
         return;
       }
 
-      // Update tenant custom_domain
       const { error } = await supabase
         .from('tenants')
         .update({ custom_domain: domain, domain_status: 'pending' })
@@ -157,7 +150,6 @@ export function DomainSettingsManager() {
 
       if (error) throw error;
 
-      // Upsert into tenant_domains with verification token
       const token = generateVerificationToken();
       const { data: existingDomain, error: existingDomainError } = await supabase
         .from('tenant_domains')
@@ -170,25 +162,75 @@ export function DomainSettingsManager() {
       if (existingDomain) {
         const { error: updateDomainError } = await supabase
           .from('tenant_domains')
-          .update({ domain, status: 'pending', verification_token: token })
+          .update({ domain, status: 'pending', verification_token: token, verified_at: null })
           .eq('id', existingDomain.id);
-
         if (updateDomainError) throw updateDomainError;
       } else {
         const { error: insertDomainError } = await supabase
           .from('tenant_domains')
           .insert({ tenant_id: tenant.id, domain, status: 'pending', verification_token: token });
-
         if (insertDomainError) throw insertDomainError;
       }
 
       setCustomDomain(domain);
       setVerificationToken(token);
-      toast.success('Custom domain saved! DNS configuration is required to activate it.');
+      setDomainStatus('pending');
+      toast.success('Custom domain saved! Add the DNS records below, then click "Verify Now".');
     } catch (e: any) {
       toast.error(e.message || 'Failed to update custom domain');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleVerifyNow = async () => {
+    setVerifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-tenant-domain', {
+        body: { tenant_id: tenant.id },
+      });
+
+      if (error) throw error;
+
+      const result = data?.results?.[0];
+      if (result?.verified) {
+        setDomainStatus('active');
+        toast.success('Domain verified successfully! Your store is now live on ' + customDomain);
+      } else {
+        toast.error(
+          'TXT record not found yet. Make sure your DNS record is set to:\n' +
+          `Host: _sonexstudio\nValue: ${verificationToken}\n\nDNS changes can take up to 48 hours to propagate.`
+        );
+        await loadDomainRecord();
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Verification check failed');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const statusBadge = () => {
+    switch (domainStatus) {
+      case 'active':
+        return (
+          <Badge className="bg-green-500/10 text-green-600 border-green-500/20 gap-1">
+            <CheckCircle2 className="h-3 w-3" /> Verified
+          </Badge>
+        );
+      case 'verifying':
+        return (
+          <Badge variant="outline" className="gap-1 text-yellow-600 border-yellow-500/30">
+            <RefreshCw className="h-3 w-3" /> Checking…
+          </Badge>
+        );
+      case 'pending':
+      default:
+        return (
+          <Badge variant="outline" className="gap-1 text-muted-foreground">
+            <AlertCircle className="h-3 w-3" /> Pending verification
+          </Badge>
+        );
     }
   };
 
@@ -233,12 +275,16 @@ export function DomainSettingsManager() {
 
         {canCustomDomain ? (
           <>
-            <Input
-              value={customDomain}
-              onChange={(e) => setCustomDomain(e.target.value)}
-              placeholder="www.yourdomain.com"
-              className="max-w-md"
-            />
+            <div className="flex items-center gap-2 flex-wrap">
+              <Input
+                value={customDomain}
+                onChange={(e) => setCustomDomain(e.target.value)}
+                placeholder="www.yourdomain.com"
+                className="max-w-md"
+              />
+              {tenant.custom_domain && statusBadge()}
+            </div>
+
             <div className="space-y-2 text-xs text-muted-foreground">
               <p><strong>DNS Setup:</strong></p>
               <p>1. Add an <strong>A record</strong> pointing to <code className="bg-muted px-1 rounded">185.158.133.1</code></p>
@@ -270,10 +316,30 @@ export function DomainSettingsManager() {
                 </div>
               </div>
             </div>
-            <Button onClick={handleSaveCustomDomain} disabled={saving || customDomain === (tenant.custom_domain ?? '')} size="sm">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Update Custom Domain
-            </Button>
+
+            <div className="flex gap-2">
+              <Button onClick={handleSaveCustomDomain} disabled={saving || customDomain === (tenant.custom_domain ?? '')} size="sm">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Update Custom Domain
+              </Button>
+              {tenant.custom_domain && domainStatus !== 'active' && (
+                <Button
+                  onClick={handleVerifyNow}
+                  disabled={verifying}
+                  size="sm"
+                  variant="outline"
+                >
+                  {verifying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                  Verify Now
+                </Button>
+              )}
+            </div>
+
+            {domainStatus === 'active' && (
+              <p className="text-xs text-green-600">
+                ✅ Your store is live at <strong>{tenant.custom_domain}</strong>
+              </p>
+            )}
           </>
         ) : (
           <div className="space-y-3">

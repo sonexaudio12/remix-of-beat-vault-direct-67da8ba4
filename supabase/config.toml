@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.send-service-order-update]
 verify_jwt = false
+
+[functions.verify-tenant-domain]
+verify_jwt = false

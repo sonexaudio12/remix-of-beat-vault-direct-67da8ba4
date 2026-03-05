@@ -14,6 +14,19 @@ export function DomainSettingsManager() {
   const [slug, setSlug] = useState(tenant?.slug ?? '');
   const [customDomain, setCustomDomain] = useState(tenant?.custom_domain ?? '');
   const [saving, setSaving] = useState(false);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+
+  // Load existing verification token on mount
+  const loadToken = async () => {
+    if (!tenant) return;
+    const { data } = await supabase
+      .from('tenant_domains')
+      .select('verification_token, domain')
+      .eq('tenant_id', tenant.id)
+      .maybeSingle();
+    if (data?.verification_token) setVerificationToken(data.verification_token);
+  };
+  useState(() => { loadToken(); });
 
   if (!tenant) return null;
 

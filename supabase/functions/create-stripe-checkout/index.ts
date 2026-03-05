@@ -161,7 +161,7 @@ serve(async (req) => {
     }));
 
     // Get the origin for redirect URLs
-    const origin = req.headers.get("origin") || "https://sonex.shop";
+    const origin = req.headers.get("origin") || "https://sonexstudio.shop";
 
     // Build checkout session params
     const sessionParams: any = {

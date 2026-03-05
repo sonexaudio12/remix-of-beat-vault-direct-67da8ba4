@@ -176,7 +176,7 @@ serve(async (req) => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Sonex Beats <noreply@sonexbeats.shop>",
+      from: "Sonex Studio <noreply@sonexstudio.shop>",
       to: [customerEmail],
       subject,
       html: `

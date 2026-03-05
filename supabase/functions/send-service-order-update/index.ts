@@ -82,7 +82,7 @@ function generateEmailHtml(data: ServiceOrderUpdateRequest): string {
       ${messageBlock}
       ${completedNote}
       <div style="text-align: center; margin: 32px 0;">
-        <a href="https://www.sonexbeats.shop/account"
+        <a href="https://www.sonexstudio.shop/account"
            style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: bold; font-size: 15px;">
           View Your Orders
         </a>
@@ -126,7 +126,7 @@ serve(async (req: Request) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Sonex Studio <no-reply@sonexbeats.shop>",
+        from: "Sonex Studio <no-reply@sonexstudio.shop>",
         to: [data.customerEmail],
         subject: `${statusEmoji[data.newStatus] || "📬"} Your order is now: ${label}`,
         html: generateEmailHtml(data),

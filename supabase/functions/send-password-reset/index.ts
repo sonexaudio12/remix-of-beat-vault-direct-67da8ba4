@@ -110,12 +110,12 @@ serve(async (req) => {
     const tokenHash = actionUrl.searchParams.get("token") || actionUrl.searchParams.get("token_hash");
     const type = actionUrl.searchParams.get("type") || "recovery";
 
-    const resetLink = `https://www.sonexbeats.shop/reset-password?token_hash=${encodeURIComponent(tokenHash!)}&type=${type}`;
+    const resetLink = `https://www.sonexstudio.shop/reset-password?token_hash=${encodeURIComponent(tokenHash!)}&type=${type}`;
 
-    console.log("Built custom reset link for domain: www.sonexbeats.shop");
+    console.log("Built custom reset link for domain: www.sonexstudio.shop");
 
     const emailResponse = await resend.emails.send({
-      from: "Sonex Studio <support@sonexbeats.shop>",
+      from: "Sonex Studio <support@sonexstudio.shop>",
       to: [trimmedEmail],
       subject: "Reset Your Password - Sonex Beats",
       html: `
@@ -145,7 +145,7 @@ serve(async (req) => {
           
           <p style="color: #666; font-size: 12px; text-align: center;">
             &copy; Sonex Beats. All rights reserved.<br/>
-            If you need help, contact us at support@sonexbeats.shop
+            If you need help, contact us at support@sonexstudio.shop
           </p>
         </div>
       `,

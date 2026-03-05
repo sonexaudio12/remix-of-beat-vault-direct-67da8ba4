@@ -76,7 +76,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     const resolve = async () => {
       try {
         // Normalize hostname: lowercase, no port
-        const hostname = window.location.hostname.toLowerCase();
+        const hostname = normalizeHostname(window.location.hostname);
         console.log('[TenantResolver] Hostname:', hostname);
 
         // Preview/dev/root domain environments

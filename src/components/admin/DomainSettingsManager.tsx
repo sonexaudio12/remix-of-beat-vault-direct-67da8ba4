@@ -19,6 +19,15 @@ export function DomainSettingsManager() {
   const generateVerificationToken = () =>
     `sonex_verify_${Math.random().toString(36).slice(2, 18)}`;
 
+  const normalizeCustomDomain = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/.*$/, '')
+      .replace(/:\d+$/, '')
+      .replace(/\.$/, '');
+
   useEffect(() => {
     let mounted = true;
 
@@ -110,7 +119,35 @@ export function DomainSettingsManager() {
 
     setSaving(true);
     try {
-      const domain = customDomain.trim().toLowerCase();
+      const domain = normalizeCustomDomain(customDomain);
+
+      if (!domain || !domain.includes('.')) {
+        toast.error('Enter a valid domain (e.g. beats.yourdomain.com)');
+        return;
+      }
+
+      const [domainConflictResult, tenantConflictResult] = await Promise.all([
+        supabase
+          .from('tenant_domains')
+          .select('id, tenant_id')
+          .eq('domain', domain)
+          .neq('tenant_id', tenant.id)
+          .maybeSingle(),
+        supabase
+          .from('tenants')
+          .select('id')
+          .eq('custom_domain', domain)
+          .neq('id', tenant.id)
+          .maybeSingle(),
+      ]);
+
+      if (domainConflictResult.error) throw domainConflictResult.error;
+      if (tenantConflictResult.error) throw tenantConflictResult.error;
+
+      if (domainConflictResult.data || tenantConflictResult.data) {
+        toast.error('This domain is already connected to another tenant');
+        return;
+      }
 
       // Update tenant custom_domain
       const { error } = await supabase
@@ -122,24 +159,31 @@ export function DomainSettingsManager() {
 
       // Upsert into tenant_domains with verification token
       const token = generateVerificationToken();
-      const { data: existingDomain } = await supabase
+      const { data: existingDomain, error: existingDomainError } = await supabase
         .from('tenant_domains')
         .select('id')
         .eq('tenant_id', tenant.id)
         .maybeSingle();
 
+      if (existingDomainError) throw existingDomainError;
+
       if (existingDomain) {
-        await supabase
+        const { error: updateDomainError } = await supabase
           .from('tenant_domains')
           .update({ domain, status: 'pending', verification_token: token })
           .eq('id', existingDomain.id);
+
+        if (updateDomainError) throw updateDomainError;
       } else {
-        await supabase
+        const { error: insertDomainError } = await supabase
           .from('tenant_domains')
           .insert({ tenant_id: tenant.id, domain, status: 'pending', verification_token: token });
-      }
-      setVerificationToken(token);
 
+        if (insertDomainError) throw insertDomainError;
+      }
+
+      setCustomDomain(domain);
+      setVerificationToken(token);
       toast.success('Custom domain saved! DNS configuration is required to activate it.');
     } catch (e: any) {
       toast.error(e.message || 'Failed to update custom domain');

@@ -35,6 +35,10 @@ const SAAS_ROOT_DOMAINS = [
   '127.0.0.1',
 ];
 
+function normalizeHostname(hostname: string): string {
+  return hostname.toLowerCase().replace(/\.$/, '');
+}
+
 function isPreviewDomain(hostname: string): boolean {
   return hostname.includes('lovable.app') || hostname.includes('lovableproject.com');
 }
@@ -46,6 +50,16 @@ function extractSubdomain(hostname: string): string | null {
     if (sub !== 'www') return sub;
   }
   return null;
+}
+
+function getDomainCandidates(hostname: string): string[] {
+  const candidates = new Set<string>([hostname]);
+  if (hostname.startsWith('www.')) {
+    candidates.add(hostname.replace(/^www\./, ''));
+  } else {
+    candidates.add(`www.${hostname}`);
+  }
+  return Array.from(candidates);
 }
 
 export function TenantProvider({ children }: { children: React.ReactNode }) {
@@ -62,7 +76,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     const resolve = async () => {
       try {
         // Normalize hostname: lowercase, no port
-        const hostname = window.location.hostname.toLowerCase();
+        const hostname = normalizeHostname(window.location.hostname);
         console.log('[TenantResolver] Hostname:', hostname);
 
         // Preview/dev/root domain environments
@@ -114,13 +128,18 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Try custom domain match (e.g. beats.johnproducer.com)
-        console.log('[TenantResolver] Trying custom domain match:', hostname);
-        const { data: domainRecord } = await supabase
+        const domainCandidates = getDomainCandidates(hostname);
+        console.log('[TenantResolver] Trying custom domain match:', domainCandidates.join(', '));
+
+        const { data: domainRecord, error: domainError } = await supabase
           .from('tenant_domains')
-          .select('tenant_id')
-          .eq('domain', hostname)
-          .eq('status', 'active')
+          .select('tenant_id, domain, status')
+          .in('domain', domainCandidates)
+          .in('status', ['active', 'verified', 'pending'])
+          .limit(1)
           .maybeSingle();
+
+        if (domainError) throw domainError;
 
         if (domainRecord) {
           const { data: tenantData } = await supabase
@@ -131,11 +150,29 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             .maybeSingle();
 
           if (tenantData) {
-            console.log('[TenantResolver] Tenant found by custom domain:', tenantData.name);
+            console.log('[TenantResolver] Tenant found by custom domain table:', tenantData.name);
             setTenant(tenantData as Tenant);
             setIsLoading(false);
             return;
           }
+        }
+
+        // Fallback: direct match from tenants.custom_domain
+        const { data: directTenant, error: directTenantError } = await supabase
+          .from('tenants')
+          .select('*')
+          .in('custom_domain', domainCandidates)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+
+        if (directTenantError) throw directTenantError;
+
+        if (directTenant) {
+          console.log('[TenantResolver] Tenant found by tenants.custom_domain:', directTenant.name);
+          setTenant(directTenant as Tenant);
+          setIsLoading(false);
+          return;
         }
 
         // No tenant found → show SaaS landing

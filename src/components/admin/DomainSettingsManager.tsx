@@ -26,7 +26,7 @@ export function DomainSettingsManager() {
       .maybeSingle();
     if (data?.verification_token) setVerificationToken(data.verification_token);
   };
-  useState(() => { loadToken(); });
+  useEffect(() => { loadToken(); }, [tenant?.id]);
 
   if (!tenant) return null;
 
@@ -167,9 +167,27 @@ export function DomainSettingsManager() {
               placeholder="www.yourdomain.com"
               className="max-w-md"
             />
-            <p className="text-xs text-muted-foreground">
-              Point your domain's A record to <code className="bg-muted px-1 rounded">185.158.133.1</code> and add a TXT record for verification.
-            </p>
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <p><strong>DNS Setup:</strong></p>
+              <p>1. Add an <strong>A record</strong> pointing to <code className="bg-muted px-1 rounded">185.158.133.1</code></p>
+              <p>2. Add a <strong>TXT record</strong> with:</p>
+              {verificationToken ? (
+                <div className="flex items-center gap-2">
+                  <code className="bg-muted px-2 py-1 rounded text-xs break-all select-all">{verificationToken}</code>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => { navigator.clipboard.writeText(verificationToken); toast.success('Copied!'); }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              ) : (
+                <p className="italic">Save your domain first to generate a verification token.</p>
+              )}
+            </div>
             <Button onClick={handleSaveCustomDomain} disabled={saving || customDomain === (tenant.custom_domain ?? '')} size="sm">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Update Custom Domain

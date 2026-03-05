@@ -300,7 +300,7 @@ serve(async (req: Request) => {
           price: item.price,
         })),
         total: data.total ?? order.total,
-        downloadUrl: data.downloadUrl || `${Deno.env.get("SITE_URL") || "https://sonex.shop"}/order-confirmation?orderId=${order.id}&email=${encodeURIComponent(order.customer_email)}`,
+        downloadUrl: data.downloadUrl || `${Deno.env.get("SITE_URL") || "https://sonexstudio.shop"}/order-confirmation?orderId=${order.id}&email=${encodeURIComponent(order.customer_email)}`,
         expiresAt: data.expiresAt || order.download_expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       };
     }

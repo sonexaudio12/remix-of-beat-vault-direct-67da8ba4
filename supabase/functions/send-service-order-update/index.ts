@@ -89,7 +89,7 @@ function generateEmailHtml(data: ServiceOrderUpdateRequest): string {
       </div>
       <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 32px 0;">
       <p style="color: #666; font-size: 14px; text-align: center; margin: 0;">
-        Questions? Reply to this email or contact support@sonex.shop
+        Questions? Reply to this email or contact support@sonexstudio.shop
       </p>
     </div>
     <p style="color: #999; font-size: 12px; text-align: center; margin-top: 24px;">

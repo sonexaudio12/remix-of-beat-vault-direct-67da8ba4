@@ -16,17 +16,45 @@ export function DomainSettingsManager() {
   const [saving, setSaving] = useState(false);
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
 
-  // Load existing verification token on mount
-  const loadToken = async () => {
-    if (!tenant) return;
-    const { data } = await supabase
-      .from('tenant_domains')
-      .select('verification_token, domain')
-      .eq('tenant_id', tenant.id)
-      .maybeSingle();
-    if (data?.verification_token) setVerificationToken(data.verification_token);
-  };
-  useEffect(() => { loadToken(); }, [tenant?.id]);
+  const generateVerificationToken = () =>
+    `sonex_verify_${Math.random().toString(36).slice(2, 18)}`;
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadOrCreateToken = async () => {
+      if (!tenant) return;
+
+      const { data } = await supabase
+        .from('tenant_domains')
+        .select('id, domain, verification_token')
+        .eq('tenant_id', tenant.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      if (data?.verification_token) {
+        setVerificationToken(data.verification_token);
+        return;
+      }
+
+      if (data?.id && data.domain) {
+        const nextToken = generateVerificationToken();
+        const { error } = await supabase
+          .from('tenant_domains')
+          .update({ verification_token: nextToken })
+          .eq('id', data.id);
+
+        if (!error && mounted) setVerificationToken(nextToken);
+      }
+    };
+
+    void loadOrCreateToken();
+
+    return () => {
+      mounted = false;
+    };
+  }, [tenant?.id]);
 
   if (!tenant) return null;
 
@@ -93,7 +121,7 @@ export function DomainSettingsManager() {
       if (error) throw error;
 
       // Upsert into tenant_domains with verification token
-      const token = `sonex_verify_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
+      const token = generateVerificationToken();
       const { data: existingDomain } = await supabase
         .from('tenant_domains')
         .select('id')
@@ -171,22 +199,32 @@ export function DomainSettingsManager() {
               <p><strong>DNS Setup:</strong></p>
               <p>1. Add an <strong>A record</strong> pointing to <code className="bg-muted px-1 rounded">185.158.133.1</code></p>
               <p>2. Add a <strong>TXT record</strong> with:</p>
-              {verificationToken ? (
-                <div className="flex items-center gap-2">
-                  <code className="bg-muted px-2 py-1 rounded text-xs break-all select-all">{verificationToken}</code>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={() => { navigator.clipboard.writeText(verificationToken); toast.success('Copied!'); }}
-                  >
-                    Copy
-                  </Button>
+              <div className="space-y-1">
+                <p>
+                  <strong>TXT Host/Name:</strong>{' '}
+                  <code className="bg-muted px-1 rounded">_lovable</code>
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span><strong>TXT Value:</strong></span>
+                  <code className="bg-muted px-2 py-1 rounded text-xs break-all select-all">
+                    {verificationToken ?? 'Click "Update Custom Domain" to generate token'}
+                  </code>
+                  {verificationToken && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => {
+                        navigator.clipboard.writeText(verificationToken);
+                        toast.success('Copied!');
+                      }}
+                    >
+                      Copy
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <p className="italic">Save your domain first to generate a verification token.</p>
-              )}
+              </div>
             </div>
             <Button onClick={handleSaveCustomDomain} disabled={saving || customDomain === (tenant.custom_domain ?? '')} size="sm">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

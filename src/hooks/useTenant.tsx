@@ -87,7 +87,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        // Try subdomain match first (e.g. mybeats.sonexbeats.shop)
+        // Try subdomain match first (e.g. mybeats.sonexstudio.shop)
         const subdomain = extractSubdomain(hostname);
         if (subdomain) {
           const { data, error: err } = await supabase

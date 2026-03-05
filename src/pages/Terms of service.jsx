@@ -32,7 +32,7 @@ export default function Terms() {
           <p>We reserve the right to suspend or terminate access at any time.</p>
 
           <h2 className="text-xl font-semibold">5. Contact</h2>
-          <p>Email: support@sonex.shop</p>
+          <p>Email: support@sonexstudio.shop</p>
         </div>
       </main>
 

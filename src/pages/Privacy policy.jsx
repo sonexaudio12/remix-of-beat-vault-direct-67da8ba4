@@ -26,7 +26,7 @@ export default function Privacy() {
           <p>Payments are handled by third-party providers like PayPal.</p>
 
           <h2 className="text-xl font-semibold">Contact</h2>
-          <p>Email: support@sonex.shop</p>
+          <p>Email: support@sonexstudio.shop</p>
         </div>
       </main>
 

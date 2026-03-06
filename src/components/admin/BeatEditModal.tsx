@@ -165,6 +165,7 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
           is_active: isActive,
           is_exclusive_available: isExclusiveAvailable,
           is_free: isFree,
+          owner_split_percentage: ownerSplitPercentage,
         })
         .eq('id', beat.id);
 
@@ -178,6 +179,21 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
           .eq('id', tier.id);
 
         if (tierError) throw tierError;
+      }
+
+      // Update collaborators - delete existing and re-insert
+      await supabase.from('beat_collaborators').delete().eq('beat_id', beat.id);
+      if (collaborators.length > 0) {
+        const collabInserts = collaborators.map((c: any) => ({
+          beat_id: beat.id,
+          collaborator_user_id: c.collaborator_user_id,
+          split_percentage: c.split_percentage,
+          role: c.role,
+          status: c.status || 'pending',
+          tenant_id: tenant?.id || null,
+        }));
+        const { error: collabError } = await supabase.from('beat_collaborators').insert(collabInserts);
+        if (collabError) throw collabError;
       }
 
       toast.success('Beat updated successfully!');

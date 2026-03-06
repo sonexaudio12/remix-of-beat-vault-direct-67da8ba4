@@ -46,7 +46,7 @@ export function LicenseModal({ beat, open, onOpenChange }: LicenseModalProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4 md:grid-cols-3">
+        <div className="grid gap-3 py-4 grid-cols-1 md:grid-cols-3 max-h-[60vh] overflow-y-auto">
           {beat.licenses.map((license) => {
             const Icon = licenseIcons[license.type];
             const colorClass = {

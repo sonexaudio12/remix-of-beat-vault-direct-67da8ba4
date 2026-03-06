@@ -9,11 +9,11 @@ import { UsersManager } from '@/components/superadmin/UsersManager';
 import { PromoCodesManager } from '@/components/superadmin/PromoCodesManager';
 
 const navItems = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'tenants', label: 'Tenants', icon: Store },
-  { id: 'users', label: 'Users', icon: Users },
-  { id: 'promo-codes', label: 'Promo Codes', icon: Tag },
-];
+{ id: 'overview', label: 'Overview', icon: LayoutDashboard },
+{ id: 'tenants', label: 'Tenants', icon: Store },
+{ id: 'users', label: 'Users', icon: Users },
+{ id: 'promo-codes', label: 'Promo Codes', icon: Tag }];
+
 
 export default function SuperAdmin() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -35,8 +35,8 @@ export default function SuperAdmin() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+      </div>);
+
   }
 
   if (!user || !isAdmin) return null;
@@ -44,15 +44,15 @@ export default function SuperAdmin() {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-card/50 flex flex-col">
-        <div className="p-6 border-b border-border">
+      <aside className="w-64 border-r border-border flex flex-col bg-accent-foreground">
+        <div className="p-6 border-b border-border bg-background">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
             <span className="font-display text-lg font-bold">Super Admin</span>
           </div>
         </div>
 
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 bg-background">
           <ul className="space-y-1">
             {navItems.map(({ id, label, icon: Icon }) => {
               const isActive = activeTab === id;
@@ -61,21 +61,21 @@ export default function SuperAdmin() {
                   <button
                     onClick={() => setActiveTab(id)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                    }`}
-                  >
+                    isActive ?
+                    'bg-primary/10 text-primary' :
+                    'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`
+                    }>
+                    
                     <Icon className="h-5 w-5" />
                     {label}
                   </button>
-                </li>
-              );
+                </li>);
+
             })}
           </ul>
         </nav>
 
-        <div className="p-4 border-t border-border space-y-2">
+        <div className="p-4 border-t border-border space-y-2 bg-background">
           <div className="px-4 py-2 text-sm text-muted-foreground truncate">
             {user.email}
           </div>
@@ -88,8 +88,8 @@ export default function SuperAdmin() {
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-muted-foreground"
-            onClick={handleSignOut}
-          >
+            onClick={handleSignOut}>
+            
             <LogOut className="h-5 w-5" />
             Sign Out
           </Button>
@@ -98,7 +98,7 @@ export default function SuperAdmin() {
 
       {/* Main */}
       <main className="flex-1 overflow-auto">
-        <header className="h-16 border-b border-border bg-card/50 flex items-center px-8">
+        <header className="h-16 border-b border-border flex items-center px-8 bg-background">
           <h1 className="text-xl font-semibold capitalize">
             {activeTab.replace('-', ' ')}
           </h1>
@@ -111,6 +111,6 @@ export default function SuperAdmin() {
           {activeTab === 'promo-codes' && <PromoCodesManager />}
         </div>
       </main>
-    </div>
-  );
+    </div>);
+
 }

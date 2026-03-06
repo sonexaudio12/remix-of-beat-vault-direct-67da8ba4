@@ -38,14 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         setIsAdmin(false);
-        return;
+      } else {
+        setIsAdmin(!!data);
       }
-
-      setIsAdmin(!!data);
     };
 
     const { data: { subscription } } =
-      supabase.auth.onAuthStateChange((event, session) => {
+      supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           setIsPasswordRecovery(true);
         }
@@ -53,9 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          setTimeout(() => {
-            fetchAdminStatus(session.user.id);
-          }, 0);
+          await fetchAdminStatus(session.user.id);
         } else {
           setIsAdmin(false);
         }
@@ -63,12 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        fetchAdminStatus(session.user.id);
+        await fetchAdminStatus(session.user.id);
       } else {
         setIsAdmin(false);
       }

@@ -493,6 +493,17 @@ export function BeatUploadForm({
         </div>
       </div>
 
+      {/* Collaborators */}
+      <div className="rounded-xl bg-card border border-border p-6">
+        <BeatCollaborators
+          tenantId={tenant?.id}
+          collaborators={collaborators}
+          ownerSplitPercentage={ownerSplitPercentage}
+          onCollaboratorsChange={setCollaborators}
+          onOwnerSplitChange={setOwnerSplitPercentage}
+        />
+      </div>
+
       {/* Submit */}
       <div className="flex gap-4">
         <Button type="submit" variant="hero" size="lg" disabled={isSubmitting} className="flex-1">

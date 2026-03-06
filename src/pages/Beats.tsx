@@ -7,6 +7,8 @@ import { BeatList } from '@/components/beats/BeatList';
 import { useBeats } from '@/hooks/useBeats';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useThemeConfig } from '@/hooks/useStoreConfig';
+import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
 import { Search, Music, SlidersHorizontal, LayoutGrid, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,6 +23,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Beats() {
+  const { user } = useAuth();
+  const { tenant } = useTenant();
+
   const { data: beats = [], isLoading } = useBeats();
   const { currentBeat } = useAudioPlayer();
   const { data: themeConfig } = useThemeConfig();
@@ -34,7 +39,9 @@ export default function Beats() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(defaultLayout);
   const [collabFilter, setCollabFilter] = useState<'all' | 'mine' | 'collabs'>('all');
 
-  const hasCollabs = beats.some((b: any) => b.isCollab);
+  // Show collab filter for store owners or when collab beats exist
+  const isStoreOwner = user && tenant && tenant.owner_user_id === user.id;
+  const hasCollabs = beats.some((b: any) => b.isCollab) || !!isStoreOwner;
 
   const { genres, moods, bpmMin, bpmMax } = useMemo(() => {
     const uniqueGenres = [...new Set(beats.map((b) => b.genre))].sort();

@@ -47,7 +47,7 @@ const mapLicenseColor = (type: string): 'basic' | 'premium' | 'exclusive' => {
   }
 };
 
-const transformBeat = (dbBeat: DbBeat): Beat & { isFree?: boolean; collaborators?: { name: string; role: string }[] } => ({
+const transformBeat = (dbBeat: DbBeat, profileMap?: Map<string, string>): Beat & { isFree?: boolean; collaborators?: { name: string; role: string }[] } => ({
   id: dbBeat.id,
   title: dbBeat.title,
   bpm: dbBeat.bpm,
@@ -69,7 +69,7 @@ const transformBeat = (dbBeat: DbBeat): Beat & { isFree?: boolean; collaborators
   collaborators: (dbBeat.beat_collaborators || [])
     .filter(c => c.status === 'accepted')
     .map(c => ({
-      name: c.profiles?.display_name || c.profiles?.email || 'Unknown',
+      name: profileMap?.get(c.collaborator_user_id) || 'Unknown',
       role: c.role,
     })),
 });

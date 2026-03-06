@@ -361,6 +361,11 @@ function ServiceOrdersContent({
 }: any) {
   return isAdmin ? <ServiceOrdersManager /> : <Guard isAdmin={false} message="Admin access required." />;
 }
+function CollabEarningsContent({
+  isAdmin
+}: any) {
+  return isAdmin ? <CollaborationEarnings /> : <Guard isAdmin={false} message="Admin access required." />;
+}
 function SettingsContent({
   isAdmin
 }: any) {

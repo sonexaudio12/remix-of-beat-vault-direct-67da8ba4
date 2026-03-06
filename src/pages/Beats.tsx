@@ -33,6 +33,10 @@ export default function Beats() {
   const [bpmRange, setBpmRange] = useState<[number, number]>([60, 200]);
   const [showFilters, setShowFilters] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(defaultLayout);
+  const [collabFilter, setCollabFilter] = useState<'all' | 'mine' | 'collabs'>('all');
+
+  // Check if any beats are collabs to show the filter
+  const hasCollabs = beats.some((b: any) => b.isCollab);
 
   // Extract unique genres and moods from beats
   const { genres, moods, bpmMin, bpmMax } = useMemo(() => {
@@ -49,26 +53,31 @@ export default function Beats() {
 
   // Filter beats based on all criteria
   const filteredBeats = useMemo(() => {
-    return beats.filter((beat) => {
+    return beats.filter((beat: any) => {
       const matchesSearch = beat.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesGenre = genreFilter === 'all' || beat.genre === genreFilter;
       const matchesMood = moodFilter === 'all' || beat.mood === moodFilter;
       const matchesBpm = beat.bpm >= bpmRange[0] && beat.bpm <= bpmRange[1];
-      return matchesSearch && matchesGenre && matchesMood && matchesBpm;
+      const matchesCollab = collabFilter === 'all' || 
+        (collabFilter === 'mine' && !beat.isCollab) || 
+        (collabFilter === 'collabs' && beat.isCollab);
+      return matchesSearch && matchesGenre && matchesMood && matchesBpm && matchesCollab;
     });
-  }, [beats, searchQuery, genreFilter, moodFilter, bpmRange]);
+  }, [beats, searchQuery, genreFilter, moodFilter, bpmRange, collabFilter]);
 
   const resetFilters = () => {
     setSearchQuery('');
     setGenreFilter('all');
     setMoodFilter('all');
     setBpmRange([bpmMin, bpmMax]);
+    setCollabFilter('all');
   };
 
   const hasActiveFilters =
     searchQuery !== '' ||
     genreFilter !== 'all' ||
     moodFilter !== 'all' ||
+    collabFilter !== 'all' ||
     bpmRange[0] !== bpmMin ||
     bpmRange[1] !== bpmMax;
 
@@ -119,6 +128,35 @@ export default function Beats() {
                 )}
               </div>
               <div className="flex items-center gap-2">
+                {/* Collab filter toggle */}
+                {hasCollabs && (
+                  <div className="flex items-center border border-border rounded-lg p-0.5 bg-background/50">
+                    <Button
+                      variant={collabFilter === 'all' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCollabFilter('all')}
+                      className="h-7 px-3 text-xs"
+                    >
+                      All
+                    </Button>
+                    <Button
+                      variant={collabFilter === 'mine' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCollabFilter('mine')}
+                      className="h-7 px-3 text-xs"
+                    >
+                      My Beats
+                    </Button>
+                    <Button
+                      variant={collabFilter === 'collabs' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCollabFilter('collabs')}
+                      className="h-7 px-3 text-xs"
+                    >
+                      Collabs
+                    </Button>
+                  </div>
+                )}
                 {/* View mode toggle */}
                 <div className="flex items-center border border-border rounded-lg p-0.5 bg-background/50">
                   <Button

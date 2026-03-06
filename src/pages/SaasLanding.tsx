@@ -176,8 +176,8 @@ export default function SaasLanding() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container flex items-center justify-between h-16">
-          <span className="text-xl font-bold tracking-tight">Sonex</span>
+        <div className="container flex items-center justify-between h-14 md:h-16">
+          <span className="text-lg md:text-xl font-bold tracking-tight">Sonex</span>
           <div className="flex items-center gap-3">
             <Link to="/login">
               <Button variant="ghost" size="sm">Log In</Button>
@@ -190,12 +190,12 @@ export default function SaasLanding() {
       </header>
 
       {/* Hero */}
-      <section className="py-24 md:py-32 bg-secondary/20">
-        <div className="container text-center max-w-3xl mx-auto">
-          <span className="inline-block text-xs font-medium tracking-wider uppercase text-muted-foreground border border-border rounded-full px-4 py-1.5 mb-6">
+      <section className="py-16 md:py-32 bg-secondary/20">
+        <div className="container text-center max-w-3xl mx-auto px-5">
+          <span className="inline-block text-xs font-medium tracking-wider uppercase text-muted-foreground border border-border rounded-full px-3 md:px-4 py-1.5 mb-4 md:mb-6">
             Private SaaS Beat Selling Platform
           </span>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
+          <h1 className="text-3xl md:text-6xl font-bold tracking-tight mb-4 md:mb-6 leading-tight">
             Own Your Beat Store. For Real.
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -215,9 +215,9 @@ export default function SaasLanding() {
       </section>
 
       {/* Pain Points */}
-      <section className="py-20">
-        <div className="container max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">Marketplace pain is real</h2>
+      <section className="py-12 md:py-20">
+        <div className="container max-w-4xl mx-auto text-center px-5">
+          <h2 className="text-2xl md:text-4xl font-bold mb-3">Marketplace pain is real</h2>
           <p className="text-muted-foreground mb-10">You cannot build durable income on borrowed platforms.</p>
           <div className="grid gap-4 md:grid-cols-3">
             {painPoints.map((p) =>
@@ -281,7 +281,7 @@ export default function SaasLanding() {
         <div className="container max-w-5xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">Pricing</h2>
           <p className="text-center text-muted-foreground mb-12">Pick the package that matches your stage.</p>
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-3">
             {plans.map((plan) =>
             <div
               key={plan.name}

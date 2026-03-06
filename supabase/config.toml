@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.manage-vercel-domain]
 verify_jwt = false
+
+[functions.submit-release]
+verify_jwt = false

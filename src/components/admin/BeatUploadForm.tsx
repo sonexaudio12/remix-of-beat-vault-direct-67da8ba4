@@ -89,6 +89,8 @@ export function BeatUploadForm({
   });
   const [licenseTiers, setLicenseTiers] = useState(defaultLicenseTiers);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [collaborators, setCollaborators] = useState<any[]>([]);
+  const [ownerSplitPercentage, setOwnerSplitPercentage] = useState(100);
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<FileUpload>>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -246,6 +248,32 @@ export function BeatUploadForm({
       if (tiersError) {
         throw tiersError;
       }
+
+      // Save collaborators
+      if (collaborators.length > 0) {
+        const totalSplit = ownerSplitPercentage + collaborators.reduce((sum: number, c: any) => sum + c.split_percentage, 0);
+        if (totalSplit !== 100) {
+          toast.error('Total split must equal 100%');
+          return;
+        }
+
+        // Update beat owner split
+        await supabase.from('beats').update({ owner_split_percentage: ownerSplitPercentage }).eq('id', beat.id);
+
+        const collabInserts = collaborators.map((c: any) => ({
+          beat_id: beat.id,
+          collaborator_user_id: c.collaborator_user_id,
+          split_percentage: c.split_percentage,
+          role: c.role,
+          status: 'pending',
+          tenant_id: tenant?.id || null,
+        }));
+        const { error: collabError } = await supabase.from('beat_collaborators').insert(collabInserts);
+        if (collabError) {
+          console.error('Collaborator insert error:', collabError);
+          toast.error('Beat uploaded but failed to save collaborators');
+        }
+      }
       toast.success('Beat uploaded successfully!');
 
       // Reset form
@@ -289,6 +317,8 @@ export function BeatUploadForm({
         error: null
       });
       setLicenseTiers(defaultLicenseTiers);
+      setCollaborators([]);
+      setOwnerSplitPercentage(100);
       onSuccess?.();
     } catch (error: any) {
       console.error('Submit error:', error);

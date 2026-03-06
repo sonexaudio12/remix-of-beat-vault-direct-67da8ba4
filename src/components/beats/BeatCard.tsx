@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 interface BeatCardProps {
   beat: Beat & {
     isFree?: boolean;
+    isCollab?: boolean;
     collaborators?: { name: string; role: string }[];
   };
 }
@@ -84,6 +85,11 @@ export function BeatCard({
 
           {/* Badges */}
           <div className="absolute top-3 right-3 flex flex-col gap-2">
+            {beat.isCollab && (
+              <div className="license-badge bg-accent text-accent-foreground">
+                Collab
+              </div>
+            )}
             {beat.isFree && <div className="license-badge bg-green-500 text-white">
                 Free
               </div>}

@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface BeatListRowProps {
-  beat: Beat & { isFree?: boolean; collaborators?: { name: string; role: string }[] };
+  beat: Beat & { isFree?: boolean; isCollab?: boolean; collaborators?: { name: string; role: string }[] };
   index: number;
   config: BeatPlayerConfig;
 }
@@ -241,6 +241,11 @@ export function BeatListRow({ beat, index, config }: BeatListRowProps) {
 
         {/* Badges */}
         <div className="flex gap-1 flex-shrink-0">
+          {beat.isCollab && (
+            <span className="text-[10px] font-bold bg-accent/20 text-accent px-1.5 py-0.5 rounded">
+              COLLAB
+            </span>
+          )}
           {beat.isFree && (
             <span className="text-[10px] font-bold bg-green-500/20 text-green-500 px-1.5 py-0.5 rounded">
               FREE

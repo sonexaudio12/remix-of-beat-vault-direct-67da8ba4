@@ -28,55 +28,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const fetchAdminStatus = async (userId: string) => {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
+    let mounted = true;
 
-      if (error) {
-        setIsAdmin(false);
+    const applyAuthSession = (nextSession: Session | null) => {
+      if (!mounted) return;
+
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        // Keep loading true until role lookup effect completes
+        setIsLoading(true);
       } else {
-        setIsAdmin(!!data);
+        setIsAdmin(false);
+        setIsLoading(false);
       }
     };
 
-    const { data: { subscription } } =
-      supabase.auth.onAuthStateChange(async (event, session) => {
-        setIsLoading(true);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+      }
 
-        if (event === 'PASSWORD_RECOVERY') {
-          setIsPasswordRecovery(true);
-        }
-        setSession(session);
-        setUser(session?.user ?? null);
+      applyAuthSession(nextSession);
+    });
 
-        if (session?.user) {
-          await fetchAdminStatus(session.user.id);
-        } else {
-          setIsAdmin(false);
-        }
-
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: nextSession } }) => {
+        applyAuthSession(nextSession);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setIsAdmin(false);
         setIsLoading(false);
       });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        await fetchAdminStatus(session.user.id);
-      } else {
-        setIsAdmin(false);
-      }
-
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchAdminStatus = async () => {
+      if (!user?.id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (cancelled) return;
+        setIsAdmin(!error && !!data);
+      } catch {
+        if (cancelled) return;
+        setIsAdmin(false);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchAdminStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

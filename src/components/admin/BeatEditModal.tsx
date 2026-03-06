@@ -51,6 +51,7 @@ interface BeatEditModalProps {
 }
 
 export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditModalProps) {
+  const { tenant } = useTenant();
   const [title, setTitle] = useState('');
   const [bpm, setBpm] = useState('');
   const [genre, setGenre] = useState('');
@@ -62,6 +63,8 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [licenseTiers, setLicenseTiers] = useState<Beat['license_tiers']>([]);
+  const [collaborators, setCollaborators] = useState<any[]>([]);
+  const [ownerSplitPercentage, setOwnerSplitPercentage] = useState(100);
 
   useEffect(() => {
     if (beat) {
@@ -75,8 +78,33 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
       setCoverPreview(beat.cover_url);
       setLicenseTiers(beat.license_tiers);
       setCoverFile(null);
+
+      // Load collaborators
+      loadCollaborators(beat.id);
     }
   }, [beat]);
+
+  const loadCollaborators = async (beatId: string) => {
+    const { data: collabs } = await supabase
+      .from('beat_collaborators')
+      .select('*, profiles:collaborator_user_id (display_name, email)')
+      .eq('beat_id', beatId);
+
+    const { data: beatData } = await supabase
+      .from('beats')
+      .select('owner_split_percentage')
+      .eq('id', beatId)
+      .single();
+
+    if (collabs) {
+      setCollaborators(collabs.map((c: any) => ({
+        ...c,
+        display_name: c.profiles?.display_name,
+        email: c.profiles?.email,
+      })));
+    }
+    setOwnerSplitPercentage(beatData?.owner_split_percentage ?? 100);
+  };
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

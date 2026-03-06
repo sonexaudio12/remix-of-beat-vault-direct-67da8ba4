@@ -47,7 +47,7 @@ const mapLicenseColor = (type: string): 'basic' | 'premium' | 'exclusive' => {
   }
 };
 
-const transformBeat = (dbBeat: DbBeat, profileMap?: Map<string, string>): Beat & { isFree?: boolean; collaborators?: { name: string; role: string }[] } => ({
+const transformBeat = (dbBeat: DbBeat, profileMap?: Map<string, string>, isCollab?: boolean): Beat & { isFree?: boolean; isCollab?: boolean; collaborators?: { name: string; role: string }[] } => ({
   id: dbBeat.id,
   title: dbBeat.title,
   bpm: dbBeat.bpm,
@@ -57,6 +57,7 @@ const transformBeat = (dbBeat: DbBeat, profileMap?: Map<string, string>): Beat &
   previewUrl: dbBeat.preview_url || '',
   isExclusiveAvailable: dbBeat.is_exclusive_available,
   isFree: dbBeat.is_free || false,
+  isCollab: isCollab || false,
   createdAt: new Date(dbBeat.created_at),
   licenses: dbBeat.license_tiers.map((tier): License => ({
     id: tier.id,
@@ -79,32 +80,77 @@ export function useBeats() {
   return useQuery({
     queryKey: ['beats', tenant?.id],
     queryFn: async (): Promise<Beat[]> => {
-      let query = supabase
+      const beatSelect = `
+        id, title, bpm, genre, mood, cover_url, preview_url,
+        is_exclusive_available, is_free, created_at, tenant_id,
+        license_tiers ( id, type, name, price, includes ),
+        beat_collaborators ( id, collaborator_user_id, split_percentage, role, status )
+      `;
+
+      // Fetch owned beats
+      let ownedQuery = supabase
         .from('beats')
-        .select(`
-          id, title, bpm, genre, mood, cover_url, preview_url,
-          is_exclusive_available, is_free, created_at,
-          license_tiers ( id, type, name, price, includes ),
-          beat_collaborators ( id, collaborator_user_id, split_percentage, role, status )
-        `)
+        .select(beatSelect)
         .eq('is_active', true);
 
       if (tenant?.id) {
-        query = query.eq('tenant_id', tenant.id);
+        ownedQuery = ownedQuery.eq('tenant_id', tenant.id);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data: ownedData, error: ownedError } = await ownedQuery.order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching beats:', error);
-        throw error;
+      if (ownedError) {
+        console.error('Error fetching owned beats:', ownedError);
+        throw ownedError;
       }
 
-      // Collect all collaborator user IDs and fetch profiles
+      const ownedBeats = (ownedData || []) as (DbBeat & { tenant_id: string | null })[];
+      const ownedBeatIds = new Set(ownedBeats.map(b => b.id));
+
+      // Fetch collab beats: beats where this tenant's owner is an accepted collaborator
+      let collabBeats: (DbBeat & { tenant_id: string | null })[] = [];
+      if (tenant?.owner_user_id) {
+        // First get beat IDs where this user is an accepted collaborator
+        const { data: collabEntries } = await supabase
+          .from('beat_collaborators')
+          .select('beat_id')
+          .eq('collaborator_user_id', tenant.owner_user_id)
+          .eq('status', 'accepted');
+
+        const collabBeatIds = (collabEntries || [])
+          .map(c => c.beat_id)
+          .filter(id => !ownedBeatIds.has(id));
+
+        if (collabBeatIds.length > 0) {
+          const { data: collabData, error: collabError } = await supabase
+            .from('beats')
+            .select(beatSelect)
+            .in('id', collabBeatIds)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
+
+          if (collabError) {
+            console.error('Error fetching collab beats:', collabError);
+          } else {
+            collabBeats = (collabData || []) as (DbBeat & { tenant_id: string | null })[];
+          }
+        }
+      }
+
+      // Build profile map for all collaborators
       const allCollabIds = new Set<string>();
-      (data as DbBeat[]).forEach(b => 
+      [...ownedBeats, ...collabBeats].forEach(b =>
         (b.beat_collaborators || []).forEach(c => allCollabIds.add(c.collaborator_user_id))
       );
+
+      // Also add tenant owner to profile map for display
+      if (tenant?.owner_user_id) {
+        allCollabIds.add(tenant.owner_user_id);
+      }
+
+      // Add owners of collab beats
+      const collabTenantIds = [...new Set(collabBeats.map(b => b.tenant_id).filter(Boolean))];
+      let ownerProfileMap = new Map<string, string>();
 
       const profileMap = new Map<string, string>();
       if (allCollabIds.size > 0) {
@@ -115,7 +161,11 @@ export function useBeats() {
         profiles?.forEach(p => profileMap.set(p.id, p.display_name || p.email || 'Unknown'));
       }
 
-      return (data as DbBeat[]).map(b => transformBeat(b, profileMap));
+      // Transform and merge
+      const transformedOwned = ownedBeats.map(b => transformBeat(b, profileMap, false));
+      const transformedCollab = collabBeats.map(b => transformBeat(b, profileMap, true));
+
+      return [...transformedOwned, ...transformedCollab];
     },
   });
 }

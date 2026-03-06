@@ -3,6 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Beat, License } from '@/types/beat';
 import { useTenant } from '@/hooks/useTenant';
 
+interface DbCollaborator {
+  id: string;
+  collaborator_user_id: string;
+  split_percentage: number;
+  role: string;
+  status: string;
+  profiles: { display_name: string | null; email: string | null } | null;
+}
+
 interface DbBeat {
   id: string;
   title: string;
@@ -15,6 +24,7 @@ interface DbBeat {
   is_free: boolean | null;
   created_at: string;
   license_tiers: DbLicenseTier[];
+  beat_collaborators?: DbCollaborator[];
 }
 
 interface DbLicenseTier {
@@ -38,7 +48,7 @@ const mapLicenseColor = (type: string): 'basic' | 'premium' | 'exclusive' => {
   }
 };
 
-const transformBeat = (dbBeat: DbBeat): Beat & { isFree?: boolean } => ({
+const transformBeat = (dbBeat: DbBeat): Beat & { isFree?: boolean; collaborators?: { name: string; role: string }[] } => ({
   id: dbBeat.id,
   title: dbBeat.title,
   bpm: dbBeat.bpm,
@@ -57,6 +67,12 @@ const transformBeat = (dbBeat: DbBeat): Beat & { isFree?: boolean } => ({
     includes: tier.includes,
     color: mapLicenseColor(tier.type),
   })),
+  collaborators: (dbBeat.beat_collaborators || [])
+    .filter(c => c.status === 'accepted')
+    .map(c => ({
+      name: c.profiles?.display_name || c.profiles?.email || 'Unknown',
+      role: c.role,
+    })),
 });
 
 export function useBeats() {
@@ -69,7 +85,8 @@ export function useBeats() {
         .select(`
           id, title, bpm, genre, mood, cover_url, preview_url,
           is_exclusive_available, is_free, created_at,
-          license_tiers ( id, type, name, price, includes )
+          license_tiers ( id, type, name, price, includes ),
+          beat_collaborators ( id, collaborator_user_id, split_percentage, role, status, profiles:collaborator_user_id ( display_name, email ) )
         `)
         .eq('is_active', true);
 
@@ -96,23 +113,10 @@ export function useBeat(id: string) {
       const { data, error } = await supabase
         .from('beats')
         .select(`
-          id,
-          title,
-          bpm,
-          genre,
-          mood,
-          cover_url,
-          preview_url,
-          is_exclusive_available,
-          is_free,
-          created_at,
-          license_tiers (
-            id,
-            type,
-            name,
-            price,
-            includes
-          )
+          id, title, bpm, genre, mood, cover_url, preview_url,
+          is_exclusive_available, is_free, created_at,
+          license_tiers ( id, type, name, price, includes ),
+          beat_collaborators ( id, collaborator_user_id, split_percentage, role, status, profiles:collaborator_user_id ( display_name, email ) )
         `)
         .eq('id', id)
         .maybeSingle();

@@ -364,6 +364,16 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
             </div>
           )}
 
+          {/* Collaborators */}
+          <BeatCollaborators
+            beatId={beat?.id}
+            tenantId={tenant?.id}
+            collaborators={collaborators}
+            ownerSplitPercentage={ownerSplitPercentage}
+            onCollaboratorsChange={setCollaborators}
+            onOwnerSplitChange={setOwnerSplitPercentage}
+          />
+
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

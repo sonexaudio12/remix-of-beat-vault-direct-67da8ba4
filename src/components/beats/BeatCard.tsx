@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 interface BeatCardProps {
   beat: Beat & {
     isFree?: boolean;
+    collaborators?: { name: string; role: string }[];
   };
 }
 export function BeatCard({
@@ -99,6 +100,11 @@ export function BeatCard({
               <h3 className="font-display font-semibold text-lg leading-tight truncate text-secondary">
                 {beat.title}
               </h3>
+              {beat.collaborators && beat.collaborators.length > 0 && (
+                <p className="text-xs text-primary truncate">
+                  Produced by: {beat.collaborators.map(c => c.name).join(' × ')}
+                </p>
+              )}
               <div className="flex items-center gap-2 mt-1 text-sm text-white">
                 <span>{beat.bpm} BPM</span>
                 <span className="w-1 h-1 rounded-full bg-muted-foreground" />

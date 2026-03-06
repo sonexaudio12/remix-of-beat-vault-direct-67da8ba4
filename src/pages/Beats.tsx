@@ -7,6 +7,8 @@ import { BeatList } from '@/components/beats/BeatList';
 import { useBeats } from '@/hooks/useBeats';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useThemeConfig } from '@/hooks/useStoreConfig';
+import { useAuth } from '@/hooks/useAuth';
+import { useTenant } from '@/hooks/useTenant';
 import { Search, Music, SlidersHorizontal, LayoutGrid, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {

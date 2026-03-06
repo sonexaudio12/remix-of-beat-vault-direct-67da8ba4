@@ -34,7 +34,7 @@ export default function Beats() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(defaultLayout);
   const [collabFilter, setCollabFilter] = useState<'all' | 'mine' | 'collabs'>('all');
 
-  const hasCollabs = beats.some((b: any) => b.isCollab);
+  const hasCollabs = beats.some((b: any) => b.isCollab) || beats.length > 0;
 
   const { genres, moods, bpmMin, bpmMax } = useMemo(() => {
     const uniqueGenres = [...new Set(beats.map((b) => b.genre))].sort();

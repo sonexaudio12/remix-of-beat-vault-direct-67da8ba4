@@ -89,10 +89,6 @@ const navItems = [{
   label: 'Collab Earnings',
   icon: HandCoins
 }, {
-  id: 'distribution',
-  label: 'Distribution',
-  icon: Radio
-}, {
   id: 'page-builder',
   label: 'Page Builder',
   icon: Paintbrush

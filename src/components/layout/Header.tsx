@@ -24,7 +24,7 @@ export function Header() {
     toast.success('Signed out successfully');
   };
   return <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-14 md:h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img src={logo} alt="Sonex Beats" className="h-12 w-auto rounded-full" />
@@ -98,20 +98,20 @@ export function Header() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && <div className="md:hidden border-t border-border/40 bg-background">
-          <nav className="container py-4 flex flex-col gap-2">
-            <Link to="/beats" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+          <nav className="container py-3 flex flex-col gap-0">
+            <Link to="/beats" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
               Beats
             </Link>
-            <Link to="/sound-kits" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+            <Link to="/sound-kits" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
               Sound Kits
             </Link>
-            <Link to="/licenses" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+            <Link to="/licenses" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
               Licensing
             </Link>
-            <Link to="/services" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+            <Link to="/services" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
               Services
             </Link>
-            <Link to="/about" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+            <Link to="/about" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
               About
             </Link>
             <div className="border-t border-border/40 my-2" />

@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 import logo from '@/assets/logo-new.png';
 export function Footer() {
   return <footer className="border-t border-border/40 bg-background">
-      <div className="container py-12 text-secondary bg-[sidebar-primary-foreground] bg-background">
-        <div className="grid gap-8 md:grid-cols-4">
+      <div className="container py-8 md:py-12 text-secondary bg-background">
+        <div className="grid gap-6 md:gap-8 grid-cols-2 md:grid-cols-4">
           {/* Brand */}
-          <div className="md:col-span-2 rounded-full opacity-75">
+          <div className="col-span-2 rounded-full opacity-75">
             <Link to="/" className="flex items-center gap-2 mb-4">
               <img src={logo} alt="Sonex Beats Logo" className="h-9 w-auto rounded-full" />
             </Link>

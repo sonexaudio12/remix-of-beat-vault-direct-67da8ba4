@@ -25,7 +25,7 @@ export function BeatGrid({ beats }: BeatGridProps) {
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 bg-background">
+    <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 bg-background">
       {beats.map((beat) => (
         <BeatCard key={beat.id} beat={beat} />
       ))}

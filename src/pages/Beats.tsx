@@ -26,19 +26,16 @@ export default function Beats() {
   const { data: themeConfig } = useThemeConfig();
   const defaultLayout = themeConfig?.beatPlayer?.layout || 'list';
 
-  // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [genreFilter, setGenreFilter] = useState('all');
   const [moodFilter, setMoodFilter] = useState('all');
   const [bpmRange, setBpmRange] = useState<[number, number]>([60, 200]);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(defaultLayout);
   const [collabFilter, setCollabFilter] = useState<'all' | 'mine' | 'collabs'>('all');
 
-  // Check if any beats are collabs to show the filter
   const hasCollabs = beats.some((b: any) => b.isCollab);
 
-  // Extract unique genres and moods from beats
   const { genres, moods, bpmMin, bpmMax } = useMemo(() => {
     const uniqueGenres = [...new Set(beats.map((b) => b.genre))].sort();
     const uniqueMoods = [...new Set(beats.map((b) => b.mood))].sort();
@@ -51,7 +48,6 @@ export default function Beats() {
     };
   }, [beats]);
 
-  // Filter beats based on all criteria
   const filteredBeats = useMemo(() => {
     return beats.filter((beat: any) => {
       const matchesSearch = beat.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -86,34 +82,35 @@ export default function Beats() {
       <Header />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative py-16 md:py-24 overflow-hidden">
+        {/* Hero Section - compact on mobile */}
+        <section className="relative py-10 md:py-24 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background" />
           <div className="container relative z-10">
             <div className="text-center max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-                <Music className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-primary">Beat Catalog</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-4 md:mb-6">
+                <Music className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
+                <span className="text-xs md:text-sm font-medium text-primary">Beat Catalog</span>
               </div>
-              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-foreground">
+              <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-4 text-foreground">
                 Find Your Perfect{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
                   Beat
                 </span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Browse our collection of premium beats. Filter by genre, vibe, and tempo to find the perfect sound for your next hit.
+              <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+                Browse our collection of premium beats. Filter by genre, vibe, and tempo.
               </p>
             </div>
           </div>
         </section>
 
         {/* Filters Section */}
-        <section className="py-8 border-b border-border bg-secondary/30">
+        <section className="py-4 md:py-8 border-b border-border bg-secondary/30">
           <div className="container">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-foreground">
+            {/* Top bar */}
+            <div className="flex items-center justify-between mb-4 md:mb-6 gap-2">
+              <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                <h2 className="text-sm md:text-lg font-semibold text-foreground whitespace-nowrap">
                   {isLoading ? 'Loading...' : `${filteredBeats.length} Beats`}
                 </h2>
                 {hasActiveFilters && (
@@ -121,94 +118,67 @@ export default function Beats() {
                     variant="ghost"
                     size="sm"
                     onClick={resetFilters}
-                    className="text-muted-foreground hover:text-foreground"
+                    className="text-xs md:text-sm text-muted-foreground hover:text-foreground h-7 px-2"
                   >
-                    Clear filters
+                    Clear
                   </Button>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                {/* Collab filter toggle */}
+              <div className="flex items-center gap-1.5 md:gap-2">
+                {/* Collab filter - hidden on small mobile, shown as compact pills */}
                 {hasCollabs && (
-                  <div className="flex items-center border border-border rounded-lg p-0.5 bg-background/50">
-                    <Button
-                      variant={collabFilter === 'all' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCollabFilter('all')}
-                      className="h-7 px-3 text-xs"
-                    >
-                      All
-                    </Button>
-                    <Button
-                      variant={collabFilter === 'mine' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCollabFilter('mine')}
-                      className="h-7 px-3 text-xs"
-                    >
-                      My Beats
-                    </Button>
-                    <Button
-                      variant={collabFilter === 'collabs' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCollabFilter('collabs')}
-                      className="h-7 px-3 text-xs"
-                    >
-                      Collabs
-                    </Button>
+                  <div className="hidden sm:flex items-center border border-border rounded-lg p-0.5 bg-background/50">
+                    <Button variant={collabFilter === 'all' ? 'default' : 'ghost'} size="sm" onClick={() => setCollabFilter('all')} className="h-7 px-2 md:px-3 text-xs">All</Button>
+                    <Button variant={collabFilter === 'mine' ? 'default' : 'ghost'} size="sm" onClick={() => setCollabFilter('mine')} className="h-7 px-2 md:px-3 text-xs">Mine</Button>
+                    <Button variant={collabFilter === 'collabs' ? 'default' : 'ghost'} size="sm" onClick={() => setCollabFilter('collabs')} className="h-7 px-2 md:px-3 text-xs">Collabs</Button>
                   </div>
                 )}
                 {/* View mode toggle */}
                 <div className="flex items-center border border-border rounded-lg p-0.5 bg-background/50">
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className="h-7 w-7 p-0"
-                  >
+                  <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="h-7 w-7 p-0">
                     <List className="h-3.5 w-3.5" />
                   </Button>
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className="h-7 w-7 p-0"
-                  >
+                  <Button variant={viewMode === 'grid' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('grid')} className="h-7 w-7 p-0">
                     <LayoutGrid className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="gap-2"
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  {showFilters ? 'Hide' : 'Show'} Filters
+                <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="gap-1.5 h-8 text-xs md:text-sm">
+                  <SlidersHorizontal className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">{showFilters ? 'Hide' : 'Show'} Filters</span>
                 </Button>
               </div>
             </div>
 
+            {/* Mobile collab filter */}
+            {hasCollabs && (
+              <div className="sm:hidden flex items-center border border-border rounded-lg p-0.5 bg-background/50 w-fit mb-4">
+                <Button variant={collabFilter === 'all' ? 'default' : 'ghost'} size="sm" onClick={() => setCollabFilter('all')} className="h-7 px-3 text-xs">All</Button>
+                <Button variant={collabFilter === 'mine' ? 'default' : 'ghost'} size="sm" onClick={() => setCollabFilter('mine')} className="h-7 px-3 text-xs">Mine</Button>
+                <Button variant={collabFilter === 'collabs' ? 'default' : 'ghost'} size="sm" onClick={() => setCollabFilter('collabs')} className="h-7 px-3 text-xs">Collabs</Button>
+              </div>
+            )}
+
             {showFilters && (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {/* Search by Name */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Search</label>
+              <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Search */}
+                <div className="space-y-1.5">
+                  <label className="text-xs md:text-sm font-medium text-muted-foreground">Search</label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       placeholder="Search by name..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 bg-background border-border"
+                      className="pl-9 bg-background border-border h-10"
                     />
                   </div>
                 </div>
 
-                {/* Genre Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Genre</label>
+                {/* Genre */}
+                <div className="space-y-1.5">
+                  <label className="text-xs md:text-sm font-medium text-muted-foreground">Genre</label>
                   <Select value={genreFilter} onValueChange={setGenreFilter}>
-                    <SelectTrigger className="bg-background border-border">
+                    <SelectTrigger className="bg-background border-border h-10">
                       <SelectValue placeholder="All Genres" />
                     </SelectTrigger>
                     <SelectContent>
@@ -220,11 +190,11 @@ export default function Beats() {
                   </Select>
                 </div>
 
-                {/* Mood/Vibe Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">Vibe</label>
+                {/* Mood */}
+                <div className="space-y-1.5">
+                  <label className="text-xs md:text-sm font-medium text-muted-foreground">Vibe</label>
                   <Select value={moodFilter} onValueChange={setMoodFilter}>
-                    <SelectTrigger className="bg-background border-border">
+                    <SelectTrigger className="bg-background border-border h-10">
                       <SelectValue placeholder="All Vibes" />
                     </SelectTrigger>
                     <SelectContent>
@@ -236,9 +206,9 @@ export default function Beats() {
                   </Select>
                 </div>
 
-                {/* Tempo/BPM Range */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">
+                {/* BPM */}
+                <div className="space-y-1.5">
+                  <label className="text-xs md:text-sm font-medium text-muted-foreground">
                     Tempo: {bpmRange[0]} - {bpmRange[1]} BPM
                   </label>
                   <div className="pt-2 px-1">
@@ -262,7 +232,7 @@ export default function Beats() {
         </section>
 
         {/* Beats */}
-        <section className="py-12">
+        <section className="py-6 md:py-12">
           <div className="container">
             {isLoading ? (
               <div className="space-y-3">

@@ -70,23 +70,23 @@ export function NowPlayingBar() {
         </div>
       </div>
 
-      <div className="container flex h-[72px] items-center gap-3 md:gap-4 bg-background">
+      <div className="container flex h-[60px] md:h-[72px] items-center gap-2 md:gap-4 bg-background">
         {/* Beat Info - Left */}
-        <div className="flex items-center gap-3 min-w-0 w-[30%]">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0 w-[25%] md:w-[30%]">
           <div className="relative flex-shrink-0">
             <img
               src={currentBeat.coverUrl}
               alt={currentBeat.title}
-              className={`h-12 w-12 rounded-lg object-cover shadow-md ${isPlaying ? 'ring-2 ring-primary/30' : ''}`} />
+              className={`h-10 w-10 md:h-12 md:w-12 rounded-lg object-cover shadow-md ${isPlaying ? 'ring-2 ring-primary/30' : ''}`} />
 
             {isPlaying &&
-            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-card animate-pulse" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 bg-primary rounded-full border-2 border-card animate-pulse" />
             }
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 hidden sm:block">
             <p className="font-semibold text-sm truncate">{currentBeat.title}</p>
             <p className="text-xs text-muted-foreground truncate">
-              {currentBeat.bpm} BPM • {currentBeat.genre} • {currentBeat.mood}
+              {currentBeat.bpm} BPM • {currentBeat.genre}
             </p>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function NowPlayingBar() {
         </div>
 
         {/* Actions - Right */}
-        <div className="flex items-center gap-2 w-[30%] justify-end">
+        <div className="flex items-center gap-1.5 md:gap-2 w-[25%] md:w-[30%] justify-end">
           {/* Buy button */}
           <Button
             variant="default"

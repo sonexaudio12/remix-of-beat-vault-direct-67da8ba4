@@ -100,10 +100,10 @@ export function BeatCard({
         </div>
 
         {/* Info */}
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-2 mb-3 text-secondary">
+        <div className="p-3 md:p-4">
+          <div className="flex items-start justify-between gap-2 mb-2 md:mb-3 text-secondary">
             <div>
-              <h3 className="font-display font-semibold text-lg leading-tight truncate text-secondary">
+              <h3 className="font-display font-semibold text-sm md:text-lg leading-tight truncate text-secondary">
                 {beat.title}
               </h3>
               {beat.collaborators && beat.collaborators.length > 0 && (
@@ -111,21 +111,20 @@ export function BeatCard({
                   Produced by: {beat.collaborators.map(c => c.name).join(' × ')}
                 </p>
               )}
-              <div className="flex items-center gap-2 mt-1 text-sm text-white">
+              <div className="flex items-center gap-1.5 md:gap-2 mt-0.5 md:mt-1 text-xs md:text-sm text-white">
                 <span>{beat.bpm} BPM</span>
                 <span className="w-1 h-1 rounded-full bg-muted-foreground" />
                 <span>{beat.genre}</span>
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-right flex-shrink-0">
               {beat.isFree ? <>
-                  <div className="text-lg font-bold text-green-500">FREE</div>
-                  <div className="text-xs text-muted-foreground">download</div>
+                  <div className="text-sm md:text-lg font-bold text-green-500">FREE</div>
                 </> : <>
-                  <div className="text-lg font-bold text-primary">
+                  <div className="text-sm md:text-lg font-bold text-primary">
                     ${lowestPrice.toFixed(2)}
                   </div>
-                  <div className="text-xs text-muted-foreground">starting at</div>
+                  <div className="text-[10px] md:text-xs text-muted-foreground hidden sm:block">starting at</div>
                 </>}
             </div>
           </div>

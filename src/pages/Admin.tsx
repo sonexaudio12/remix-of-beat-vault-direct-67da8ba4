@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList, Paintbrush, ChevronDown, Tag } from 'lucide-react';
+import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList, Paintbrush, ChevronDown, Tag, HandCoins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { BeatUploadForm } from '@/components/admin/BeatUploadForm';
@@ -22,6 +22,7 @@ import { ServiceOrdersManager } from '@/components/admin/ServiceOrdersManager';
 import { VisualPageBuilder } from '@/components/admin/VisualPageBuilder';
 import { DiscountCodesManager } from '@/components/admin/DiscountCodesManager';
 import { DomainSettingsManager } from '@/components/admin/DomainSettingsManager';
+import { CollaborationEarnings } from '@/components/admin/CollaborationEarnings';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import logo from '@/assets/logo.png';
@@ -82,6 +83,10 @@ const navItems = [{
   id: 'service-orders',
   label: 'Service Orders',
   icon: ClipboardList
+}, {
+  id: 'collab-earnings',
+  label: 'Collab Earnings',
+  icon: HandCoins
 }, {
   id: 'page-builder',
   label: 'Page Builder',
@@ -192,6 +197,7 @@ export default function Admin() {
           {activeTab === 'discount-codes' && <DiscountCodesContent isAdmin={isAdmin} />}
           {activeTab === 'services-manage' && <ServicesManageContent isAdmin={isAdmin} />}
           {activeTab === 'service-orders' && <ServiceOrdersContent isAdmin={isAdmin} />}
+{activeTab === 'collab-earnings' && <CollabEarningsContent isAdmin={isAdmin} />}
 {activeTab === 'page-builder' && isAdmin && <VisualPageBuilder onClose={() => setActiveTab('dashboard')} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>
@@ -354,6 +360,11 @@ function ServiceOrdersContent({
   isAdmin
 }: any) {
   return isAdmin ? <ServiceOrdersManager /> : <Guard isAdmin={false} message="Admin access required." />;
+}
+function CollabEarningsContent({
+  isAdmin
+}: any) {
+  return isAdmin ? <CollaborationEarnings /> : <Guard isAdmin={false} message="Admin access required." />;
 }
 function SettingsContent({
   isAdmin

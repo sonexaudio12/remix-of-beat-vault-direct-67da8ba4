@@ -49,6 +49,54 @@ export type Database = {
           },
         ]
       }
+      beat_collaborators: {
+        Row: {
+          beat_id: string
+          collaborator_user_id: string
+          created_at: string
+          id: string
+          role: string
+          split_percentage: number
+          status: string
+          tenant_id: string | null
+        }
+        Insert: {
+          beat_id: string
+          collaborator_user_id: string
+          created_at?: string
+          id?: string
+          role?: string
+          split_percentage?: number
+          status?: string
+          tenant_id?: string | null
+        }
+        Update: {
+          beat_id?: string
+          collaborator_user_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          split_percentage?: number
+          status?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beat_collaborators_beat_id_fkey"
+            columns: ["beat_id"]
+            isOneToOne: false
+            referencedRelation: "beats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beat_collaborators_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beat_plays: {
         Row: {
           beat_id: string
@@ -103,6 +151,7 @@ export type Database = {
           is_free: boolean | null
           mood: string
           mp3_file_path: string | null
+          owner_split_percentage: number
           preview_url: string | null
           stems_file_path: string | null
           tenant_id: string | null
@@ -121,6 +170,7 @@ export type Database = {
           is_free?: boolean | null
           mood?: string
           mp3_file_path?: string | null
+          owner_split_percentage?: number
           preview_url?: string | null
           stems_file_path?: string | null
           tenant_id?: string | null
@@ -139,6 +189,7 @@ export type Database = {
           is_free?: boolean | null
           mood?: string
           mp3_file_path?: string | null
+          owner_split_percentage?: number
           preview_url?: string | null
           stems_file_path?: string | null
           tenant_id?: string | null
@@ -149,6 +200,61 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "beats_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaboration_earnings: {
+        Row: {
+          beat_id: string
+          created_at: string
+          earnings_amount: number
+          id: string
+          order_item_id: string
+          producer_id: string
+          split_percentage: number
+          tenant_id: string | null
+        }
+        Insert: {
+          beat_id: string
+          created_at?: string
+          earnings_amount?: number
+          id?: string
+          order_item_id: string
+          producer_id: string
+          split_percentage?: number
+          tenant_id?: string | null
+        }
+        Update: {
+          beat_id?: string
+          created_at?: string
+          earnings_amount?: number
+          id?: string
+          order_item_id?: string
+          producer_id?: string
+          split_percentage?: number
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_earnings_beat_id_fkey"
+            columns: ["beat_id"]
+            isOneToOne: false
+            referencedRelation: "beats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_earnings_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_earnings_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

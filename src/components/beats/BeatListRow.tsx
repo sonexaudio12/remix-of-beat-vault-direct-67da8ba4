@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface BeatListRowProps {
-  beat: Beat & { isFree?: boolean };
+  beat: Beat & { isFree?: boolean; collaborators?: { name: string; role: string }[] };
   index: number;
   config: BeatPlayerConfig;
 }
@@ -129,6 +129,14 @@ export function BeatListRow({ beat, index, config }: BeatListRowProps) {
           </div>
           {config.showTags && (
             <div className="flex items-center gap-2 mt-0.5">
+              {beat.collaborators && beat.collaborators.length > 0 && (
+                <span className="text-xs text-primary truncate">
+                  {beat.collaborators.map(c => c.name).join(' × ')}
+                </span>
+              )}
+              {beat.collaborators && beat.collaborators.length > 0 && (
+                <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+              )}
               <span className="text-xs text-muted-foreground">{beat.genre}</span>
               <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
               <span className="text-xs text-muted-foreground">{beat.mood}</span>

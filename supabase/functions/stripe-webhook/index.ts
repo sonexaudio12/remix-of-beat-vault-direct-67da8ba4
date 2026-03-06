@@ -183,6 +183,42 @@ serve(async (req) => {
         }
       }
 
+      // Record collaboration earnings
+      try {
+        for (const item of order.order_items || []) {
+          if (item.beat_id) {
+            const { data: collabs } = await supabase
+              .from("beat_collaborators")
+              .select("collaborator_user_id, split_percentage")
+              .eq("beat_id", item.beat_id)
+              .eq("status", "accepted");
+
+            if (collabs && collabs.length > 0) {
+              // Get owner split
+              const { data: beatData } = await supabase
+                .from("beats")
+                .select("owner_split_percentage, tenant_id")
+                .eq("id", item.beat_id)
+                .single();
+
+              const earningsInserts = collabs.map((c: any) => ({
+                order_item_id: item.id,
+                beat_id: item.beat_id,
+                producer_id: c.collaborator_user_id,
+                earnings_amount: (item.price * c.split_percentage) / 100,
+                split_percentage: c.split_percentage,
+                tenant_id: beatData?.tenant_id || null,
+              }));
+
+              await supabase.from("collaboration_earnings").insert(earningsInserts);
+              console.log(`Recorded ${earningsInserts.length} collaboration earnings for beat ${item.beat_id}`);
+            }
+          }
+        }
+      } catch (earningsErr) {
+        console.error("Error recording collaboration earnings:", earningsErr);
+      }
+
       console.log("Order completed successfully:", orderId);
     }
 

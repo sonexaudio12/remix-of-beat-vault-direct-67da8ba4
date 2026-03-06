@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { BeatCollaborators } from './BeatCollaborators';
+import { useTenant } from '@/hooks/useTenant';
 
 const genres = ['Hip Hop', 'Trap', 'R&B', 'Pop', 'Drill', 'Lo-Fi', 'Afrobeats', 'Reggaeton', 'Soul', 'Jazz'];
 const moods = ['Energetic', 'Dark', 'Chill', 'Aggressive', 'Dreamy', 'Uplifting', 'Melancholic', 'Romantic', 'Bouncy', 'Ethereal'];
@@ -49,6 +51,7 @@ interface BeatEditModalProps {
 }
 
 export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditModalProps) {
+  const { tenant } = useTenant();
   const [title, setTitle] = useState('');
   const [bpm, setBpm] = useState('');
   const [genre, setGenre] = useState('');
@@ -60,6 +63,8 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [licenseTiers, setLicenseTiers] = useState<Beat['license_tiers']>([]);
+  const [collaborators, setCollaborators] = useState<any[]>([]);
+  const [ownerSplitPercentage, setOwnerSplitPercentage] = useState(100);
 
   useEffect(() => {
     if (beat) {
@@ -73,8 +78,33 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
       setCoverPreview(beat.cover_url);
       setLicenseTiers(beat.license_tiers);
       setCoverFile(null);
+
+      // Load collaborators
+      loadCollaborators(beat.id);
     }
   }, [beat]);
+
+  const loadCollaborators = async (beatId: string) => {
+    const { data: collabs } = await supabase
+      .from('beat_collaborators')
+      .select('*, profiles:collaborator_user_id (display_name, email)')
+      .eq('beat_id', beatId);
+
+    const { data: beatData } = await supabase
+      .from('beats')
+      .select('owner_split_percentage')
+      .eq('id', beatId)
+      .single();
+
+    if (collabs) {
+      setCollaborators(collabs.map((c: any) => ({
+        ...c,
+        display_name: c.profiles?.display_name,
+        email: c.profiles?.email,
+      })));
+    }
+    setOwnerSplitPercentage(beatData?.owner_split_percentage ?? 100);
+  };
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -135,6 +165,7 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
           is_active: isActive,
           is_exclusive_available: isExclusiveAvailable,
           is_free: isFree,
+          owner_split_percentage: ownerSplitPercentage,
         })
         .eq('id', beat.id);
 
@@ -148,6 +179,21 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
           .eq('id', tier.id);
 
         if (tierError) throw tierError;
+      }
+
+      // Update collaborators - delete existing and re-insert
+      await supabase.from('beat_collaborators').delete().eq('beat_id', beat.id);
+      if (collaborators.length > 0) {
+        const collabInserts = collaborators.map((c: any) => ({
+          beat_id: beat.id,
+          collaborator_user_id: c.collaborator_user_id,
+          split_percentage: c.split_percentage,
+          role: c.role,
+          status: c.status || 'pending',
+          tenant_id: tenant?.id || null,
+        }));
+        const { error: collabError } = await supabase.from('beat_collaborators').insert(collabInserts);
+        if (collabError) throw collabError;
       }
 
       toast.success('Beat updated successfully!');
@@ -317,6 +363,16 @@ export function BeatEditModal({ beat, open, onOpenChange, onSuccess }: BeatEditM
               ))}
             </div>
           )}
+
+          {/* Collaborators */}
+          <BeatCollaborators
+            beatId={beat?.id}
+            tenantId={tenant?.id}
+            collaborators={collaborators}
+            ownerSplitPercentage={ownerSplitPercentage}
+            onCollaboratorsChange={setCollaborators}
+            onOwnerSplitChange={setOwnerSplitPercentage}
+          />
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t">

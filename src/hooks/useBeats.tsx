@@ -9,7 +9,6 @@ interface DbCollaborator {
   split_percentage: number;
   role: string;
   status: string;
-  profiles: { display_name: string | null; email: string | null } | null;
 }
 
 interface DbBeat {
@@ -86,7 +85,7 @@ export function useBeats() {
           id, title, bpm, genre, mood, cover_url, preview_url,
           is_exclusive_available, is_free, created_at,
           license_tiers ( id, type, name, price, includes ),
-          beat_collaborators ( id, collaborator_user_id, split_percentage, role, status, profiles:collaborator_user_id ( display_name, email ) )
+          beat_collaborators ( id, collaborator_user_id, split_percentage, role, status )
         `)
         .eq('is_active', true);
 
@@ -101,7 +100,22 @@ export function useBeats() {
         throw error;
       }
 
-      return (data as DbBeat[]).map(transformBeat);
+      // Collect all collaborator user IDs and fetch profiles
+      const allCollabIds = new Set<string>();
+      (data as DbBeat[]).forEach(b => 
+        (b.beat_collaborators || []).forEach(c => allCollabIds.add(c.collaborator_user_id))
+      );
+
+      const profileMap = new Map<string, string>();
+      if (allCollabIds.size > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, email')
+          .in('id', Array.from(allCollabIds));
+        profiles?.forEach(p => profileMap.set(p.id, p.display_name || p.email || 'Unknown'));
+      }
+
+      return (data as DbBeat[]).map(b => transformBeat(b, profileMap));
     },
   });
 }
@@ -116,7 +130,7 @@ export function useBeat(id: string) {
           id, title, bpm, genre, mood, cover_url, preview_url,
           is_exclusive_available, is_free, created_at,
           license_tiers ( id, type, name, price, includes ),
-          beat_collaborators ( id, collaborator_user_id, split_percentage, role, status, profiles:collaborator_user_id ( display_name, email ) )
+          beat_collaborators ( id, collaborator_user_id, split_percentage, role, status )
         `)
         .eq('id', id)
         .maybeSingle();
@@ -128,7 +142,17 @@ export function useBeat(id: string) {
 
       if (!data) return null;
 
-      return transformBeat(data as DbBeat);
+      const profileMap = new Map<string, string>();
+      const collabIds = (data as DbBeat).beat_collaborators?.map(c => c.collaborator_user_id) || [];
+      if (collabIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, email')
+          .in('id', collabIds);
+        profiles?.forEach(p => profileMap.set(p.id, p.display_name || p.email || 'Unknown'));
+      }
+
+      return transformBeat(data as DbBeat, profileMap);
     },
     enabled: !!id,
   });

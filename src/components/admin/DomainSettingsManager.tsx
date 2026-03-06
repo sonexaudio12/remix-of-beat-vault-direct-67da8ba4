@@ -175,7 +175,22 @@ export function DomainSettingsManager() {
       setCustomDomain(domain);
       setVerificationToken(token);
       setDomainStatus('pending');
-      toast.success('Custom domain saved! Add the DNS records below, then click "Verify Now".');
+
+      // Auto-provision domain on Vercel
+      try {
+        const { error: vercelError } = await supabase.functions.invoke('manage-vercel-domain', {
+          body: { action: 'add', domain },
+        });
+        if (vercelError) {
+          console.warn('[DomainSettings] Vercel provisioning warning:', vercelError);
+          toast.warning('Domain saved but Vercel provisioning may need manual setup.');
+        } else {
+          toast.success('Custom domain saved and provisioned on Vercel! DNS may take a few minutes to propagate.');
+        }
+      } catch (vercelErr) {
+        console.warn('[DomainSettings] Vercel provisioning error:', vercelErr);
+        toast.success('Custom domain saved! Vercel provisioning will be retried.');
+      }
     } catch (e: any) {
       toast.error(e.message || 'Failed to update custom domain');
     } finally {

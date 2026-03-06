@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
+import { BeatCollaborators } from './BeatCollaborators';
 const genres = ['Hip Hop', 'Trap', 'R&B', 'Pop', 'Drill', 'Lo-Fi', 'Afrobeats', 'Reggaeton', 'Soul', 'Jazz'];
 const moods = ['Energetic', 'Dark', 'Chill', 'Aggressive', 'Dreamy', 'Uplifting', 'Melancholic', 'Romantic', 'Bouncy', 'Ethereal'];
 interface FileUpload {

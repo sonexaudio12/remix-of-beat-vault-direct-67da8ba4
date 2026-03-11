@@ -32,6 +32,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Services from "./pages/Services";
 import ServiceOrder from "./pages/ServiceOrder";
 import SaasLanding from "./pages/SaasLanding";
+import Marketplace from "./pages/Marketplace";
 import Onboarding from "./pages/Onboarding";
 import SuperAdmin from "./pages/SuperAdmin";
 import Upgrade from "./pages/Upgrade";

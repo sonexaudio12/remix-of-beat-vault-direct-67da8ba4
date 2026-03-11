@@ -1,7 +1,57 @@
+export interface NavLinkConfig {
+  id: string;
+  label: string;
+  url: string;
+  enabled: boolean;
+}
+
+export interface SocialLinksConfig {
+  instagram: string;
+  twitter: string;
+  youtube: string;
+  tiktok: string;
+  facebook: string;
+  soundcloud: string;
+  spotify: string;
+}
+
+export interface FooterConfig {
+  showFooter: boolean;
+  copyrightText: string;
+  showSocialLinks: boolean;
+  showNavLinks: boolean;
+  customHtml: string;
+}
+
+export interface FeaturedTrackConfig {
+  enabled: boolean;
+  beatId: string;
+  label: string;
+}
+
+export interface SeoConfig {
+  metaTitle: string;
+  metaDescription: string;
+  ogImage: string;
+  favicon: string;
+}
+
+export interface BackgroundConfig {
+  type: 'color' | 'image' | 'video';
+  color: string;
+  imageUrl: string;
+  videoUrl: string;
+  overlay: boolean;
+  overlayOpacity: number;
+}
+
 export interface ThemeConfig {
   logo: {
     url: string;
     height: number;
+    type: 'image' | 'text';
+    text: string;
+    textColor: string;
   };
   colors: {
     primary: string;
@@ -38,6 +88,13 @@ export interface ThemeConfig {
     primaryWeight: string;
   };
   searchPlaceholder?: string;
+  heroPosition?: number;
+  navigation?: NavLinkConfig[];
+  socialLinks?: SocialLinksConfig;
+  footer?: FooterConfig;
+  featuredTrack?: FeaturedTrackConfig;
+  seo?: SeoConfig;
+  background?: BackgroundConfig;
   licensing?: LicensingConfig;
   beatPlayer?: BeatPlayerConfig;
 }

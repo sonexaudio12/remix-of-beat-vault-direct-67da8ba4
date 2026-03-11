@@ -55,7 +55,8 @@ function AppRoutes() {
   if (isSaasLanding) {
     return (
       <Routes>
-        <Route path="/" element={<SaasLanding />} />
+        <Route path="/" element={<Marketplace />} />
+        <Route path="/landing" element={<SaasLanding />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<Onboarding />} />
@@ -66,7 +67,7 @@ function AppRoutes() {
         <Route path="/demo" element={<DemoStore />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="*" element={<SaasLanding />} />
+        <Route path="*" element={<Marketplace />} />
       </Routes>
     );
   }

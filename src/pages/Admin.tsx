@@ -24,6 +24,7 @@ import { DiscountCodesManager } from '@/components/admin/DiscountCodesManager';
 import { DomainSettingsManager } from '@/components/admin/DomainSettingsManager';
 import { CollaborationEarnings } from '@/components/admin/CollaborationEarnings';
 import { DistributionDashboard } from '@/components/admin/DistributionDashboard';
+import { EmailSubscribersManager } from '@/components/admin/EmailSubscribersManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import logo from '@/assets/logo.png';

@@ -205,6 +205,7 @@ export default function Admin() {
           {activeTab === 'service-orders' && <ServiceOrdersContent isAdmin={isAdmin} />}
 {activeTab === 'collab-earnings' && <CollabEarningsContent isAdmin={isAdmin} />}
 {activeTab === 'distribution' && <DistributionContent isAdmin={isAdmin} />}
+{activeTab === 'email-subscribers' && isAdmin && <EmailSubscribersManager />}
 {activeTab === 'page-builder' && isAdmin && <VisualPageBuilder onClose={() => setActiveTab('dashboard')} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>

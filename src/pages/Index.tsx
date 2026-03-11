@@ -155,6 +155,7 @@ const Index = () => {
               </div>}
           </div>
         </section>
+        <EmailCaptureSection />
       </main>
 
       <Footer />

@@ -13,6 +13,7 @@ import { mockBeats } from '@/data/mockBeats';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ArrowRight, Sliders, Disc3, Headphones, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EmailCaptureSection } from '@/components/home/EmailCaptureSection';
 interface Service {
   id: string;
   title: string;

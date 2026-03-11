@@ -178,7 +178,7 @@ export const DEFAULT_LICENSING: LicensingConfig = {
 };
 
 export const DEFAULT_THEME: ThemeConfig = {
-  logo: { url: '', height: 36 },
+  logo: { url: '', height: 36, type: 'image', text: '', textColor: '0 0% 100%' },
   colors: {
     primary: '198 93% 59%',
     primaryForeground: '204 80% 15%',

@@ -84,6 +84,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           console.log('[TenantResolver] Root/preview domain detected');
           // If user is logged in, check if they own a tenant
           if (user) {
+            // First check if they own a tenant
             const { data: ownedTenant } = await supabase
               .from('tenants')
               .select('*')
@@ -96,6 +97,31 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
               setTenant(ownedTenant as Tenant);
               setIsLoading(false);
               return;
+            }
+
+            // Check if they're a team member of any tenant
+            const { data: membership } = await supabase
+              .from('tenant_members' as any)
+              .select('tenant_id')
+              .eq('user_id', user.id)
+              .eq('status', 'active')
+              .limit(1)
+              .maybeSingle();
+
+            if (membership) {
+              const { data: memberTenant } = await supabase
+                .from('tenants')
+                .select('*')
+                .eq('id', (membership as any).tenant_id)
+                .eq('status', 'active')
+                .maybeSingle();
+
+              if (memberTenant) {
+                console.log('[TenantResolver] Found team tenant:', memberTenant.slug);
+                setTenant(memberTenant as Tenant);
+                setIsLoading(false);
+                return;
+              }
             }
           }
 

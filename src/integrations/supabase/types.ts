@@ -1257,6 +1257,50 @@ export type Database = {
           },
         ]
       }
+      tenant_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          invited_email: string | null
+          role: Database["public"]["Enums"]["team_role"]
+          status: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          invited_email?: string | null
+          role?: Database["public"]["Enums"]["team_role"]
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          invited_email?: string | null
+          role?: Database["public"]["Enums"]["team_role"]
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           branding: Json
@@ -1337,11 +1381,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_tenant_member_role: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: string
+      }
       get_user_tenant_id: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      is_tenant_member: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_tenant_owner: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "customer"
+      team_role: "owner" | "producer" | "manager" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1470,6 +1527,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "customer"],
+      team_role: ["owner", "producer", "manager", "viewer"],
     },
   },
 } as const

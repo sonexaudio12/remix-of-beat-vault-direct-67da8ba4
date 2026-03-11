@@ -25,6 +25,7 @@ import { DomainSettingsManager } from '@/components/admin/DomainSettingsManager'
 import { CollaborationEarnings } from '@/components/admin/CollaborationEarnings';
 import { DistributionDashboard } from '@/components/admin/DistributionDashboard';
 import { EmailSubscribersManager } from '@/components/admin/EmailSubscribersManager';
+import { TeamManager } from '@/components/admin/TeamManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import logo from '@/assets/logo.png';
@@ -93,6 +94,10 @@ const navItems = [{
   id: 'email-subscribers',
   label: 'Email Subscribers',
   icon: Mail
+}, {
+  id: 'team',
+  label: 'Team (Label Mode)',
+  icon: Users
 }, {
   id: 'page-builder',
   label: 'Page Builder',
@@ -206,6 +211,7 @@ export default function Admin() {
 {activeTab === 'collab-earnings' && <CollabEarningsContent isAdmin={isAdmin} />}
 {activeTab === 'distribution' && <DistributionContent isAdmin={isAdmin} />}
 {activeTab === 'email-subscribers' && isAdmin && <EmailSubscribersManager />}
+{activeTab === 'team' && isAdmin && <TeamManager />}
 {activeTab === 'page-builder' && isAdmin && <VisualPageBuilder onClose={() => setActiveTab('dashboard')} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>

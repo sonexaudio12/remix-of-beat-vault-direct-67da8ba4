@@ -62,6 +62,7 @@ function AppRoutes() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="/upgrade" element={<Upgrade />} />
+        <Route path="/demo" element={<DemoStore />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<SaasLanding />} />

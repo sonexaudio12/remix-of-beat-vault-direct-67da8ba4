@@ -95,8 +95,9 @@ function AppRoutes() {
       <Route path="/services" element={<Services />} />
       <Route path="/service-order/:serviceId" element={<ServiceOrder />} />
       <Route path="/super-admin" element={<SuperAdmin />} />
-      <Route path="/upgrade" element={<Upgrade />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="/upgrade" element={<Upgrade />} />
+        <Route path="/demo" element={<DemoStore />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -207,9 +207,11 @@ export default function SaasLanding() {
                 Launch My Store <ArrowRight className="h-4 w-4" />
               </Button>
             </a>
-            <Button size="lg" variant="outline" className="text-base px-8">
-              View Demo Store
-            </Button>
+            <Link to="/demo">
+              <Button size="lg" variant="outline" className="text-base px-8">
+                View Demo Store
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

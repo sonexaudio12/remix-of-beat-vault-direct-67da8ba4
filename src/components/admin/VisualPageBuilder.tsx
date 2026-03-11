@@ -3,7 +3,8 @@ import {
   GripVertical, Eye, EyeOff, Save, Check, Loader2, RotateCcw,
   LayoutTemplate, ZoomIn, ZoomOut, Monitor, Tablet, Smartphone, X,
   Upload, ChevronDown, ChevronRight, Pencil, Image as ImageIcon,
-  Type, Palette, Ruler, Search, Globe, Layers, Music,
+  Type, Palette, Ruler, Search, Globe, Layers, Music, Link2,
+  Share2, Star, FileText, ImagePlus, Video, Navigation,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,13 +14,46 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SectionConfig, DEFAULT_SECTIONS } from '@/types/sectionConfig';
-import { ThemeConfig, DEFAULT_THEME, FONT_OPTIONS, COLOR_PRESETS, DEFAULT_LICENSING, LicensingConfig, LicenseTierConfig, BeatPlayerConfig, DEFAULT_BEAT_PLAYER } from '@/types/storeConfig';
+import {
+  ThemeConfig, DEFAULT_THEME, FONT_OPTIONS, COLOR_PRESETS, DEFAULT_LICENSING,
+  LicensingConfig, LicenseTierConfig, BeatPlayerConfig, DEFAULT_BEAT_PLAYER,
+  NavLinkConfig, SocialLinksConfig, FooterConfig, FeaturedTrackConfig, SeoConfig, BackgroundConfig,
+} from '@/types/storeConfig';
 import { useSectionsDraft, useSaveSectionsDraft, usePublishSections } from '@/hooks/useSectionConfig';
 import { useThemeDraft, useSaveThemeDraft, usePublishTheme } from '@/hooks/useStoreConfig';
 import { SECTION_TEMPLATES } from '@/data/sectionTemplates';
 import { HomepageLivePreview } from './HomepageLivePreview';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+/* ---- Defaults for new config sections ---- */
+const DEFAULT_NAV_LINKS: NavLinkConfig[] = [
+  { id: 'beats', label: 'Beats', url: '/beats', enabled: true },
+  { id: 'sound-kits', label: 'Sound Kits', url: '/sound-kits', enabled: true },
+  { id: 'services', label: 'Services', url: '/services', enabled: true },
+  { id: 'licenses', label: 'Licenses', url: '/licenses', enabled: true },
+  { id: 'about', label: 'About', url: '/about', enabled: true },
+];
+
+const DEFAULT_SOCIAL_LINKS: SocialLinksConfig = {
+  instagram: '', twitter: '', youtube: '', tiktok: '', facebook: '', soundcloud: '', spotify: '',
+};
+
+const DEFAULT_FOOTER: FooterConfig = {
+  showFooter: true, copyrightText: '© 2025 All rights reserved.', showSocialLinks: true, showNavLinks: true, customHtml: '',
+};
+
+const DEFAULT_FEATURED_TRACK: FeaturedTrackConfig = {
+  enabled: false, beatId: '', label: 'Featured Track',
+};
+
+const DEFAULT_SEO: SeoConfig = {
+  metaTitle: '', metaDescription: '', ogImage: '', favicon: '',
+};
+
+const DEFAULT_BACKGROUND: BackgroundConfig = {
+  type: 'color', color: '', imageUrl: '', videoUrl: '', overlay: false, overlayOpacity: 50,
+};
 
 /* ---- Color helpers ---- */
 function hslToHex(hsl: string): string {
@@ -106,12 +140,13 @@ const COLOR_GROUPS = [
 ];
 
 /* ---- Accordion section component ---- */
-function AccordionSection({ icon, title, open, onToggle, children }: {
+function AccordionSection({ icon, title, open, onToggle, children, badge }: {
   icon: React.ReactNode;
   title: string;
   open: boolean;
   onToggle: () => void;
   children: React.ReactNode;
+  badge?: string;
 }) {
   return (
     <div className="border-b border-border/40">
@@ -121,6 +156,7 @@ function AccordionSection({ icon, title, open, onToggle, children }: {
       >
         <span className="text-muted-foreground">{icon}</span>
         <span className="flex-1 text-left">{title}</span>
+        {badge && <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">{badge}</span>}
         {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
       </button>
       {open && <div className="px-4 pb-4">{children}</div>}
@@ -149,7 +185,7 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
   const [zoom, setZoom] = useState(0.55);
   const [showTemplates, setShowTemplates] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [openPanels, setOpenPanels] = useState<Set<string>>(new Set(['sections']));
+  const [openPanels, setOpenPanels] = useState<Set<string>>(new Set(['customization']));
 
   const togglePanel = (id: string) => {
     setOpenPanels(prev => {
@@ -208,7 +244,10 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
       const next = JSON.parse(JSON.stringify(prev));
       const keys = path.split('.');
       let obj = next;
-      for (let i = 0; i < keys.length - 1; i++) obj = obj[keys[i]];
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (obj[keys[i]] === undefined) obj[keys[i]] = {};
+        obj = obj[keys[i]];
+      }
       obj[keys[keys.length - 1]] = value;
       return next;
     });
@@ -230,7 +269,28 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(path);
       updateTheme('logo.url', publicUrl);
+      updateTheme('logo.type', 'image');
       toast.success('Logo uploaded');
+    } catch (err: any) {
+      toast.error('Upload failed: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `theme/bg-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('covers').upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(path);
+      updateTheme('background.imageUrl', publicUrl);
+      updateTheme('background.type', 'image');
+      toast.success('Background uploaded');
     } catch (err: any) {
       toast.error('Upload failed: ' + err.message);
     } finally {
@@ -275,6 +335,15 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
   const selectedSection = sections.find(s => s.id === selectedId);
   const settingsDef = selectedId ? SECTION_SETTING_LABELS[selectedId] || {} : {};
   const viewportWidth = viewport === 'mobile' ? '390px' : viewport === 'tablet' ? '768px' : '100%';
+
+  /* ---- Derived config values ---- */
+  const navLinks = theme.navigation || DEFAULT_NAV_LINKS;
+  const socialLinks = theme.socialLinks || DEFAULT_SOCIAL_LINKS;
+  const footer = theme.footer || DEFAULT_FOOTER;
+  const featuredTrack = theme.featuredTrack || DEFAULT_FEATURED_TRACK;
+  const seo = theme.seo || DEFAULT_SEO;
+  const background = theme.background || DEFAULT_BACKGROUND;
+  const logoType = theme.logo?.type || 'image';
 
   if (sectionsLoading || themeLoading) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -338,7 +407,9 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
 
       {/* ---- Main body ---- */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Single accordion sidebar */}
+        {/* ============================================================= */}
+        {/* SIDEBAR — BeatStars-style accordion                           */}
+        {/* ============================================================= */}
         <div className="w-80 flex-shrink-0 border-r border-border/40 bg-card overflow-y-auto">
           <div className="px-4 py-3 border-b border-border/40">
             <div className="flex items-center gap-2">
@@ -347,7 +418,7 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
             </div>
           </div>
 
-          {/* ===== CUSTOMIZATION OPTIONS ===== */}
+          {/* ===== 1. CUSTOMIZATION OPTIONS ===== */}
           <AccordionSection
             icon={<Palette className="h-4 w-4" />}
             title="Customization Options"
@@ -355,6 +426,50 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
             onToggle={() => togglePanel('customization')}
           >
             <div className="space-y-4">
+              {/* Website Logo */}
+              <div>
+                <Label className="text-xs font-semibold mb-2 block text-muted-foreground uppercase tracking-wider">Website Logo</Label>
+                <Select value={logoType} onValueChange={v => updateTheme('logo.type', v)}>
+                  <SelectTrigger className="h-8 text-xs bg-background/30 mb-2"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text"><span className="flex items-center gap-2"><Type className="h-3 w-3" /> Text</span></SelectItem>
+                    <SelectItem value="image"><span className="flex items-center gap-2"><ImageIcon className="h-3 w-3" /> Image</span></SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {logoType === 'text' ? (
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-[10px] mb-0.5 block text-muted-foreground">Logo Text</Label>
+                      <Input value={theme.logo?.text || ''} onChange={e => updateTheme('logo.text', e.target.value)} className="text-xs h-8 bg-background/30" placeholder="Your brand name" />
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary/30 hover:bg-primary/10">Update Logo Text</Button>
+                    <ColorField label="Logo Text Color" value={theme.logo?.textColor || '0 0% 100%'} onChange={v => updateTheme('logo.textColor', v)} />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {theme.logo?.url ? (
+                      <div className="rounded-lg border border-border/50 p-3 flex flex-col items-center gap-3 bg-background/30">
+                        <img src={theme.logo.url} alt="Logo" style={{ height: `${theme.logo?.height || 36}px` }} className="object-contain" />
+                        <Button variant="outline" size="sm" onClick={() => updateTheme('logo.url', '')} className="text-xs h-7">Remove Logo</Button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-dashed border-border/50 hover:border-primary/50 cursor-pointer transition-colors bg-background/20">
+                        <Upload className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Upload Logo</span>
+                        <span className="text-[10px] text-muted-foreground/60">PNG, SVG, JPG</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
+                        {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                      </label>
+                    )}
+                    <div>
+                      <Label className="text-xs mb-1 block">Logo Height: {theme.logo?.height || 36}px</Label>
+                      <Slider value={[theme.logo?.height || 36]} min={20} max={80} step={2} onValueChange={([v]) => updateTheme('logo.height', v)} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Color Presets */}
               <div>
                 <Label className="text-xs font-semibold mb-2 block text-muted-foreground uppercase tracking-wider">Color Presets</Label>
@@ -372,7 +487,7 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
                 </div>
               </div>
 
-              {/* Colors */}
+              {/* Color Groups */}
               {COLOR_GROUPS.map(group => (
                 <div key={group.title}>
                   <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">{group.title}</Label>
@@ -384,36 +499,159 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
             </div>
           </AccordionSection>
 
-          {/* ===== WEBSITE LOGO ===== */}
+          {/* ===== 2. HOMEPAGE MAIN TEXT & BUTTONS ===== */}
           <AccordionSection
-            icon={<ImageIcon className="h-4 w-4" />}
-            title="Website Logo"
-            open={openPanels.has('logo')}
-            onToggle={() => togglePanel('logo')}
+            icon={<Pencil className="h-4 w-4" />}
+            title="Homepage Main Text & Buttons"
+            open={openPanels.has('hero-text')}
+            onToggle={() => togglePanel('hero-text')}
+          >
+            {(() => {
+              const heroSection = sections.find(s => s.id === 'hero');
+              if (!heroSection) return <p className="text-xs text-muted-foreground">No hero section found</p>;
+              const heroDef = SECTION_SETTING_LABELS.hero;
+              return (
+                <div className="space-y-3">
+                  {/* Adjust Position */}
+                  <div>
+                    <Label className="text-xs mb-1 block">Adjust Position</Label>
+                    <Slider
+                      value={[theme.heroPosition ?? 50]}
+                      min={0} max={100} step={1}
+                      onValueChange={([v]) => updateTheme('heroPosition', v)}
+                    />
+                    <p className="text-[9px] text-muted-foreground/60 mt-1">Move headline text vertically within the hero area</p>
+                  </div>
+
+                  {/* Hero fields */}
+                  {Object.entries(heroDef).map(([key, def]) => (
+                    <div key={key}>
+                      <Label className="text-[10px] mb-0.5 block text-muted-foreground">{def.label}</Label>
+                      {def.type === 'textarea' ? (
+                        <Textarea value={heroSection.settings[key] || ''} onChange={(e) => updateSetting('hero', key, e.target.value)} rows={2} className="text-xs bg-background/30" />
+                      ) : (
+                        <Input type="text" value={heroSection.settings[key] || ''} onChange={(e) => updateSetting('hero', key, e.target.value)} className="text-xs h-8 bg-background/30" />
+                      )}
+                    </div>
+                  ))}
+
+                  <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary/30 hover:bg-primary/10">
+                    Update Headline Text
+                  </Button>
+
+                  <div className="text-[9px] text-muted-foreground/60 space-y-0.5">
+                    <p>Allowed HTML Tags:</p>
+                    <p className="font-mono">&lt;em&gt; Text to Italicize&lt;/em&gt;</p>
+                    <p className="font-mono">&lt;br&gt;=creates a line break</p>
+                  </div>
+
+                  <ColorField label="Text Color" value={theme.colors.foreground} onChange={v => updateTheme('colors.foreground', v)} />
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <Switch checked={heroSection.enabled} onCheckedChange={() => toggleEnabled('hero')} />
+                    <Label className="text-xs">Show Hero Section</Label>
+                  </div>
+                </div>
+              );
+            })()}
+          </AccordionSection>
+
+          {/* ===== 3. SEARCH BAR ===== */}
+          <AccordionSection
+            icon={<Search className="h-4 w-4" />}
+            title="Search Bar"
+            open={openPanels.has('search')}
+            onToggle={() => togglePanel('search')}
           >
             <div className="space-y-3">
-              {theme.logo.url ? (
-                <div className="rounded-lg border border-border/50 p-3 flex flex-col items-center gap-3 bg-background/30">
-                  <img src={theme.logo.url} alt="Logo" style={{ height: `${theme.logo.height}px` }} className="object-contain" />
-                  <Button variant="outline" size="sm" onClick={() => updateTheme('logo.url', '')} className="text-xs h-7">Remove Logo</Button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-dashed border-border/50 hover:border-primary/50 cursor-pointer transition-colors bg-background/20">
-                  <Upload className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Upload Logo</span>
-                  <span className="text-[10px] text-muted-foreground/60">PNG, SVG, JPG</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
-                  {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
-                </label>
-              )}
               <div>
-                <Label className="text-xs mb-1 block">Logo Height: {theme.logo.height}px</Label>
-                <Slider value={[theme.logo.height]} min={20} max={80} step={2} onValueChange={([v]) => updateTheme('logo.height', v)} />
+                <Label className="text-[10px] mb-0.5 block text-muted-foreground">Search Placeholder Text</Label>
+                <Input
+                  value={theme.searchPlaceholder || 'Search beats, sound kits...'}
+                  onChange={(e) => updateTheme('searchPlaceholder', e.target.value)}
+                  className="text-xs h-8 bg-background/30"
+                  placeholder="What type of track are you looking for?"
+                />
+              </div>
+              <div className="rounded-lg border border-border/50 p-2 bg-background/20">
+                <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/20 border border-border/30">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{theme.searchPlaceholder || 'Search beats, sound kits...'}</span>
+                </div>
+                <p className="text-[9px] text-muted-foreground/60 mt-1.5 text-center">Preview</p>
               </div>
             </div>
           </AccordionSection>
 
-          {/* ===== HOMEPAGE SECTIONS ===== */}
+          {/* ===== 4. BACKGROUND ===== */}
+          <AccordionSection
+            icon={<ImagePlus className="h-4 w-4" />}
+            title="Background"
+            open={openPanels.has('background')}
+            onToggle={() => togglePanel('background')}
+          >
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs mb-1 block">Background Type</Label>
+                <Select value={background.type} onValueChange={v => updateTheme('background.type', v)}>
+                  <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="color">Solid Color</SelectItem>
+                    <SelectItem value="image">Image</SelectItem>
+                    <SelectItem value="video">Video URL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {background.type === 'color' && (
+                <ColorField label="Background Color" value={background.color || theme.colors.background} onChange={v => updateTheme('background.color', v)} />
+              )}
+
+              {background.type === 'image' && (
+                <div className="space-y-2">
+                  {background.imageUrl ? (
+                    <div className="rounded-lg border border-border/50 overflow-hidden">
+                      <img src={background.imageUrl} alt="Background" className="w-full h-24 object-cover" />
+                      <div className="p-2 flex justify-center">
+                        <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => updateTheme('background.imageUrl', '')}>Remove</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-lg border border-dashed border-border/50 hover:border-primary/50 cursor-pointer transition-colors bg-background/20">
+                      <Upload className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Upload Background Image</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleBackgroundUpload} disabled={uploading} />
+                      {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    </label>
+                  )}
+                </div>
+              )}
+
+              {background.type === 'video' && (
+                <div>
+                  <Label className="text-[10px] mb-0.5 block text-muted-foreground">Video URL</Label>
+                  <Input value={background.videoUrl} onChange={e => updateTheme('background.videoUrl', e.target.value)} className="text-xs h-8 bg-background/30" placeholder="https://..." />
+                </div>
+              )}
+
+              {(background.type === 'image' || background.type === 'video') && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={background.overlay} onCheckedChange={v => updateTheme('background.overlay', v)} />
+                    <Label className="text-xs">Dark Overlay</Label>
+                  </div>
+                  {background.overlay && (
+                    <div>
+                      <Label className="text-xs mb-1 block">Overlay Opacity: {background.overlayOpacity}%</Label>
+                      <Slider value={[background.overlayOpacity]} min={10} max={90} step={5} onValueChange={([v]) => updateTheme('background.overlayOpacity', v)} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </AccordionSection>
+
+          {/* ===== 5. HOMEPAGE SECTIONS ===== */}
           <AccordionSection
             icon={<Layers className="h-4 w-4" />}
             title="Homepage Sections"
@@ -469,45 +707,188 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
             )}
           </AccordionSection>
 
-          {/* ===== HOMEPAGE MAIN TEXT & BUTTONS ===== */}
+          {/* ===== 6. NAVIGATION ===== */}
           <AccordionSection
-            icon={<Pencil className="h-4 w-4" />}
-            title="Homepage Main Text & Buttons"
-            open={openPanels.has('hero-text')}
-            onToggle={() => togglePanel('hero-text')}
+            icon={<Navigation className="h-4 w-4" />}
+            title="Navigation"
+            open={openPanels.has('navigation')}
+            onToggle={() => togglePanel('navigation')}
+          >
+            <div className="space-y-2">
+              <p className="text-[10px] text-muted-foreground mb-2">Show or hide header links. Drag to reorder.</p>
+              {navLinks.map((link, idx) => (
+                <div key={link.id} className="flex items-center gap-2 p-2 rounded-lg border border-border/50 bg-background/20">
+                  <GripVertical className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 cursor-grab" />
+                  <div className="flex-1 space-y-1">
+                    <Input
+                      value={link.label}
+                      onChange={e => {
+                        const updated = [...navLinks];
+                        updated[idx] = { ...updated[idx], label: e.target.value };
+                        updateTheme('navigation', updated);
+                      }}
+                      className="text-xs h-7 bg-background/30"
+                      placeholder="Label"
+                    />
+                    <Input
+                      value={link.url}
+                      onChange={e => {
+                        const updated = [...navLinks];
+                        updated[idx] = { ...updated[idx], url: e.target.value };
+                        updateTheme('navigation', updated);
+                      }}
+                      className="text-xs h-7 bg-background/30"
+                      placeholder="/path"
+                    />
+                  </div>
+                  <Switch
+                    checked={link.enabled}
+                    onCheckedChange={v => {
+                      const updated = [...navLinks];
+                      updated[idx] = { ...updated[idx], enabled: v };
+                      updateTheme('navigation', updated);
+                    }}
+                  />
+                </div>
+              ))}
+              <Button
+                variant="outline" size="sm" className="text-[10px] h-7 w-full"
+                onClick={() => {
+                  const updated = [...navLinks, { id: `nav-${Date.now()}`, label: 'New Link', url: '/', enabled: true }];
+                  updateTheme('navigation', updated);
+                }}
+              >
+                + Add Link
+              </Button>
+            </div>
+          </AccordionSection>
+
+          {/* ===== 7. PLAYER SETTINGS ===== */}
+          <AccordionSection
+            icon={<Music className="h-4 w-4" />}
+            title="Player Settings"
+            open={openPanels.has('beat-player')}
+            onToggle={() => togglePanel('beat-player')}
           >
             {(() => {
-              const heroSection = sections.find(s => s.id === 'hero');
-              if (!heroSection) return <p className="text-xs text-muted-foreground">No hero section found</p>;
-              const heroDef = SECTION_SETTING_LABELS.hero;
+              const bp = theme.beatPlayer || DEFAULT_BEAT_PLAYER;
               return (
                 <div className="space-y-3">
-                  {Object.entries(heroDef).map(([key, def]) => (
-                    <div key={key}>
-                      <Label className="text-[10px] mb-0.5 block text-muted-foreground">{def.label}</Label>
-                      {def.type === 'textarea' ? (
-                        <Textarea value={heroSection.settings[key] || ''} onChange={(e) => updateSetting('hero', key, e.target.value)} rows={2} className="text-xs bg-background/30" />
-                      ) : (
-                        <Input type="text" value={heroSection.settings[key] || ''} onChange={(e) => updateSetting('hero', key, e.target.value)} className="text-xs h-8 bg-background/30" />
-                      )}
-                    </div>
-                  ))}
-
                   <div>
-                    <Label className="text-xs mb-1 block">Text Color</Label>
-                    <ColorField label="Foreground" value={theme.colors.foreground} onChange={v => updateTheme('colors.foreground', v)} />
+                    <Label className="text-xs mb-1 block">Default Layout</Label>
+                    <Select value={bp.layout} onValueChange={v => updateTheme('beatPlayer.layout', v)}>
+                      <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="list">List (BeatStars style)</SelectItem>
+                        <SelectItem value="grid">Grid (Card style)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <Switch checked={heroSection.enabled} onCheckedChange={() => toggleEnabled('hero')} />
-                    <Label className="text-xs">Show Hero Section</Label>
+                  <div>
+                    <Label className="text-xs mb-1 block">Row Density</Label>
+                    <Select value={bp.rowStyle} onValueChange={v => updateTheme('beatPlayer.rowStyle', v)}>
+                      <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compact">Compact</SelectItem>
+                        <SelectItem value="comfortable">Comfortable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block pt-2">Show / Hide Elements</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2"><Switch checked={bp.showCover} onCheckedChange={v => updateTheme('beatPlayer.showCover', v)} /><Label className="text-xs">Cover Art</Label></div>
+                    <div className="flex items-center gap-2"><Switch checked={bp.showBpm} onCheckedChange={v => updateTheme('beatPlayer.showBpm', v)} /><Label className="text-xs">BPM Badge</Label></div>
+                    <div className="flex items-center gap-2"><Switch checked={bp.showTags} onCheckedChange={v => updateTheme('beatPlayer.showTags', v)} /><Label className="text-xs">Genre & Mood Tags</Label></div>
+                    <div className="flex items-center gap-2"><Switch checked={bp.showWaveform} onCheckedChange={v => updateTheme('beatPlayer.showWaveform', v)} /><Label className="text-xs">Waveform Preview</Label></div>
+                    <div className="flex items-center gap-2"><Switch checked={bp.showShareButton} onCheckedChange={v => updateTheme('beatPlayer.showShareButton', v)} /><Label className="text-xs">Share Button</Label></div>
                   </div>
                 </div>
               );
             })()}
           </AccordionSection>
 
-          {/* ===== FONTS & TYPOGRAPHY ===== */}
+          {/* ===== 8. FEATURED TRACK ===== */}
+          <AccordionSection
+            icon={<Star className="h-4 w-4" />}
+            title="Featured Track"
+            open={openPanels.has('featured')}
+            onToggle={() => togglePanel('featured')}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Switch checked={featuredTrack.enabled} onCheckedChange={v => updateTheme('featuredTrack.enabled', v)} />
+                <Label className="text-xs">Enable Featured Track</Label>
+              </div>
+              {featuredTrack.enabled && (
+                <>
+                  <div>
+                    <Label className="text-[10px] mb-0.5 block text-muted-foreground">Label Text</Label>
+                    <Input value={featuredTrack.label} onChange={e => updateTheme('featuredTrack.label', e.target.value)} className="text-xs h-8 bg-background/30" placeholder="Featured Track" />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] mb-0.5 block text-muted-foreground">Beat ID</Label>
+                    <Input value={featuredTrack.beatId} onChange={e => updateTheme('featuredTrack.beatId', e.target.value)} className="text-xs h-8 bg-background/30" placeholder="Paste beat ID here" />
+                    <p className="text-[9px] text-muted-foreground/60 mt-1">Copy a beat ID from Manage Beats</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </AccordionSection>
+
+          {/* ===== 9. SOCIAL LINKS ===== */}
+          <AccordionSection
+            icon={<Share2 className="h-4 w-4" />}
+            title="Social Links"
+            open={openPanels.has('social')}
+            onToggle={() => togglePanel('social')}
+          >
+            <div className="space-y-2">
+              {(['instagram', 'twitter', 'youtube', 'tiktok', 'facebook', 'soundcloud', 'spotify'] as const).map(platform => (
+                <div key={platform}>
+                  <Label className="text-[10px] mb-0.5 block text-muted-foreground capitalize">{platform}</Label>
+                  <Input
+                    value={socialLinks[platform]}
+                    onChange={e => updateTheme(`socialLinks.${platform}`, e.target.value)}
+                    className="text-xs h-8 bg-background/30"
+                    placeholder={`https://${platform}.com/...`}
+                  />
+                </div>
+              ))}
+            </div>
+          </AccordionSection>
+
+          {/* ===== 10. FOOTER ===== */}
+          <AccordionSection
+            icon={<Ruler className="h-4 w-4" />}
+            title="Footer"
+            open={openPanels.has('footer')}
+            onToggle={() => togglePanel('footer')}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Switch checked={footer.showFooter} onCheckedChange={v => updateTheme('footer.showFooter', v)} />
+                <Label className="text-xs">Show Footer</Label>
+              </div>
+              <div>
+                <Label className="text-[10px] mb-0.5 block text-muted-foreground">Copyright Text</Label>
+                <Input value={footer.copyrightText} onChange={e => updateTheme('footer.copyrightText', e.target.value)} className="text-xs h-8 bg-background/30" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={footer.showSocialLinks} onCheckedChange={v => updateTheme('footer.showSocialLinks', v)} />
+                <Label className="text-xs">Show Social Icons in Footer</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={footer.showNavLinks} onCheckedChange={v => updateTheme('footer.showNavLinks', v)} />
+                <Label className="text-xs">Show Nav Links in Footer</Label>
+              </div>
+              <div>
+                <Label className="text-[10px] mb-0.5 block text-muted-foreground">Custom HTML</Label>
+                <Textarea value={footer.customHtml} onChange={e => updateTheme('footer.customHtml', e.target.value)} rows={3} className="text-xs bg-background/30 font-mono" placeholder="<p>Custom footer content</p>" />
+              </div>
+            </div>
+          </AccordionSection>
+
+          {/* ===== 11. FONTS & TYPOGRAPHY ===== */}
           <AccordionSection
             icon={<Type className="h-4 w-4" />}
             title="Fonts & Typography"
@@ -547,34 +928,7 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
             </div>
           </AccordionSection>
 
-          {/* ===== SEARCH BAR ===== */}
-          <AccordionSection
-            icon={<Search className="h-4 w-4" />}
-            title="Search Bar"
-            open={openPanels.has('search')}
-            onToggle={() => togglePanel('search')}
-          >
-            <div className="space-y-3">
-              <div>
-                <Label className="text-[10px] mb-0.5 block text-muted-foreground">Search Placeholder Text</Label>
-                <Input
-                  value={theme.searchPlaceholder || 'Search beats, sound kits...'}
-                  onChange={(e) => updateTheme('searchPlaceholder', e.target.value)}
-                  className="text-xs h-8 bg-background/30"
-                  placeholder="What type of beat are you looking for?"
-                />
-              </div>
-              <div className="rounded-lg border border-border/50 p-2 bg-background/20">
-                <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/20 border border-border/30">
-                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{theme.searchPlaceholder || 'Search beats, sound kits...'}</span>
-                </div>
-                <p className="text-[9px] text-muted-foreground/60 mt-1.5 text-center">Preview</p>
-              </div>
-            </div>
-          </AccordionSection>
-
-          {/* ===== LAYOUT & SPACING ===== */}
+          {/* ===== 12. LAYOUT & SPACING ===== */}
           <AccordionSection
             icon={<Ruler className="h-4 w-4" />}
             title="Layout & Spacing"
@@ -626,53 +980,48 @@ export function VisualPageBuilder({ onClose }: { onClose?: () => void }) {
             </div>
           </AccordionSection>
 
-          {/* ===== BEAT PLAYER ===== */}
-          <AccordionSection
-            icon={<Music className="h-4 w-4" />}
-            title="Beat Player"
-            open={openPanels.has('beat-player')}
-            onToggle={() => togglePanel('beat-player')}
-          >
-            {(() => {
-              const bp = theme.beatPlayer || DEFAULT_BEAT_PLAYER;
-              return (
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-xs mb-1 block">Default Layout</Label>
-                    <Select value={bp.layout} onValueChange={v => updateTheme('beatPlayer.layout', v)}>
-                      <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="list">List (BeatStars style)</SelectItem>
-                        <SelectItem value="grid">Grid (Card style)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs mb-1 block">Row Density</Label>
-                    <Select value={bp.rowStyle} onValueChange={v => updateTheme('beatPlayer.rowStyle', v)}>
-                      <SelectTrigger className="h-8 text-xs bg-background/30"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="compact">Compact</SelectItem>
-                        <SelectItem value="comfortable">Comfortable</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block pt-2">Show / Hide Elements</Label>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2"><Switch checked={bp.showCover} onCheckedChange={v => updateTheme('beatPlayer.showCover', v)} /><Label className="text-xs">Cover Art</Label></div>
-                    <div className="flex items-center gap-2"><Switch checked={bp.showBpm} onCheckedChange={v => updateTheme('beatPlayer.showBpm', v)} /><Label className="text-xs">BPM Badge</Label></div>
-                    <div className="flex items-center gap-2"><Switch checked={bp.showTags} onCheckedChange={v => updateTheme('beatPlayer.showTags', v)} /><Label className="text-xs">Genre & Mood Tags</Label></div>
-                    <div className="flex items-center gap-2"><Switch checked={bp.showWaveform} onCheckedChange={v => updateTheme('beatPlayer.showWaveform', v)} /><Label className="text-xs">Waveform Preview</Label></div>
-                    <div className="flex items-center gap-2"><Switch checked={bp.showShareButton} onCheckedChange={v => updateTheme('beatPlayer.showShareButton', v)} /><Label className="text-xs">Share Button</Label></div>
-                  </div>
-                </div>
-              );
-            })()}
-          </AccordionSection>
-
-          {/* ===== PAGES ===== */}
+          {/* ===== 13. SEO ===== */}
           <AccordionSection
             icon={<Globe className="h-4 w-4" />}
+            title="SEO & Meta Tags"
+            open={openPanels.has('seo')}
+            onToggle={() => togglePanel('seo')}
+          >
+            <div className="space-y-3">
+              <div>
+                <Label className="text-[10px] mb-0.5 block text-muted-foreground">Meta Title</Label>
+                <Input value={seo.metaTitle} onChange={e => updateTheme('seo.metaTitle', e.target.value)} className="text-xs h-8 bg-background/30" placeholder="Your page title for search engines" />
+                <p className="text-[9px] text-muted-foreground/60 mt-0.5">{(seo.metaTitle || '').length}/60 characters</p>
+              </div>
+              <div>
+                <Label className="text-[10px] mb-0.5 block text-muted-foreground">Meta Description</Label>
+                <Textarea value={seo.metaDescription} onChange={e => updateTheme('seo.metaDescription', e.target.value)} rows={3} className="text-xs bg-background/30" placeholder="Describe your page for search results..." />
+                <p className="text-[9px] text-muted-foreground/60 mt-0.5">{(seo.metaDescription || '').length}/160 characters</p>
+              </div>
+              <div>
+                <Label className="text-[10px] mb-0.5 block text-muted-foreground">OG Image URL</Label>
+                <Input value={seo.ogImage} onChange={e => updateTheme('seo.ogImage', e.target.value)} className="text-xs h-8 bg-background/30" placeholder="https://..." />
+              </div>
+              <div>
+                <Label className="text-[10px] mb-0.5 block text-muted-foreground">Favicon URL</Label>
+                <Input value={seo.favicon} onChange={e => updateTheme('seo.favicon', e.target.value)} className="text-xs h-8 bg-background/30" placeholder="https://..." />
+              </div>
+
+              {/* Google Preview */}
+              <div className="rounded-lg border border-border/50 p-3 bg-background/20">
+                <p className="text-[9px] text-muted-foreground/60 mb-2">Google Preview</p>
+                <div className="space-y-0.5">
+                  <p className="text-sm text-blue-400 truncate">{seo.metaTitle || 'Your Page Title'}</p>
+                  <p className="text-[10px] text-green-500/70 truncate">yoursite.com</p>
+                  <p className="text-[10px] text-muted-foreground line-clamp-2">{seo.metaDescription || 'Add a meta description to see a preview here.'}</p>
+                </div>
+              </div>
+            </div>
+          </AccordionSection>
+
+          {/* ===== 14. EDIT PAGES ===== */}
+          <AccordionSection
+            icon={<FileText className="h-4 w-4" />}
             title="Edit Pages"
             open={openPanels.has('pages')}
             onToggle={() => togglePanel('pages')}
@@ -849,7 +1198,6 @@ function PagesContent({ theme, updateTheme }: { theme: ThemeConfig; updateTheme:
       </button>
       {expandedPage === 'licensing' && (
         <div className="space-y-3 pl-1">
-          {/* Hero text */}
           <div>
             <Label className="text-[10px] mb-0.5 block text-muted-foreground">Hero Title</Label>
             <Input value={licensing.heroTitle} onChange={e => updateLicensing('heroTitle', e.target.value)} className="text-xs h-8 bg-background/30" />
@@ -899,7 +1247,6 @@ function PagesContent({ theme, updateTheme }: { theme: ThemeConfig; updateTheme:
                       <Label className="text-[10px]">Mark as Popular</Label>
                     </div>
 
-                    {/* Includes */}
                     <div>
                       <Label className="text-[10px] font-semibold mb-1 block text-muted-foreground">What's Included</Label>
                       {tier.includes.map((inc, incIdx) => (
@@ -913,7 +1260,6 @@ function PagesContent({ theme, updateTheme }: { theme: ThemeConfig; updateTheme:
                       <Button variant="outline" size="sm" className="text-[10px] h-6 mt-1" onClick={() => addTierInclude(tierIdx)}>+ Add Item</Button>
                     </div>
 
-                    {/* Use Cases */}
                     <div>
                       <Label className="text-[10px] font-semibold mb-1 block text-muted-foreground">Ideal For</Label>
                       {tier.useCases.map((uc, ucIdx) => (
@@ -927,7 +1273,6 @@ function PagesContent({ theme, updateTheme }: { theme: ThemeConfig; updateTheme:
                       <Button variant="outline" size="sm" className="text-[10px] h-6 mt-1" onClick={() => addUseCase(tierIdx)}>+ Add Use Case</Button>
                     </div>
 
-                    {/* Remove Tier */}
                     <div className="pt-2 border-t border-border/30">
                       <Button variant="outline" size="sm" className="text-[10px] h-7 text-destructive border-destructive/30 hover:bg-destructive/10 w-full" onClick={() => removeTier(tierIdx)}>
                         Remove This Tier

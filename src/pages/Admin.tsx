@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList, Paintbrush, ChevronDown, Tag, HandCoins, Radio } from 'lucide-react';
+import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList, Paintbrush, ChevronDown, Tag, HandCoins, Radio, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { BeatUploadForm } from '@/components/admin/BeatUploadForm';

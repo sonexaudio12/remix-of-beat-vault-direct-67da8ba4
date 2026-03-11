@@ -95,6 +95,10 @@ const navItems = [{
   label: 'Email Subscribers',
   icon: Mail
 }, {
+  id: 'team',
+  label: 'Team (Label Mode)',
+  icon: Users
+}, {
   id: 'page-builder',
   label: 'Page Builder',
   icon: Paintbrush

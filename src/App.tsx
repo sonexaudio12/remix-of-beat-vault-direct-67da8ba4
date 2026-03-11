@@ -35,6 +35,7 @@ import SaasLanding from "./pages/SaasLanding";
 import Onboarding from "./pages/Onboarding";
 import SuperAdmin from "./pages/SuperAdmin";
 import Upgrade from "./pages/Upgrade";
+import DemoStore from "./pages/DemoStore";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();

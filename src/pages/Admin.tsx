@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList, Paintbrush, ChevronDown, Tag, HandCoins, Radio } from 'lucide-react';
+import { Music2, Upload, FileText, DollarSign, Settings, LayoutDashboard, Package, LogOut, Loader2, Archive, ScrollText, Users, BarChart3, MessageSquare, Headphones, ClipboardList, Paintbrush, ChevronDown, Tag, HandCoins, Radio, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { BeatUploadForm } from '@/components/admin/BeatUploadForm';
@@ -24,6 +24,7 @@ import { DiscountCodesManager } from '@/components/admin/DiscountCodesManager';
 import { DomainSettingsManager } from '@/components/admin/DomainSettingsManager';
 import { CollaborationEarnings } from '@/components/admin/CollaborationEarnings';
 import { DistributionDashboard } from '@/components/admin/DistributionDashboard';
+import { EmailSubscribersManager } from '@/components/admin/EmailSubscribersManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import logo from '@/assets/logo.png';
@@ -88,6 +89,10 @@ const navItems = [{
   id: 'collab-earnings',
   label: 'Collab Earnings',
   icon: HandCoins
+}, {
+  id: 'email-subscribers',
+  label: 'Email Subscribers',
+  icon: Mail
 }, {
   id: 'page-builder',
   label: 'Page Builder',
@@ -200,6 +205,7 @@ export default function Admin() {
           {activeTab === 'service-orders' && <ServiceOrdersContent isAdmin={isAdmin} />}
 {activeTab === 'collab-earnings' && <CollabEarningsContent isAdmin={isAdmin} />}
 {activeTab === 'distribution' && <DistributionContent isAdmin={isAdmin} />}
+{activeTab === 'email-subscribers' && isAdmin && <EmailSubscribersManager />}
 {activeTab === 'page-builder' && isAdmin && <VisualPageBuilder onClose={() => setActiveTab('dashboard')} />}
           {activeTab === 'settings' && <SettingsContent isAdmin={isAdmin} />}
         </div>

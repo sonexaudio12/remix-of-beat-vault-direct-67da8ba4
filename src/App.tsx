@@ -32,6 +32,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Services from "./pages/Services";
 import ServiceOrder from "./pages/ServiceOrder";
 import SaasLanding from "./pages/SaasLanding";
+import Marketplace from "./pages/Marketplace";
 import Onboarding from "./pages/Onboarding";
 import SuperAdmin from "./pages/SuperAdmin";
 import Upgrade from "./pages/Upgrade";
@@ -54,7 +55,8 @@ function AppRoutes() {
   if (isSaasLanding) {
     return (
       <Routes>
-        <Route path="/" element={<SaasLanding />} />
+        <Route path="/" element={<Marketplace />} />
+        <Route path="/landing" element={<SaasLanding />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/onboarding" element={<Onboarding />} />
@@ -65,7 +67,7 @@ function AppRoutes() {
         <Route path="/demo" element={<DemoStore />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="*" element={<SaasLanding />} />
+        <Route path="*" element={<Marketplace />} />
       </Routes>
     );
   }

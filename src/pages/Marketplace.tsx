@@ -53,8 +53,7 @@ export default function Marketplace() {
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 md:px-6 h-16">
           <Link to="/" className="flex items-center gap-2">
-            <Music className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg text-foreground">Sonex</span>
+            <img src="/lovable-uploads/db65a914-2de4-4b0b-8ad2-99b00fbd856a.png" alt="Sonex" className="h-8" />
           </Link>
 
           <div className="hidden md:flex relative max-w-sm flex-1 mx-8">

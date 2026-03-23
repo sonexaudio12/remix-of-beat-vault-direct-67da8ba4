@@ -102,7 +102,7 @@ export default function Marketplace() {
           </div>
 
           {/* Genre pills */}
-          <div className="flex flex-wrap justify-center gap-2 bg-card-foreground bg-[sidebar-primary-foreground] border-secondary">
+          <div className="flex flex-wrap justify-center gap-2 bg-[sidebar-primary-foreground] border-secondary bg-background">
             {GENRES.map((genre) =>
             <button
               key={genre}

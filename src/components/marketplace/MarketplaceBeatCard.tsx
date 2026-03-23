@@ -98,7 +98,7 @@ export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
       <div className="p-3 md:p-4 bg-background">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="min-w-0">
-            <h3 className="font-semibold text-sm md:text-base leading-tight truncate text-card-foreground">
+            <h3 className="font-semibold text-sm md:text-base leading-tight truncate text-accent">
               {beat.title}
             </h3>
             {beat.tenants &&

@@ -69,7 +69,7 @@ export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
         
         {/* Play overlay */}
         {beat.preview_url &&
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-background/40 border-card-foreground">
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-background/40 border-muted-foreground">
             <Button variant="player" size="iconLg" onClick={handlePlay}>
               {isCurrentlyPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-0.5" />}
             </Button>

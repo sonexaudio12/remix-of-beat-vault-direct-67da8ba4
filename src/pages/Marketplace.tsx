@@ -19,15 +19,15 @@ export default function Marketplace() {
   const { data: beats = [], isLoading } = useQuery({
     queryKey: ['marketplace-beats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('beats')
-        .select('id, title, bpm, genre, mood, cover_url, preview_url, is_free, tenants(name, slug, custom_domain), license_tiers(price)')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(60);
+      const { data, error } = await supabase.
+      from('beats').
+      select('id, title, bpm, genre, mood, cover_url, preview_url, is_free, tenants(name, slug, custom_domain), license_tiers(price)').
+      eq('is_active', true).
+      order('created_at', { ascending: false }).
+      limit(60);
       if (error) throw error;
       return data || [];
-    },
+    }
   });
 
   const filtered = useMemo(() => {
@@ -38,10 +38,10 @@ export default function Marketplace() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((b: any) =>
-        b.title?.toLowerCase().includes(q) ||
-        b.genre?.toLowerCase().includes(q) ||
-        b.mood?.toLowerCase().includes(q) ||
-        (b.tenants as any)?.name?.toLowerCase().includes(q)
+      b.title?.toLowerCase().includes(q) ||
+      b.genre?.toLowerCase().includes(q) ||
+      b.mood?.toLowerCase().includes(q) ||
+      (b.tenants as any)?.name?.toLowerCase().includes(q)
       );
     }
     return result;
@@ -62,8 +62,8 @@ export default function Marketplace() {
               placeholder="Search beats, genres, producers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-card border-border"
-            />
+              className="pl-9 bg-card border-border" />
+            
           </div>
 
           <div className="flex items-center gap-3">
@@ -97,25 +97,25 @@ export default function Marketplace() {
               placeholder="Search beats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-card border-border"
-            />
+              className="pl-9 bg-card border-border" />
+            
           </div>
 
           {/* Genre pills */}
-          <div className="flex flex-wrap justify-center gap-2">
-            {GENRES.map((genre) => (
-              <button
-                key={genre}
-                onClick={() => setActiveGenre(genre)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  activeGenre === genre
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-border'
-                }`}
-              >
+          <div className="flex flex-wrap justify-center gap-2 bg-card-foreground bg-[sidebar-primary-foreground] border-secondary">
+            {GENRES.map((genre) =>
+            <button
+              key={genre}
+              onClick={() => setActiveGenre(genre)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+              activeGenre === genre ?
+              'bg-primary text-primary-foreground shadow-md' :
+              'bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-border'}`
+              }>
+              
                 {genre}
               </button>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -129,29 +129,29 @@ export default function Marketplace() {
           <span className="text-sm text-muted-foreground">{filtered.length} beats</span>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-20">
+        {isLoading ?
+        <div className="flex justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
+          </div> :
+        filtered.length === 0 ?
+        <div className="text-center py-20 text-muted-foreground">
             <Music className="h-12 w-12 mx-auto mb-4 opacity-40" />
             <p className="text-lg">No beats found</p>
             <p className="text-sm mt-1">Try a different search or genre filter</p>
+          </div> :
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5">
+            {filtered.map((beat: any) =>
+          <MarketplaceBeatCard key={beat.id} beat={beat} />
+          )}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5">
-            {filtered.map((beat: any) => (
-              <MarketplaceBeatCard key={beat.id} beat={beat} />
-            ))}
-          </div>
-        )}
+        }
       </section>
 
       {/* CTA Banner */}
-      <section className="border-t border-border/50 bg-card">
+      <section className="border-t border-border/50 bg-background">
         <div className="max-w-4xl mx-auto text-center px-4 py-16 md:py-20">
-          <h2 className="text-2xl md:text-4xl font-bold mb-4 text-card-foreground">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4 text-foreground">
             Ready to sell your beats?
           </h2>
           <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
@@ -181,6 +181,6 @@ export default function Marketplace() {
 
       {/* Audio player bar */}
       {currentBeat && <NowPlayingBar />}
-    </div>
-  );
+    </div>);
+
 }

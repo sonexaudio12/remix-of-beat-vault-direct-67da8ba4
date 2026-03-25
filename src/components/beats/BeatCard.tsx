@@ -9,6 +9,7 @@ import { MakeOfferModal } from './MakeOfferModal';
 import { useBeatPlayTracking } from '@/hooks/useAnalyticsTracking';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { downloadFileFromUrl, sanitizeFilename } from '@/lib/download';
 interface BeatCardProps {
   beat: Beat & {
     isFree?: boolean;
@@ -52,7 +53,8 @@ export function BeatCard({
       });
       if (error) throw error;
       if (data?.downloadUrl) {
-        window.open(data.downloadUrl, '_blank');
+        const fileName = `${sanitizeFilename(beat.title)}_free.mp3`;
+        await downloadFileFromUrl(data.downloadUrl, fileName);
         toast.success('Download started!');
       }
     } catch (error) {

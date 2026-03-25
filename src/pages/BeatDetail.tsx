@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Beat } from '@/types/beat';
+import { downloadFileFromUrl, sanitizeFilename } from '@/lib/download';
 
 export default function BeatDetail() {
   const { beatId } = useParams<{ beatId: string }>();
@@ -124,7 +125,8 @@ export default function BeatDetail() {
       });
       if (error) throw error;
       if (data?.downloadUrl) {
-        window.open(data.downloadUrl, '_blank');
+        const fileName = `${sanitizeFilename(beat.title)}_free.mp3`;
+        await downloadFileFromUrl(data.downloadUrl, fileName);
         toast.success('Download started!');
       }
     } catch {

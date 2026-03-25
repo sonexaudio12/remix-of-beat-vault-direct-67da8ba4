@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Play, Pause, ExternalLink } from 'lucide-react';
+import { Play, Pause, ExternalLink, Download } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { downloadFileFromUrl, sanitizeFilename } from '@/lib/download';
 
 interface MarketplaceBeat {
   id: string;

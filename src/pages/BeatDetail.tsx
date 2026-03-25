@@ -38,9 +38,7 @@ export default function BeatDetail() {
           tenant_id,
           tenants(name, slug, custom_domain),
           license_tiers(id, name, type, price, includes, is_active),
-          beat_collaborators(id, role, split_percentage, status,
-            profiles:collaborator_user_id(display_name, email)
-          )
+          beat_collaborators(id, role, split_percentage, status, collaborator_user_id)
         `)
         .eq('id', beatId!)
         .eq('is_active', true)
@@ -249,7 +247,7 @@ export default function BeatDetail() {
 
               {collaborators.length > 0 && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Produced by: {collaborators.map((c: any) => c.profiles?.display_name || 'Unknown').join(' × ')}
+                  Produced by: {collaborators.map((c: any) => c.role || 'Co-Producer').join(' × ')}
                 </p>
               )}
 

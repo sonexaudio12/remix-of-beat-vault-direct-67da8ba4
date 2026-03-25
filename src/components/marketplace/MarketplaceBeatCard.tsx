@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Play, Pause, ExternalLink } from 'lucide-react';
+import { Play, Pause, ExternalLink, Download } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { downloadFileFromUrl, sanitizeFilename } from '@/lib/download';
 
 interface MarketplaceBeat {
   id: string;
@@ -32,6 +36,7 @@ function getStoreUrl(tenant: MarketplaceBeat['tenants']): string {
 
 export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
   const { currentBeat, isPlaying, toggle } = useAudioPlayer();
+  const [downloading, setDownloading] = useState(false);
 
   const isCurrentlyPlaying = currentBeat?.id === beat.id && isPlaying;
 
@@ -43,7 +48,6 @@ export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
 
   const handlePlay = () => {
     if (!beat.preview_url) return;
-    // Create a minimal beat object for the audio player
     toggle({
       id: beat.id,
       title: beat.title,
@@ -56,6 +60,29 @@ export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
       isExclusiveAvailable: false,
       createdAt: new Date()
     });
+  };
+
+  const handleFreeDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-download-urls', {
+        body: { beatId: beat.id, licenseType: 'mp3', isFree: true }
+      });
+      if (error) throw error;
+      if (data?.downloadUrl) {
+        const fileName = `${sanitizeFilename(beat.title)}_free.mp3`;
+        await downloadFileFromUrl(data.downloadUrl, fileName);
+        toast.success('Download started!');
+      } else {
+        throw new Error('No download URL');
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('Failed to start download');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -130,17 +157,28 @@ export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
           </div>
         </div>
 
-        {/* Visit store */}
-        <a
-          href={`${storeUrl}/beats`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
-          
-          <ExternalLink className="h-3 w-3" />
-          Visit Store
-        </a>
+        {/* Actions */}
+        <div className="flex items-center justify-between gap-2">
+          {beat.is_free && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleFreeDownload}
+              disabled={downloading}
+              className="gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs">
+              <Download className="h-3.5 w-3.5" />
+              {downloading ? 'Downloading...' : 'Free DL'}
+            </Button>
+          )}
+          <a
+            href={`${storeUrl}/beats`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors ml-auto">
+            <ExternalLink className="h-3 w-3" />
+            Visit Store
+          </a>
+        </div>
       </div>
     </div>);
-
 }

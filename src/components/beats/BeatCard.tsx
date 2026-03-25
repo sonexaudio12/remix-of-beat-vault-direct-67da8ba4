@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Play, Pause, ShoppingCart, Download, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Beat } from '@/types/beat';
@@ -103,9 +104,9 @@ export function BeatCard({
         <div className="p-3 md:p-4">
           <div className="flex items-start justify-between gap-2 mb-2 md:mb-3 text-secondary">
             <div>
-              <h3 className="font-display font-semibold text-sm md:text-lg leading-tight truncate text-secondary">
+              <Link to={`/beat/${beat.id}`} className="font-display font-semibold text-sm md:text-lg leading-tight truncate text-secondary hover:text-primary transition-colors block">
                 {beat.title}
-              </h3>
+              </Link>
               {beat.collaborators && beat.collaborators.length > 0 && (
                 <p className="text-xs text-primary truncate">
                   Produced by: {beat.collaborators.map(c => c.name).join(' × ')}

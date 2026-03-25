@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Play, Pause, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
@@ -98,9 +99,9 @@ export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
       <div className="p-3 md:p-4 bg-background">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="min-w-0">
-            <h3 className="font-semibold text-sm md:text-base leading-tight truncate text-accent">
+            <Link to={`/beat/${beat.id}`} className="font-semibold text-sm md:text-base leading-tight truncate text-accent hover:text-primary transition-colors block">
               {beat.title}
-            </h3>
+            </Link>
             {beat.tenants &&
             <a
               href={storeUrl}

@@ -36,6 +36,7 @@ function getStoreUrl(tenant: MarketplaceBeat['tenants']): string {
 
 export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
   const { currentBeat, isPlaying, toggle } = useAudioPlayer();
+  const [downloading, setDownloading] = useState(false);
 
   const isCurrentlyPlaying = currentBeat?.id === beat.id && isPlaying;
 

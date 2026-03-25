@@ -157,17 +157,28 @@ export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
           </div>
         </div>
 
-        {/* Visit store */}
-        <a
-          href={`${storeUrl}/beats`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
-          
-          <ExternalLink className="h-3 w-3" />
-          Visit Store
-        </a>
+        {/* Actions */}
+        <div className="flex items-center justify-between gap-2">
+          {beat.is_free && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleFreeDownload}
+              disabled={downloading}
+              className="gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs">
+              <Download className="h-3.5 w-3.5" />
+              {downloading ? 'Downloading...' : 'Free DL'}
+            </Button>
+          )}
+          <a
+            href={`${storeUrl}/beats`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors ml-auto">
+            <ExternalLink className="h-3 w-3" />
+            Visit Store
+          </a>
+        </div>
       </div>
     </div>);
-
 }

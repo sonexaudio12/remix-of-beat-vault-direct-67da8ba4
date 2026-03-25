@@ -29,8 +29,10 @@ const corsHeaders = {
  }
  
 interface DownloadRequest {
-  orderId: string;
-  customerEmail: string;
+  orderId?: string;
+  customerEmail?: string;
+  beatId?: string;
+  isFree?: boolean;
 }
 
 serve(async (req: Request) => {
@@ -53,7 +55,64 @@ serve(async (req: Request) => {
        );
      }
  
-    const { orderId, customerEmail }: DownloadRequest = await req.json();
+    const body: DownloadRequest = await req.json();
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // ── FREE DOWNLOAD FLOW ──
+    if (body.isFree && body.beatId) {
+      console.log(`Free download request for beat: ${body.beatId}, IP: ${clientIp}`);
+
+      const { data: beat, error: beatErr } = await supabase
+        .from("beats")
+        .select("id, title, mp3_file_path, is_free, is_active")
+        .eq("id", body.beatId)
+        .single();
+
+      if (beatErr || !beat) {
+        return new Response(
+          JSON.stringify({ error: "Beat not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!beat.is_free || !beat.is_active) {
+        return new Response(
+          JSON.stringify({ error: "This beat is not available for free download" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!beat.mp3_file_path) {
+        return new Response(
+          JSON.stringify({ error: "No downloadable file available for this beat" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: signedUrl, error: signErr } = await supabase.storage
+        .from("beats")
+        .createSignedUrl(beat.mp3_file_path, 3600);
+
+      if (signErr || !signedUrl) {
+        console.error("Failed to create signed URL for free beat:", signErr);
+        return new Response(
+          JSON.stringify({ error: "Failed to generate download link" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ downloadUrl: signedUrl.signedUrl }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ── PAID ORDER DOWNLOAD FLOW ──
+    const { orderId, customerEmail } = body;
 
     if (!orderId || !customerEmail) {
        console.warn(`Invalid request - missing orderId or customerEmail from IP: ${clientIp}`);
@@ -63,16 +122,8 @@ serve(async (req: Request) => {
       );
     }
 
-     // Create authenticated client to check if user is logged in
-     const authHeader = req.headers.get("Authorization");
-     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
- 
-     // Service role client for database operations
-     const supabase = createClient(supabaseUrl, supabaseServiceKey);
- 
      // If auth header present, validate the user
+     const authHeader = req.headers.get("Authorization");
      let authenticatedEmail: string | null = null;
      if (authHeader?.startsWith("Bearer ")) {
        const userClient = createClient(supabaseUrl, supabaseAnonKey, {

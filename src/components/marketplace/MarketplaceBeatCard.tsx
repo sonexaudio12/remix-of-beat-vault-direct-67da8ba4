@@ -48,7 +48,6 @@ export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
 
   const handlePlay = () => {
     if (!beat.preview_url) return;
-    // Create a minimal beat object for the audio player
     toggle({
       id: beat.id,
       title: beat.title,
@@ -61,6 +60,29 @@ export function MarketplaceBeatCard({ beat }: MarketplaceBeatCardProps) {
       isExclusiveAvailable: false,
       createdAt: new Date()
     });
+  };
+
+  const handleFreeDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-download-urls', {
+        body: { beatId: beat.id, licenseType: 'mp3', isFree: true }
+      });
+      if (error) throw error;
+      if (data?.downloadUrl) {
+        const fileName = `${sanitizeFilename(beat.title)}_free.mp3`;
+        await downloadFileFromUrl(data.downloadUrl, fileName);
+        toast.success('Download started!');
+      } else {
+        throw new Error('No download URL');
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('Failed to start download');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (

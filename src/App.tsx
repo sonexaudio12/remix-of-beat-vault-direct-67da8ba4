@@ -33,6 +33,7 @@ import Services from "./pages/Services";
 import ServiceOrder from "./pages/ServiceOrder";
 import SaasLanding from "./pages/SaasLanding";
 import Marketplace from "./pages/Marketplace";
+import BeatDetail from "./pages/BeatDetail";
 import Onboarding from "./pages/Onboarding";
 import SuperAdmin from "./pages/SuperAdmin";
 import Upgrade from "./pages/Upgrade";
@@ -65,6 +66,7 @@ function AppRoutes() {
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/demo" element={<DemoStore />} />
+        <Route path="/beat/:beatId" element={<BeatDetail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/terms" element={<Terms />} />
@@ -81,6 +83,7 @@ function AppRoutes() {
       <Route path="/landing" element={<SaasLanding />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/beats" element={<Beats />} />
+      <Route path="/beat/:beatId" element={<BeatDetail />} />
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/download" element={<Download />} />

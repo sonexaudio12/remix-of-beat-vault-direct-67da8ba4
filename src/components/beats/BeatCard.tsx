@@ -118,9 +118,10 @@ export function BeatCard({
                 <span>{beat.genre}</span>
               </div>
             </div>
-            <div className="text-right flex-shrink-0">
+             <div className="text-right flex-shrink-0">
               {beat.isFree ? <>
                   <div className="text-sm md:text-lg font-bold text-green-500">FREE</div>
+                  {lowestPrice > 0 && <div className="text-[10px] md:text-xs text-muted-foreground hidden sm:block">or from ${lowestPrice.toFixed(2)}</div>}
                 </> : <>
                   <div className="text-sm md:text-lg font-bold text-primary">
                     ${lowestPrice.toFixed(2)}
@@ -142,13 +143,14 @@ export function BeatCard({
                   Offer
                 </Button>}
               
-              {beat.isFree ? <Button variant="default" size="sm" onClick={handleFreeDownload} className="gap-1.5 bg-green-500 hover:bg-green-600">
+              {beat.isFree && <Button variant="default" size="sm" onClick={handleFreeDownload} className="gap-1.5 bg-green-500 hover:bg-green-600">
                   <Download className="h-4 w-4" />
-                  Download
-                </Button> : <Button variant="default" size="sm" onClick={() => setShowLicenseModal(true)} className="gap-1.5">
-                  <ShoppingCart className="h-4 w-4" />
-                  Buy
+                  Free
                 </Button>}
+              <Button variant="default" size="sm" onClick={() => setShowLicenseModal(true)} className="gap-1.5">
+                <ShoppingCart className="h-4 w-4" />
+                Buy
+              </Button>
             </div>
           </div>
         </div>

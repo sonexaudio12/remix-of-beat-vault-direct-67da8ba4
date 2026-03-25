@@ -260,37 +260,32 @@ export default function BeatDetail() {
 
             {/* Price & CTA */}
             <div className="rounded-xl border border-border bg-card p-5">
-              {(beatData as any).is_free ? (
-                <div className="flex items-center justify-between">
+              {(beatData as any).is_free && (
+                <div className="flex items-center justify-between mb-4">
                   <div>
                     <div className="text-2xl font-bold text-green-500">FREE</div>
-                    <p className="text-sm text-muted-foreground">Download this beat for free</p>
+                    <p className="text-sm text-muted-foreground">Download this beat for free (MP3 tagged)</p>
                   </div>
                   <Button onClick={handleFreeDownload} className="gap-1.5 bg-green-500 hover:bg-green-600">
-                    <Download className="h-5 w-5" /> Download
+                    <Download className="h-5 w-5" /> Free Download
                   </Button>
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      {lowestPrice !== null && (
-                        <>
-                          <div className="text-2xl font-bold text-primary">${lowestPrice.toFixed(2)}</div>
-                          <p className="text-sm text-muted-foreground">Starting price</p>
-                        </>
-                      )}
-                    </div>
-                    <Button onClick={() => setShowLicenseModal(true)} className="gap-1.5">
-                      <ShoppingCart className="h-5 w-5" /> Buy License
-                    </Button>
+              )}
+              {lowestPrice !== null && (
+                <div className={`flex items-center justify-between ${(beatData as any).is_free ? 'pt-4 border-t border-border' : ''}`}>
+                  <div>
+                    <div className="text-2xl font-bold text-primary">${lowestPrice.toFixed(2)}</div>
+                    <p className="text-sm text-muted-foreground">{(beatData as any).is_free ? 'Or buy a license for more rights' : 'Starting price'}</p>
                   </div>
-                </>
+                  <Button onClick={() => setShowLicenseModal(true)} className="gap-1.5">
+                    <ShoppingCart className="h-5 w-5" /> Buy License
+                  </Button>
+                </div>
               )}
             </div>
 
             {/* License tiers preview */}
-            {!((beatData as any).is_free) && beat.licenses.length > 0 && (
+            {beat.licenses.length > 0 && (
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Available Licenses</h3>
                 <div className="space-y-2">

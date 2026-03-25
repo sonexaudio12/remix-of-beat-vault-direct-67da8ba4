@@ -247,7 +247,7 @@ export default function BeatDetail() {
 
               {collaborators.length > 0 && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Produced by: {collaborators.map((c: any) => c.profiles?.display_name || 'Unknown').join(' × ')}
+                  Produced by: {collaborators.map((c: any) => c.role || 'Co-Producer').join(' × ')}
                 </p>
               )}
 

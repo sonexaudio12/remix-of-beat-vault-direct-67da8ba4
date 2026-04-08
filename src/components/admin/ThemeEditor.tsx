@@ -95,9 +95,10 @@ export function ThemeEditor() {
     if (!file) return;
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
+      const optimized = await optimizeImage(file, { maxWidth: 800, maxHeight: 200 });
+      const ext = optimized.name.split('.').pop();
       const path = `theme/logo-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from('covers').upload(path, file, { upsert: true });
+      const { error: uploadError } = await supabase.storage.from('covers').upload(path, optimized, { upsert: true });
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(path);
       update('logo.url', publicUrl);

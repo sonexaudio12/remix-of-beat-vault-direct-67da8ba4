@@ -10,6 +10,7 @@ import { ThemeConfig, DEFAULT_THEME, FONT_OPTIONS, COLOR_PRESETS } from '@/types
 import { useThemeDraft, useSaveThemeDraft, usePublishTheme } from '@/hooks/useStoreConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { optimizeImage } from '@/lib/imageOptimize';
 
 function hslToHex(hsl: string): string {
   const parts = hsl.split(/\s+/);

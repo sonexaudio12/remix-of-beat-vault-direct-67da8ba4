@@ -10,6 +10,7 @@ import { ThemeConfig, DEFAULT_THEME, FONT_OPTIONS, COLOR_PRESETS } from '@/types
 import { useThemeDraft, useSaveThemeDraft, usePublishTheme } from '@/hooks/useStoreConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { optimizeImage } from '@/lib/imageOptimize';
 
 function hslToHex(hsl: string): string {
   const parts = hsl.split(/\s+/);
@@ -95,9 +96,10 @@ export function ThemeEditor() {
     if (!file) return;
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
+      const optimized = await optimizeImage(file, { maxWidth: 800, maxHeight: 200 });
+      const ext = optimized.name.split('.').pop();
       const path = `theme/logo-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from('covers').upload(path, file, { upsert: true });
+      const { error: uploadError } = await supabase.storage.from('covers').upload(path, optimized, { upsert: true });
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from('covers').getPublicUrl(path);
       update('logo.url', publicUrl);

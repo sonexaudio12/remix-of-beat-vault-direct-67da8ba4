@@ -10,6 +10,15 @@ import { useToast } from '@/hooks/use-toast';
 
 type Step = 'verify' | 'auth' | 'store-setup' | 'done';
 
+function createSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 63);
+}
+
 export default function Onboarding() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -35,6 +44,7 @@ export default function Onboarding() {
   // Store setup
   const [storeName, setStoreName] = useState('');
   const [slug, setSlug] = useState('');
+  const [isSlugEdited, setIsSlugEdited] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [setupLoading, setSetupLoading] = useState(false);
 
@@ -244,7 +254,11 @@ export default function Onboarding() {
                 <Label>Store Name</Label>
                 <Input
                   value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setStoreName(name);
+                    if (!isSlugEdited) setSlug(createSlug(name));
+                  }}
                   placeholder="My Beat Store"
                 />
               </div>
@@ -253,12 +267,15 @@ export default function Onboarding() {
                 <div className="flex items-center gap-0">
                   <Input
                     value={slug}
-                    onChange={(e) => setSlug(e.target.value.replace(/[^a-z0-9-]/gi, '').toLowerCase())}
+                    onChange={(e) => {
+                      setIsSlugEdited(true);
+                      setSlug(e.target.value.replace(/[^a-z0-9-]/gi, '').toLowerCase());
+                    }}
                     placeholder="mybeats"
                     className="rounded-r-none"
                   />
                   <span className="border border-l-0 border-border bg-muted px-3 h-10 flex items-center text-sm text-muted-foreground rounded-r-md whitespace-nowrap">
-                    .sonexstudio.com
+                    .sonexstudio.shop
                   </span>
                 </div>
                 {slug.length >= 3 && slugAvailable !== null && (

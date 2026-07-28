@@ -42,6 +42,16 @@ const plans = [
   },
 ];
 
+async function getCheckoutError(error: unknown): Promise<string> {
+  const response = (error as { context?: unknown }).context;
+  if (response instanceof Response) {
+    const body = await response.json().catch(() => null);
+    if (body && typeof body.error === 'string') return body.error;
+  }
+
+  return error instanceof Error ? error.message : 'Could not start checkout';
+}
+
 export default function Upgrade() {
   const { toast } = useToast();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -52,7 +62,11 @@ export default function Upgrade() {
       const { data, error } = await supabase.functions.invoke('create-saas-checkout', {
         body: { planKey },
       });
-      if (error || !data?.url) {
+      if (error) {
+        toast({ title: 'Error', description: await getCheckoutError(error), variant: 'destructive' });
+        return;
+      }
+      if (!data?.url) {
         toast({ title: 'Error', description: data?.error || 'Could not start checkout', variant: 'destructive' });
         return;
       }

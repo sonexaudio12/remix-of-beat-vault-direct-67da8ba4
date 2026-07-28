@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { Play, Pause, ShoppingCart, Download, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Beat } from '@/types/beat';
@@ -104,17 +103,22 @@ export function BeatCard({
 
         {/* Info */}
         <div className="p-3 md:p-4">
-          <div className="flex items-start justify-between gap-2 mb-2 md:mb-3 text-secondary">
+          <div className="flex items-start justify-between gap-2 mb-2 md:mb-3">
             <div>
-              <Link to={`/beat/${beat.id}`} className="font-display font-semibold text-sm md:text-lg leading-tight truncate text-secondary hover:text-primary transition-colors block">
+              <button
+                type="button"
+                onClick={handlePlay}
+                className="font-display font-semibold text-left text-sm md:text-lg leading-tight truncate text-foreground hover:text-primary transition-colors block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-sm"
+                aria-label={`${isCurrentlyPlaying ? 'Pause' : 'Play'} ${beat.title}`}
+              >
                 {beat.title}
-              </Link>
+              </button>
               {beat.collaborators && beat.collaborators.length > 0 && (
                 <p className="text-xs text-primary truncate">
                   Produced by: {beat.collaborators.map(c => c.name).join(' × ')}
                 </p>
               )}
-              <div className="flex items-center gap-1.5 md:gap-2 mt-0.5 md:mt-1 text-xs md:text-sm text-white">
+              <div className="flex items-center gap-1.5 md:gap-2 mt-0.5 md:mt-1 text-xs md:text-sm text-muted-foreground">
                 <span>{beat.bpm} BPM</span>
                 <span className="w-1 h-1 rounded-full bg-muted-foreground" />
                 <span>{beat.genre}</span>
@@ -135,12 +139,12 @@ export function BeatCard({
 
           {/* Mood Tag & Actions */}
           <div className="flex items-center justify-between gap-2">
-            <span className="inline-block px-2 py-1 text-xs font-medium rounded-md bg-secondary text-white">
+            <span className="inline-block px-2 py-1 text-xs font-medium rounded-md bg-secondary text-secondary-foreground">
               {beat.mood}
             </span>
             
             <div className="flex gap-2">
-              {beat.isExclusiveAvailable && <Button variant="outline" size="sm" onClick={() => setShowOfferModal(true)} className="gap-1 text-xs text-white [&_svg]:text-white" title="Make an offer for exclusive rights">
+              {beat.isExclusiveAvailable && <Button variant="outline" size="sm" onClick={() => setShowOfferModal(true)} className="gap-1 text-xs" title="Make an offer for exclusive rights">
                   <DollarSign className="h-3 w-3" />
                   Offer
                 </Button>}

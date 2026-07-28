@@ -112,9 +112,14 @@ export function BeatListRow({ beat, index, config }: BeatListRowProps) {
         {/* Title + Tags */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className={`font-semibold text-sm truncate ${isCurrent ? 'text-primary' : 'text-foreground'}`}>
+            <button
+              type="button"
+              onClick={handlePlay}
+              className={`font-semibold text-sm truncate text-left transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-sm ${isCurrent ? 'text-primary' : 'text-foreground'}`}
+              aria-label={`${isCurrentlyPlaying ? 'Pause' : 'Play'} ${beat.title}`}
+            >
               {beat.title}
-            </p>
+            </button>
             {isCurrentlyPlaying && (
               <div className="flex gap-0.5 items-end">
                 {[...Array(3)].map((_, i) => (

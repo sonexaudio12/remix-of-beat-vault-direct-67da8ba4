@@ -125,23 +125,22 @@ export function TenantsManager() {
   };
 
   const resendConfirmation = async (tenant: Tenant) => {
-    if (!tenant.owner_email || tenant.owner_email === 'Unknown') {
-      toast.error('This tenant does not have an owner email address');
-      return;
-    }
-
     setResendingConfirmation(tenant.id);
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: tenant.owner_email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const { data, error } = await supabase.functions.invoke('resend-tenant-confirmation', {
+        body: { tenantId: tenant.id },
       });
 
-      if (error) throw error;
-      toast.success(`Confirmation email sent to ${tenant.owner_email}`);
+      if (error || data?.error) {
+        const response = error?.context;
+        if (response instanceof Response) {
+          const body = await response.json().catch(() => null);
+          if (body?.error) throw new Error(body.error);
+        }
+        throw new Error(data?.error || error?.message || 'Could not resend confirmation email');
+      }
+
+      toast.success(`Confirmation email sent to ${data.email}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not resend confirmation email');
     } finally {
@@ -241,7 +240,7 @@ export function TenantsManager() {
                       variant="ghost"
                       size="icon"
                       onClick={() => resendConfirmation(t)}
-                      disabled={resendingConfirmation === t.id || !t.owner_email || t.owner_email === 'Unknown'}
+                      disabled={resendingConfirmation === t.id}
                       title="Resend email confirmation"
                     >
                       {resendingConfirmation === t.id ? (
@@ -254,7 +253,6 @@ export function TenantsManager() {
                       variant="ghost"
                       size="icon"
                       onClick={() => setResetting(t)}
-                      disabled={!t.owner_email || t.owner_email === 'Unknown'}
                       title="Send password reset link"
                     >
                       <KeyRound className="h-4 w-4" />

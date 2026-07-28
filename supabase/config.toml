@@ -27,6 +27,9 @@ verify_jwt = false
 [functions.send-password-reset]
 verify_jwt = false
 
+[functions.resend-tenant-confirmation]
+verify_jwt = false
+
 [functions.create-saas-checkout]
 verify_jwt = false
 

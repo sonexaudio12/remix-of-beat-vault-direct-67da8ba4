@@ -10,6 +10,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { PageTracker } from "@/components/PageTracker";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TenantProvider, useTenant } from "@/hooks/useTenant";
+import { LanguageProvider } from "@/hooks/useLanguage";
 import Index from "./pages/Index";
 import Beats from "./pages/Beats";
 import Cart from "./pages/Cart";
@@ -123,7 +124,9 @@ const App = () => (
               <PageTracker />
               <ThemeProvider>
                 <TenantProvider>
-                  <AppRoutes />
+                  <LanguageProvider>
+                    <AppRoutes />
+                  </LanguageProvider>
                 </TenantProvider>
               </ThemeProvider>
             </BrowserRouter>

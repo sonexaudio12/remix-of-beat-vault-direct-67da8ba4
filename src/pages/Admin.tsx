@@ -28,6 +28,7 @@ import { DistributionDashboard } from '@/components/admin/DistributionDashboard'
 import { EmailSubscribersManager } from '@/components/admin/EmailSubscribersManager';
 import { TeamManager } from '@/components/admin/TeamManager';
 import { AccountSecuritySettings } from '@/components/admin/AccountSecuritySettings';
+import { LanguageSettingsManager } from '@/components/admin/LanguageSettingsManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import logo from '@/assets/logo.png';
@@ -402,6 +403,14 @@ function SettingsContent({
           <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'account-security' ? 'rotate-180' : ''}`} />
         </button>
         {openSection === 'account-security' && <div className="px-2 pb-2"><AccountSecuritySettings /></div>}
+      </div>
+
+      <div className="rounded-xl border border-border overflow-hidden">
+        <button onClick={() => toggle('language')} className="w-full flex items-center justify-between px-6 py-4 bg-card hover:bg-muted/30 transition-colors">
+          <span className="font-semibold">Storefront Language</span>
+          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'language' ? 'rotate-180' : ''}`} />
+        </button>
+        {openSection === 'language' && <div className="px-2 pb-2"><LanguageSettingsManager /></div>}
       </div>
 
       {/* Domain Settings */}

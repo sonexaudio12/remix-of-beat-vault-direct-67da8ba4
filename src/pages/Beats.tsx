@@ -21,10 +21,13 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLanguage } from '@/hooks/useLanguage';
+import { useLocalizedBeats } from '@/hooks/useBeatTranslations';
 
 export default function Beats() {
   const { user } = useAuth();
   const { tenant } = useTenant();
+  const { t, language } = useLanguage();
 
   const { data: beats = [], isLoading } = useBeats();
   const { currentBeat } = useAudioPlayer();
@@ -67,6 +70,7 @@ export default function Beats() {
       return matchesSearch && matchesGenre && matchesMood && matchesBpm && matchesCollab;
     });
   }, [beats, searchQuery, genreFilter, moodFilter, bpmRange, collabFilter]);
+  const localizedBeats = useLocalizedBeats(filteredBeats, tenant?.id, language);
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -96,16 +100,16 @@ export default function Beats() {
             <div className="text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-4 md:mb-6">
                 <Music className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
-                <span className="text-xs md:text-sm font-medium text-primary">Beat Catalog</span>
+                <span className="text-xs md:text-sm font-medium text-primary">{t('beatCatalog')}</span>
               </div>
               <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-4 text-foreground">
-                Find Your Perfect{' '}
+                {t('findYourPerfect')}{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
-                  Beat
+                  {t('beat')}
                 </span>
               </h1>
               <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-                Browse our collection of premium beats. Filter by genre, vibe, and tempo.
+                {t('browseCollection')}
               </p>
             </div>
           </div>
@@ -127,7 +131,7 @@ export default function Beats() {
                     onClick={resetFilters}
                     className="text-xs md:text-sm text-muted-foreground hover:text-foreground h-7 px-2"
                   >
-                    Clear
+                    {t('clear')}
                   </Button>
                 )}
               </div>
@@ -151,7 +155,7 @@ export default function Beats() {
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="gap-1.5 h-8 text-xs md:text-sm">
                   <SlidersHorizontal className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  <span className="hidden sm:inline">{showFilters ? 'Hide' : 'Show'} Filters</span>
+                  <span className="hidden sm:inline">{showFilters ? t('hideFilters') : t('showFilters')}</span>
                 </Button>
               </div>
             </div>
@@ -169,7 +173,7 @@ export default function Beats() {
               <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 {/* Search */}
                 <div className="space-y-1.5">
-                  <label className="text-xs md:text-sm font-medium text-muted-foreground">Search</label>
+                  <label className="text-xs md:text-sm font-medium text-muted-foreground">{t('search')}</label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -186,10 +190,10 @@ export default function Beats() {
                   <label className="text-xs md:text-sm font-medium text-muted-foreground">Genre</label>
                   <Select value={genreFilter} onValueChange={setGenreFilter}>
                     <SelectTrigger className="bg-background border-border h-10">
-                      <SelectValue placeholder="All Genres" />
+                      <SelectValue placeholder={t('allGenres')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Genres</SelectItem>
+                      <SelectItem value="all">{t('allGenres')}</SelectItem>
                       {genres.map((genre) => (
                         <SelectItem key={genre} value={genre}>{genre}</SelectItem>
                       ))}
@@ -202,10 +206,10 @@ export default function Beats() {
                   <label className="text-xs md:text-sm font-medium text-muted-foreground">Vibe</label>
                   <Select value={moodFilter} onValueChange={setMoodFilter}>
                     <SelectTrigger className="bg-background border-border h-10">
-                      <SelectValue placeholder="All Vibes" />
+                      <SelectValue placeholder={t('allVibes')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Vibes</SelectItem>
+                      <SelectItem value="all">{t('allVibes')}</SelectItem>
                       {moods.map((mood) => (
                         <SelectItem key={mood} value={mood}>{mood}</SelectItem>
                       ))}
@@ -216,7 +220,7 @@ export default function Beats() {
                 {/* BPM */}
                 <div className="space-y-1.5">
                   <label className="text-xs md:text-sm font-medium text-muted-foreground">
-                    Tempo: {bpmRange[0]} - {bpmRange[1]} BPM
+                    {t('tempo')}: {bpmRange[0]} - {bpmRange[1]} BPM
                   </label>
                   <div className="pt-2 px-1">
                     <Slider
@@ -248,9 +252,9 @@ export default function Beats() {
                 ))}
               </div>
             ) : viewMode === 'list' ? (
-              <BeatList beats={filteredBeats} />
+              <BeatList beats={localizedBeats} />
             ) : (
-              <BeatGrid beats={filteredBeats} />
+              <BeatGrid beats={localizedBeats} />
             )}
           </div>
         </section>

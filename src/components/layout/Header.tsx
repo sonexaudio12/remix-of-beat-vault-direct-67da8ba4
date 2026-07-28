@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo-new.png';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { useLanguage } from '@/hooks/useLanguage';
 export function Header() {
   const {
     itemCount
@@ -17,6 +18,7 @@ export function Header() {
     signOut
   } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const handleSignOut = async () => {
     await signOut();
@@ -33,24 +35,27 @@ export function Header() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           <Link to="/beats" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Beats
+            {t('beats')}
           </Link>
           <Link to="/sound-kits" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Sound Kits
+            {t('soundKits')}
           </Link>
           <Link to="/licenses" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Licensing
+            {t('licensing')}
           </Link>
           <Link to="/services" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Services
+            {t('services')}
           </Link>
           <Link to="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            About
+            {t('about')}
           </Link>
         </nav>
 
         {/* Right Side */}
         <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => setLanguage(language === 'en' ? 'es' : 'en')} className="hidden sm:inline-flex text-xs font-semibold">
+            {language === 'en' ? 'ES' : 'EN'}
+          </Button>
           <Link to="/cart">
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5 rounded-none" />
@@ -85,7 +90,7 @@ export function Header() {
               </Button>
             </Link> : <Link to="/login" className="hidden md:block">
               <Button variant="outline" size="sm">
-                Sign In
+                {t('signIn')}
               </Button>
             </Link>}
 
@@ -100,21 +105,24 @@ export function Header() {
       {mobileMenuOpen && <div className="md:hidden border-t border-border/40 bg-background">
           <nav className="container py-3 flex flex-col gap-0">
             <Link to="/beats" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
-              Beats
+              {t('beats')}
             </Link>
             <Link to="/sound-kits" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
-              Sound Kits
+              {t('soundKits')}
             </Link>
             <Link to="/licenses" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
-              Licensing
+              {t('licensing')}
             </Link>
             <Link to="/services" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
-              Services
+              {t('services')}
             </Link>
             <Link to="/about" className="py-3 px-2 text-sm font-medium active:bg-secondary/50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>
-              About
+              {t('about')}
             </Link>
             <div className="border-t border-border/40 my-2" />
+            <button onClick={() => setLanguage(language === 'en' ? 'es' : 'en')} className="py-2 text-sm font-medium text-left text-primary">
+              {t('language')}: {language === 'en' ? 'Español' : 'English'}
+            </button>
             {user && isAdmin ? <>
                 <Link to="/admin" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
                   Admin Dashboard
@@ -128,7 +136,7 @@ export function Header() {
               </> : user ? <Link to="/account" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
                 My Account
               </Link> : <Link to="/login" className="py-2 text-sm font-medium text-primary" onClick={() => setMobileMenuOpen(false)}>
-                Sign In
+              {t('signIn')}
               </Link>}
           </nav>
         </div>}

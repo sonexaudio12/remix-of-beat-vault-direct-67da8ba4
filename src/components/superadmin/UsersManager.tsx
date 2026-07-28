@@ -11,7 +11,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Loader2, Search, Shield, ShieldOff, Users } from 'lucide-react';
+import { Loader2, MailCheck, Search, Shield, ShieldOff, Users } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -27,6 +27,7 @@ export function UsersManager() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [toggling, setToggling] = useState<string | null>(null);
+  const [resendingConfirmation, setResendingConfirmation] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -92,6 +93,31 @@ export function UsersManager() {
     }
   };
 
+  const resendConfirmation = async (email: string | null, userId: string) => {
+    if (!email) {
+      toast.error('This user does not have an email address');
+      return;
+    }
+
+    setResendingConfirmation(userId);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+      toast.success(`Confirmation email sent to ${email}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not resend confirmation email');
+    } finally {
+      setResendingConfirmation(null);
+    }
+  };
+
   const filtered = users.filter(u =>
     (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
     (u.display_name || '').toLowerCase().includes(search.toLowerCase())
@@ -133,7 +159,7 @@ export function UsersManager() {
               <TableHead>Role</TableHead>
               <TableHead>Store</TableHead>
               <TableHead>Joined</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="w-[190px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -156,42 +182,57 @@ export function UsersManager() {
                   <TableCell>{u.tenant_name || '—'}</TableCell>
                   <TableCell>{new Date(u.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={toggling === u.id}
-                          title={u.is_admin ? 'Remove admin' : 'Grant admin'}
-                        >
-                          {toggling === u.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : u.is_admin ? (
-                            <ShieldOff className="h-4 w-4 text-destructive" />
-                          ) : (
-                            <Shield className="h-4 w-4 text-primary" />
-                          )}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            {u.is_admin ? 'Remove Admin Access?' : 'Grant Admin Access?'}
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {u.is_admin
-                              ? `This will revoke admin privileges for ${u.email}.`
-                              : `This will grant admin privileges to ${u.email}.`}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => toggleAdmin(u.id, u.is_admin)}>
-                            Confirm
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={resendingConfirmation === u.id || !u.email}
+                        title="Resend email confirmation"
+                        onClick={() => resendConfirmation(u.email, u.id)}
+                      >
+                        {resendingConfirmation === u.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MailCheck className="h-4 w-4 text-primary" />
+                        )}
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={toggling === u.id}
+                            title={u.is_admin ? 'Remove admin' : 'Grant admin'}
+                          >
+                            {toggling === u.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : u.is_admin ? (
+                              <ShieldOff className="h-4 w-4 text-destructive" />
+                            ) : (
+                              <Shield className="h-4 w-4 text-primary" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {u.is_admin ? 'Remove Admin Access?' : 'Grant Admin Access?'}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {u.is_admin
+                                ? `This will revoke admin privileges for ${u.email}.`
+                                : `This will grant admin privileges to ${u.email}.`}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => toggleAdmin(u.id, u.is_admin)}>
+                              Confirm
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

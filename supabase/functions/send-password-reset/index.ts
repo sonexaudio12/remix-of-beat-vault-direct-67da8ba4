@@ -85,14 +85,6 @@ async function getResetOrigin(request: Request, supabaseAdmin: any): Promise<str
   return Deno.env.get("SITE_URL") || DEFAULT_SITE_URL;
 }
 
-function getTenantResetOrigin(tenant: { slug: string; custom_domain: string | null; domain_status: string }): string {
-  if (tenant.custom_domain && tenant.domain_status === "verified") {
-    return `https://${tenant.custom_domain}`;
-  }
-
-  return `https://${tenant.slug}.sonexstudio.shop`;
-}
-
 function isSuperAdmin(email: string | undefined): boolean {
   const configuredEmails = Deno.env.get("SUPER_ADMIN_EMAILS") || Deno.env.get("ADMIN_EMAIL") || "";
   const allowedEmails = configuredEmails
@@ -170,7 +162,7 @@ serve(async (req) => {
       }
 
       email = ownerData.user.email;
-      resetOrigin = getTenantResetOrigin(tenant);
+      resetOrigin = await getResetOrigin(req, supabaseAdmin);
     }
 
     if (!email || typeof email !== "string") {

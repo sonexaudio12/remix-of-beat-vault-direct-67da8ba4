@@ -103,12 +103,21 @@ export function TenantsManager() {
         body: { tenantId: resetting.id },
       });
 
-      if (error) throw error;
+      if (error) {
+        const response = error.context;
+        if (response instanceof Response) {
+          const body = await response.json().catch(() => null);
+          if (body && typeof body.error === 'string') {
+            throw new Error(body.error);
+          }
+        }
+        throw error;
+      }
 
       toast.success(`Password reset link sent to ${resetting.owner_email}`);
       setResetting(null);
-    } catch {
-      toast.error('Could not send the password reset link');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not send the password reset link');
     } finally {
       setSendingReset(false);
     }

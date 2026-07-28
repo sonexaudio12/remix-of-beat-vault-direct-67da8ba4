@@ -100,7 +100,7 @@ export function TenantsManager() {
     setSendingReset(true);
     try {
       const { error } = await supabase.functions.invoke('send-password-reset', {
-        body: { tenantId: resetting.id },
+        body: { tenantId: resetting.id, email: resetting.owner_email },
       });
 
       if (error) {

@@ -16,7 +16,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Search, Pencil, Store, KeyRound } from 'lucide-react';
+import { Loader2, MailCheck, Search, Pencil, Store, KeyRound } from 'lucide-react';
 
 interface Tenant {
   id: string;
@@ -40,6 +40,7 @@ export function TenantsManager() {
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState<Tenant | null>(null);
   const [sendingReset, setSendingReset] = useState(false);
+  const [resendingConfirmation, setResendingConfirmation] = useState<string | null>(null);
 
   const fetchTenants = async () => {
     setLoading(true);
@@ -120,6 +121,31 @@ export function TenantsManager() {
       toast.error(error instanceof Error ? error.message : 'Could not send the password reset link');
     } finally {
       setSendingReset(false);
+    }
+  };
+
+  const resendConfirmation = async (tenant: Tenant) => {
+    if (!tenant.owner_email || tenant.owner_email === 'Unknown') {
+      toast.error('This tenant does not have an owner email address');
+      return;
+    }
+
+    setResendingConfirmation(tenant.id);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: tenant.owner_email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+      toast.success(`Confirmation email sent to ${tenant.owner_email}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not resend confirmation email');
+    } finally {
+      setResendingConfirmation(null);
     }
   };
 
@@ -210,6 +236,19 @@ export function TenantsManager() {
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(t)} title="Edit tenant">
                       <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => resendConfirmation(t)}
+                      disabled={resendingConfirmation === t.id || !t.owner_email || t.owner_email === 'Unknown'}
+                      title="Resend email confirmation"
+                    >
+                      {resendingConfirmation === t.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MailCheck className="h-4 w-4 text-primary" />
+                      )}
                     </Button>
                     <Button
                       variant="ghost"

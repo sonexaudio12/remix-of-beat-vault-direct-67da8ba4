@@ -9,10 +9,14 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Search, Pencil, Store } from 'lucide-react';
+import { Loader2, Search, Pencil, Store, KeyRound } from 'lucide-react';
 
 interface Tenant {
   id: string;
@@ -34,6 +38,8 @@ export function TenantsManager() {
   const [editPlan, setEditPlan] = useState('');
   const [editStatus, setEditStatus] = useState('');
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState<Tenant | null>(null);
+  const [sendingReset, setSendingReset] = useState(false);
 
   const fetchTenants = async () => {
     setLoading(true);
@@ -86,6 +92,26 @@ export function TenantsManager() {
       fetchTenants();
     }
     setSaving(false);
+  };
+
+  const handleSendPasswordReset = async () => {
+    if (!resetting) return;
+
+    setSendingReset(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-password-reset', {
+        body: { tenantId: resetting.id },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Password reset link sent to ${resetting.owner_email}`);
+      setResetting(null);
+    } catch {
+      toast.error('Could not send the password reset link');
+    } finally {
+      setSendingReset(false);
+    }
   };
 
   const filtered = tenants.filter(t =>
@@ -149,7 +175,7 @@ export function TenantsManager() {
               <TableHead>Plan</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
-              <TableHead className="w-[80px]">Actions</TableHead>
+              <TableHead className="w-[120px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -173,8 +199,17 @@ export function TenantsManager() {
                   </TableCell>
                   <TableCell>{new Date(t.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(t)}>
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(t)} title="Edit tenant">
                       <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setResetting(t)}
+                      disabled={!t.owner_email || t.owner_email === 'Unknown'}
+                      title="Send password reset link"
+                    >
+                      <KeyRound className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -227,6 +262,23 @@ export function TenantsManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!resetting} onOpenChange={open => !open && setResetting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send password reset link?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This sends a one-hour password reset link to {resetting?.owner_email} for {resetting?.name}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={sendingReset}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSendPasswordReset} disabled={sendingReset}>
+              {sendingReset ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Reset Link'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -15,6 +15,7 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const MAX_PER_EMAIL = 3;
 const MAX_PER_IP = 10;
+const DEFAULT_SITE_URL = "https://www.sonexstudio.shop";
 
 function isRateLimited(key: string, max: number): boolean {
   const now = Date.now();
@@ -35,13 +36,142 @@ function isRateLimited(key: string, max: number): boolean {
 
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
+async function getResetOrigin(request: Request, supabaseAdmin: any): Promise<string> {
+  const origin = request.headers.get("origin");
+
+  if (!origin) {
+    return Deno.env.get("SITE_URL") || DEFAULT_SITE_URL;
+  }
+
+  try {
+    const url = new URL(origin);
+    const hostname = url.hostname.toLowerCase();
+
+    if (hostname === "localhost" && url.protocol === "http:") {
+      return url.origin;
+    }
+
+    if (url.protocol !== "https:") {
+      return Deno.env.get("SITE_URL") || DEFAULT_SITE_URL;
+    }
+
+    if (hostname === "sonexstudio.shop" || hostname === "www.sonexstudio.shop") {
+      return url.origin;
+    }
+
+    if (hostname.endsWith(".sonexstudio.shop")) {
+      const slug = hostname.replace(/\.sonexstudio\.shop$/, "");
+      const { data: tenant } = await supabaseAdmin
+        .from("tenants")
+        .select("id")
+        .eq("slug", slug)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (tenant) return url.origin;
+    } else {
+      const { data: domain } = await supabaseAdmin
+        .from("tenant_domains")
+        .select("id")
+        .eq("domain", hostname)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (domain) return url.origin;
+    }
+  } catch {
+  }
+
+  return Deno.env.get("SITE_URL") || DEFAULT_SITE_URL;
+}
+
+function getTenantResetOrigin(tenant: { slug: string; custom_domain: string | null; domain_status: string }): string {
+  if (tenant.custom_domain && tenant.domain_status === "verified") {
+    return `https://${tenant.custom_domain}`;
+  }
+
+  return `https://${tenant.slug}.sonexstudio.shop`;
+}
+
+function isSuperAdmin(email: string | undefined): boolean {
+  const configuredEmails = Deno.env.get("SUPER_ADMIN_EMAILS") || Deno.env.get("ADMIN_EMAIL") || "";
+  const allowedEmails = configuredEmails
+    .split(",")
+    .map((configuredEmail) => configuredEmail.trim().toLowerCase())
+    .filter(Boolean);
+
+  return !!email && allowedEmails.includes(email.toLowerCase());
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { email } = await req.json();
+    if (!Deno.env.get("RESEND_API_KEY")) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    const { email: requestedEmail, tenantId } = await req.json();
+
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    let email = requestedEmail;
+    let resetOrigin: string | null = null;
+
+    if (tenantId) {
+      if (typeof tenantId !== "string") {
+        return new Response(JSON.stringify({ error: "Invalid tenant" }), {
+          status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      const accessToken = req.headers.get("authorization")?.replace("Bearer ", "");
+      if (!accessToken) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      const { data: { user: requestingUser }, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
+      if (userError || !requestingUser) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      if (!isSuperAdmin(requestingUser.email)) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      const { data: tenant, error: tenantError } = await supabaseAdmin
+        .from("tenants")
+        .select("owner_user_id, slug, custom_domain, domain_status")
+        .eq("id", tenantId)
+        .maybeSingle();
+
+      if (tenantError || !tenant) {
+        return new Response(JSON.stringify({ error: "Tenant not found" }), {
+          status: 404, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      const { data: ownerData, error: ownerError } = await supabaseAdmin.auth.admin.getUserById(tenant.owner_user_id);
+      if (ownerError || !ownerData.user?.email) {
+        return new Response(JSON.stringify({ error: "Tenant owner email is unavailable" }), {
+          status: 422, headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+
+      email = ownerData.user.email;
+      resetOrigin = getTenantResetOrigin(tenant);
+    }
 
     if (!email || typeof email !== "string") {
       return new Response(
@@ -79,11 +209,6 @@ serve(async (req) => {
       });
     }
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     const { data, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
       email: trimmedEmail,
@@ -97,25 +222,24 @@ serve(async (req) => {
       });
     }
 
-    const actionLink = data?.properties?.action_link;
-    if (!actionLink) {
-      console.error("No action link returned");
+    const tokenHash = data?.properties?.hashed_token;
+    if (!tokenHash) {
+      console.error("No hashed recovery token returned");
       return new Response(JSON.stringify({ success: true }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    const actionUrl = new URL(actionLink);
-    const tokenHash = actionUrl.searchParams.get("token") || actionUrl.searchParams.get("token_hash");
-    const type = actionUrl.searchParams.get("type") || "recovery";
+    const resetUrl = new URL("/reset-password", resetOrigin || await getResetOrigin(req, supabaseAdmin));
+    resetUrl.searchParams.set("token_hash", tokenHash);
+    resetUrl.searchParams.set("type", "recovery");
+    const resetLink = resetUrl.toString();
 
-    const resetLink = `https://www.sonexstudio.shop/reset-password?token_hash=${encodeURIComponent(tokenHash!)}&type=${type}`;
+    console.log("Built password reset link for:", resetUrl.origin);
 
-    console.log("Built custom reset link for domain: www.sonexstudio.shop");
-
-    const emailResponse = await resend.emails.send({
-      from: "Sonex Studio <support@sonexstudio.shop>",
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: "Sonex Studio <no-reply@sonexstudio.shop>",
       to: [trimmedEmail],
       subject: "Reset Your Password - Sonex Beats",
       html: `
@@ -151,7 +275,11 @@ serve(async (req) => {
       `,
     });
 
-    console.log("Password reset email sent:", emailResponse);
+    if (emailError) {
+      throw new Error(`Resend rejected password reset email: ${emailError.message}`);
+    }
+
+    console.log("Password reset email sent:", emailData?.id);
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

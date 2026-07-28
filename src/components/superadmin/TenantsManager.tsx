@@ -30,6 +30,12 @@ interface Tenant {
   owner_email?: string;
 }
 
+interface TenantOwner {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+}
+
 export function TenantsManager() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +43,8 @@ export function TenantsManager() {
   const [editing, setEditing] = useState<Tenant | null>(null);
   const [editPlan, setEditPlan] = useState('');
   const [editStatus, setEditStatus] = useState('');
+  const [editOwnerId, setEditOwnerId] = useState('');
+  const [tenantOwners, setTenantOwners] = useState<TenantOwner[]>([]);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState<Tenant | null>(null);
   const [sendingReset, setSendingReset] = useState(false);
@@ -55,16 +63,19 @@ export function TenantsManager() {
       return;
     }
 
-    // Get owner emails
-    const enriched: Tenant[] = [];
-    for (const t of data || []) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', t.owner_user_id)
-        .single();
-      enriched.push({ ...t, owner_email: profile?.email || 'Unknown' });
-    }
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, email, display_name')
+      .order('email');
+
+    const owners = (profiles || []) as TenantOwner[];
+    const ownerEmails = new Map(owners.map((owner) => [owner.id, owner.email || 'Unknown']));
+    const enriched: Tenant[] = (data || []).map((tenant) => ({
+      ...tenant,
+      owner_email: ownerEmails.get(tenant.owner_user_id) || 'Unknown',
+    }));
+
+    setTenantOwners(owners);
     setTenants(enriched);
     setLoading(false);
   };
@@ -75,6 +86,7 @@ export function TenantsManager() {
     setEditing(tenant);
     setEditPlan(tenant.plan);
     setEditStatus(tenant.status);
+    setEditOwnerId(tenant.owner_user_id);
   };
 
   const handleSave = async () => {
@@ -82,7 +94,7 @@ export function TenantsManager() {
     setSaving(true);
     const { error } = await supabase
       .from('tenants')
-      .update({ plan: editPlan, status: editStatus })
+      .update({ plan: editPlan, status: editStatus, owner_user_id: editOwnerId })
       .eq('id', editing.id);
 
     if (error) {
@@ -293,6 +305,20 @@ export function TenantsManager() {
                   <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tenant Owner</Label>
+              <Select value={editOwnerId} onValueChange={setEditOwnerId}>
+                <SelectTrigger><SelectValue placeholder="Select the tenant's account" /></SelectTrigger>
+                <SelectContent>
+                  {tenantOwners.map((owner) => (
+                    <SelectItem key={owner.id} value={owner.id}>
+                      {owner.email || owner.display_name || owner.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Reset and confirmation emails are sent to this account.</p>
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
               <p><strong>Owner:</strong> {editing?.owner_email}</p>

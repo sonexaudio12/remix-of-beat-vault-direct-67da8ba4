@@ -27,6 +27,7 @@ import { CollaborationEarnings } from '@/components/admin/CollaborationEarnings'
 import { DistributionDashboard } from '@/components/admin/DistributionDashboard';
 import { EmailSubscribersManager } from '@/components/admin/EmailSubscribersManager';
 import { TeamManager } from '@/components/admin/TeamManager';
+import { AccountSecuritySettings } from '@/components/admin/AccountSecuritySettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/hooks/useTenant';
 import logo from '@/assets/logo.png';
@@ -395,6 +396,14 @@ function SettingsContent({
   }
   const toggle = (id: string) => setOpenSection(prev => prev === id ? null : id);
   return <div className="space-y-4 max-w-3xl">
+      <div className="rounded-xl border border-border overflow-hidden">
+        <button onClick={() => toggle('account-security')} className="w-full flex items-center justify-between px-6 py-4 bg-card hover:bg-muted/30 transition-colors">
+          <span className="font-semibold">Account Security</span>
+          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'account-security' ? 'rotate-180' : ''}`} />
+        </button>
+        {openSection === 'account-security' && <div className="px-2 pb-2"><AccountSecuritySettings /></div>}
+      </div>
+
       {/* Domain Settings */}
       <div className="rounded-xl border border-border overflow-hidden">
         <button onClick={() => toggle('domain')} className="w-full flex items-center justify-between px-6 py-4 bg-card hover:bg-muted/30 transition-colors">

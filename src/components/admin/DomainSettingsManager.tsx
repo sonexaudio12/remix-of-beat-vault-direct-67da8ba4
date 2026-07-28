@@ -32,6 +32,14 @@ export function DomainSettingsManager() {
       .replace(/:\d+$/, '')
       .replace(/\.$/, '');
 
+  const isValidCustomDomain = (domain: string) =>
+    domain.length <= 253 &&
+    !domain.includes('@') &&
+    domain.split('.').length >= 2 &&
+    domain.split('.').every((label) =>
+      /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)
+    );
+
   const loadDomainRecord = useCallback(async () => {
     if (!tenant) return;
 
@@ -115,8 +123,8 @@ export function DomainSettingsManager() {
     try {
       const domain = normalizeCustomDomain(customDomain);
 
-      if (!domain || !domain.includes('.')) {
-        toast.error('Enter a valid domain (e.g. beats.yourdomain.com)');
+      if (!isValidCustomDomain(domain)) {
+        toast.error('Enter only a valid domain (e.g. sonexbeats.shop), not an email address or URL');
         return;
       }
 
@@ -294,7 +302,7 @@ export function DomainSettingsManager() {
               <Input
                 value={customDomain}
                 onChange={(e) => setCustomDomain(e.target.value)}
-                placeholder="www.yourdomain.com"
+                placeholder="sonexbeats.shop"
                 className="max-w-md"
               />
               {tenant.custom_domain && statusBadge()}
@@ -302,8 +310,10 @@ export function DomainSettingsManager() {
 
             <div className="space-y-2 text-xs text-muted-foreground">
               <p><strong>DNS Setup:</strong></p>
-              <p>1. Add an <strong>A record</strong> pointing to <code className="bg-muted px-1 rounded">185.158.133.1</code></p>
-              <p>2. Add a <strong>TXT record</strong> with:</p>
+              <p>Enter only the domain, such as <code className="bg-muted px-1 rounded">sonexbeats.shop</code> — not an email address.</p>
+              <p>1. For a root domain, add an <strong>A record</strong> for <code className="bg-muted px-1 rounded">@</code> pointing to <code className="bg-muted px-1 rounded">76.76.21.21</code>.</p>
+              <p>2. For a subdomain, add a <strong>CNAME record</strong> pointing to <code className="bg-muted px-1 rounded">cname.vercel-dns-0.com</code>.</p>
+              <p>3. Add a <strong>TXT record</strong> with:</p>
               <div className="space-y-1">
                 <p>
                   <strong>TXT Host/Name:</strong>{' '}

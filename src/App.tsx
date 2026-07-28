@@ -21,6 +21,7 @@ import Licenses from "./pages/Licenses";
 import SoundKits from "./pages/SoundKits";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import About from "@/pages/About";
@@ -61,6 +62,7 @@ function AppRoutes() {
         <Route path="/landing" element={<SaasLanding />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/account" element={<Account />} />
         <Route path="/admin" element={<Admin />} />
@@ -93,6 +95,7 @@ function AppRoutes() {
       <Route path="/sound-kits" element={<SoundKits />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/login" element={<Login />} />
       <Route path="/about" element={<About />} />
       <Route path="/account" element={<Account />} />

@@ -36,7 +36,7 @@ export function AccountSecuritySettings() {
     try {
       const { error } = await supabase.auth.updateUser(
         { email: nextEmail },
-        { emailRedirectTo: `${window.location.origin}/auth` },
+        { emailRedirectTo: `${window.location.origin}/auth/callback` },
       );
       if (error) throw error;
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const currentUserId = useRef<string | null>(null);
 
   const clearPasswordRecovery = useCallback(() => {
     setIsPasswordRecovery(false);
@@ -35,10 +36,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
+      const nextUserId = nextSession?.user.id ?? null;
+      const userChanged = nextUserId !== currentUserId.current;
+      currentUserId.current = nextUserId;
 
       if (nextSession?.user) {
-        // Keep loading true until role lookup effect completes
-        setIsLoading(true);
+        if (userChanged) {
+          // Keep loading true until role lookup effect completes for this user.
+          setIsLoading(true);
+        }
       } else {
         setIsAdmin(false);
         setIsLoading(false);

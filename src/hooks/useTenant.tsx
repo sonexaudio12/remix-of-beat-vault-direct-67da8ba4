@@ -68,10 +68,17 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const [isSaasLanding, setIsSaasLanding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user, isLoading: authLoading } = useAuth();
+  const userId = user?.id;
 
   useEffect(() => {
     // Wait for auth to finish loading before resolving tenant
     if (authLoading) return;
+
+    let cancelled = false;
+    setTenant(null);
+    setIsSaasLanding(false);
+    setError(null);
+    setIsLoading(true);
 
     const resolve = async () => {
       try {
@@ -83,43 +90,50 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         if (isPreviewDomain(hostname) || SAAS_ROOT_DOMAINS.includes(hostname)) {
           console.log('[TenantResolver] Root/preview domain detected');
           // If user is logged in, check if they own a tenant
-          if (user) {
+          if (userId) {
             // First check if they own a tenant
-            const { data: ownedTenant } = await supabase
+            const { data: ownedTenant, error: ownedTenantError } = await supabase
               .from('tenants')
               .select('*')
-              .eq('owner_user_id', user.id)
+              .eq('owner_user_id', userId)
               .eq('status', 'active')
               .maybeSingle();
+
+            if (cancelled) return;
+            if (ownedTenantError) throw ownedTenantError;
 
             if (ownedTenant) {
               console.log('[TenantResolver] Found owned tenant:', ownedTenant.slug);
               setTenant(ownedTenant as Tenant);
-              setIsLoading(false);
               return;
             }
 
             // Check if they're a team member of any tenant
-            const { data: membership } = await supabase
+            const { data: membership, error: membershipError } = await supabase
               .from('tenant_members' as any)
               .select('tenant_id')
-              .eq('user_id', user.id)
+              .eq('user_id', userId)
               .eq('status', 'active')
               .limit(1)
               .maybeSingle();
 
+            if (cancelled) return;
+            if (membershipError) throw membershipError;
+
             if (membership) {
-              const { data: memberTenant } = await supabase
+              const { data: memberTenant, error: memberTenantError } = await supabase
                 .from('tenants')
                 .select('*')
                 .eq('id', (membership as any).tenant_id)
                 .eq('status', 'active')
                 .maybeSingle();
 
+              if (cancelled) return;
+              if (memberTenantError) throw memberTenantError;
+
               if (memberTenant) {
                 console.log('[TenantResolver] Found team tenant:', memberTenant.slug);
                 setTenant(memberTenant as Tenant);
-                setIsLoading(false);
                 return;
               }
             }
@@ -128,7 +142,6 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           // No owned tenant → show SaaS landing
           console.log('[TenantResolver] No owned tenant, showing SaaS landing');
           setIsSaasLanding(true);
-          setIsLoading(false);
           return;
         }
 
@@ -143,11 +156,11 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
             .eq('status', 'active')
             .maybeSingle();
 
+          if (cancelled) return;
           if (err) throw err;
           if (data) {
             console.log('[TenantResolver] Tenant found by subdomain:', data.name);
             setTenant(data as Tenant);
-            setIsLoading(false);
             return;
           }
           console.log('[TenantResolver] No tenant found for subdomain:', subdomain);
@@ -165,20 +178,23 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           .limit(1)
           .maybeSingle();
 
+        if (cancelled) return;
         if (domainError) throw domainError;
 
         if (domainRecord) {
-          const { data: tenantData } = await supabase
+          const { data: tenantData, error: tenantError } = await supabase
             .from('tenants')
             .select('*')
             .eq('id', domainRecord.tenant_id)
             .eq('status', 'active')
             .maybeSingle();
 
+          if (cancelled) return;
+          if (tenantError) throw tenantError;
+
           if (tenantData) {
             console.log('[TenantResolver] Tenant found by custom domain table:', tenantData.name);
             setTenant(tenantData as Tenant);
-            setIsLoading(false);
             return;
           }
         }
@@ -192,12 +208,12 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           .limit(1)
           .maybeSingle();
 
+        if (cancelled) return;
         if (directTenantError) throw directTenantError;
 
         if (directTenant) {
           console.log('[TenantResolver] Tenant found by tenants.custom_domain:', directTenant.name);
           setTenant(directTenant as Tenant);
-          setIsLoading(false);
           return;
         }
 
@@ -205,16 +221,20 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
         console.log('[TenantResolver] No tenant found for hostname, showing SaaS landing');
         setIsSaasLanding(true);
       } catch (e: unknown) {
+        if (cancelled) return;
         console.error('[TenantResolver] Error:', e);
         setError(e instanceof Error ? e.message : 'Failed to resolve tenant');
         setIsSaasLanding(true);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     resolve();
-  }, [user, authLoading]);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, authLoading]);
 
   return (
     <TenantContext.Provider value={{ tenant, isLoading, isSaasLanding, error }}>
